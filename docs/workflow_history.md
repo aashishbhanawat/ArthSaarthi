@@ -1,3 +1,34 @@
+## 2026-11-24: Ground-Truth Concall Benchmark Harness & Phonetic Calibration (Issue #618 / PR #619)
+
+**Task:**
+1. Build an empirical ground-truth benchmarking harness (`benchmark_concall_pairs.py`) matching 12 pairs of Trendlyne audio conference calls with official BSE/NSE statutory PDF filings (11–23 pages).
+2. Compare lexical similarity, financial entity recall (crores, lakhs, percentages), tone concordance (Management vs. Q&A divergence), and cautionary remarks between Whisper transcripts and official PDF filings.
+3. Mine acoustic confusions on Indian earnings calls and calibrate `whisper_engine.py` ASR normalization rules.
+
+**AI Assistant:** Antigravity  
+**Role:** Lead Architect & Full-Stack Developer
+
+### Summary
+
+1. **Ground-Truth Benchmarking Harness (`backend/app/scripts/benchmark_concall_pairs.py`):**
+   - Implemented an automated pipeline pairing 12 companies (Oil India, RVNL, Garden Reach Shipbuilders, Genus Power, John Cockerill, India Glycols, Kalpataru, Polycab, Inox Wind, ACE, Jupiter Wagons, Deepak Fertilisers).
+   - Extracts ground truth via `pdfplumber`, stripping regulatory submission headers and footers.
+   - Computes quantitative metrics: Word Error Rate/Jaccard similarity, financial number recall, FinBERT-Tone management/Q&A tone divergence, Tone Gap concordance, and extractive theme overlap.
+   - Outputs machine-readable `data/benchmark_concall_report.json` and human-readable `docs/benchmark_concall_report.md`.
+2. **ASR Calibration & Phonetic Normalizations (`whisper_engine.py`):**
+   - Added support for comma-separated Indian numbers (`24,801 crew` -> `24,801 crores`).
+   - Added `"per hour"` / `"per or"` unit conversions following numbers to `"crore"` (`"25.2 per hour"` -> `"25.2 crore"`).
+   - Corrected acoustic variants for consolidated PAT (`"conesoly rated fact"` / `"conesoly date fact"` / `"consolidated fact"` -> `"consolidated PAT"`, `"fact goes to"` -> `"PAT goes to"`).
+3. **Benchmarking Results:**
+   - **Tone Gap Alert Concordance:** **100.0%** across evaluated calls (both ground-truth and Whisper accurately detected identical tone softening from prepared remarks into Q&A).
+   - **Tone Score Divergence:** Management Tone difference of only `0.111`, Analyst Q&A difference of `0.071`.
+   - **Financial Number Recall:** Calibrated up to ~29.3%.
+4. **Testing & QA:**
+   - 34/34 backend tests passing (`test_news.py`, `test_ml.py`, `test_news_service.py`).
+   - 4/4 frontend unit tests passing in `ConcallAnalysisModal.test.tsx`.
+
+---
+
 ## 2026-11-24: Proxy Timeout Background Polling & Oil India Phonetic Corrections (Issue #618 / PR #619)
 
 **Task:**

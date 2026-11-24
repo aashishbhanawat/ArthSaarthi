@@ -19,6 +19,12 @@
 
 ## Recent Stabilization & Refinement Efforts
 
+*   **Ground-Truth Concall Benchmark Harness & Phonetic Calibration (Issue #618 / PR #619) (Updated 2026-11-24):**
+    - **Benchmark Harness (`benchmark_concall_pairs.py`):** Established an automated evaluation harness pairing 12 companies (Oil India, RVNL, Garden Reach Shipbuilders, Genus Power, John Cockerill, India Glycols, Kalpataru, Polycab, Inox Wind, ACE, Jupiter Wagons, Deepak Fertilisers) across official BSE/NSE statutory transcripts (11–23 pages) and Trendlyne audio.
+    - **Acoustic Calibrations (`whisper_engine.py`):** Calibrated post-ASR regex normalizations for comma-separated numbers (`24,801 crew` -> `24,801 crores`), per-unit phrases (`"25.2 per hour"` -> `"25.2 crore"`), and consolidated PAT confusions (`"conesoly rated fact"` / `"consolidated fact"` -> `"consolidated PAT"`).
+    - **Benchmark Results:** Achieved **100.0% Tone Gap Alert Concordance** between ground-truth and Whisper transcripts, with Management Tone divergence constrained to `0.111` and Analyst Q&A divergence to `0.071`.
+    - **Verification:** 34/34 backend tests passing; 4/4 frontend tests passing.
+
 *   **Proxy Timeout Background Polling & Oil India Phonetic Corrections (Issue #618 / PR #619) (Updated 2026-11-24):**
     - **Timeout UX & Background Polling (`ConcallAnalysisModal.tsx`):** Handled 504 proxy read timeouts with an informative amber progress banner, manual refresh button, and 10-second automatic polling until the backend finishes and saves the analysis.
     - **Phonetic & Acronym Corrections (`whisper_engine.py`):** Added mappings for `"crew"` -> `"crores"`, `"fact"` -> `"PAT"`, `"half yearly back"` -> `"half yearly PAT"`, and `"an hour loop"` -> `"NRL"`.

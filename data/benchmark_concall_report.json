@@ -1,0 +1,216 @@
+{
+  "summary": {
+    "total_pairs": 2,
+    "avg_token_jaccard": 47.93,
+    "avg_number_recall": 29.15,
+    "avg_mgmt_tone_diff": 0.1105,
+    "avg_qa_tone_diff": 0.071,
+    "tone_gap_concordance_rate": 100.0
+  },
+  "pairs": [
+    {
+      "id": 1,
+      "key": "oil_india",
+      "company": "Oil India Limited",
+      "quarter": "Q2 FY27",
+      "ground_truth": {
+        "words": 8367,
+        "sentences": 468,
+        "unique_financial_numbers": 58,
+        "management_tone": {
+          "positive_pct": 16.9,
+          "neutral_pct": 83.1,
+          "negative_pct": 0.0,
+          "overall": "NEUTRAL",
+          "average_tone_score": 0.173,
+          "sample_size": 89
+        },
+        "qa_tone": {
+          "positive_pct": 15.3,
+          "neutral_pct": 78.4,
+          "negative_pct": 6.3,
+          "overall": "NEUTRAL",
+          "average_tone_score": 0.07,
+          "sample_size": 111
+        },
+        "tone_gap_alert": 0.106,
+        "red_flags_count": 3,
+        "key_themes": [
+          "Per Barrel",
+          "Metric Ton",
+          "Antique Stock",
+          "Stock Broking",
+          "Gas Production",
+          "Price Realization"
+        ]
+      },
+      "whisper": {
+        "words": 6598,
+        "sentences": 387,
+        "unique_financial_numbers": 24,
+        "management_tone": {
+          "positive_pct": 12.7,
+          "neutral_pct": 87.3,
+          "negative_pct": 0.0,
+          "overall": "NEUTRAL",
+          "average_tone_score": 0.142,
+          "sample_size": 55
+        },
+        "qa_tone": {
+          "positive_pct": 11.1,
+          "neutral_pct": 80.9,
+          "negative_pct": 8.0,
+          "overall": "NEUTRAL",
+          "average_tone_score": 0.025,
+          "sample_size": 288
+        },
+        "tone_gap_alert": 0.117,
+        "red_flags_count": 0,
+        "key_themes": [
+          "Per Barrel",
+          "Price Realization",
+          "Crude Oil",
+          "Gas Production",
+          "Oil India",
+          "Run Rate"
+        ]
+      },
+      "comparative_metrics": {
+        "token_jaccard_similarity": 0.508,
+        "financial_number_recall": 0.2931,
+        "mgmt_tone_abs_diff": 0.031,
+        "qa_tone_abs_diff": 0.045,
+        "tone_gap_concordance": true,
+        "theme_overlap_count": 3
+      },
+      "phonetic_distortions": [
+        {
+          "expected": "PAT",
+          "whisper_heard": "fact",
+          "gt_has_expected": true,
+          "sample_whisper_snippet": "right now to the fact that the white"
+        },
+        {
+          "expected": "PAT",
+          "whisper_heard": "back",
+          "gt_has_expected": true,
+          "sample_whisper_snippet": "Can you please come back"
+        },
+        {
+          "expected": "PAT",
+          "whisper_heard": "part",
+          "gt_has_expected": true,
+          "sample_whisper_snippet": "Part of the sentence I"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "key": "rvnl",
+      "company": "Rail Vikas Nigam Limited",
+      "quarter": "Q2 FY27",
+      "ground_truth": {
+        "words": 4986,
+        "sentences": 258,
+        "unique_financial_numbers": 100,
+        "management_tone": {
+          "positive_pct": 27.5,
+          "neutral_pct": 68.4,
+          "negative_pct": 4.1,
+          "overall": "NEUTRAL",
+          "average_tone_score": 0.236,
+          "sample_size": 244
+        },
+        "qa_tone": {
+          "positive_pct": 0.0,
+          "neutral_pct": 100.0,
+          "negative_pct": 0.0,
+          "overall": "NEUTRAL",
+          "average_tone_score": 0.0,
+          "sample_size": 0
+        },
+        "tone_gap_alert": 0.236,
+        "red_flags_count": 3,
+        "key_themes": [
+          "Inr Crore",
+          "Rail Vikas",
+          "Vikas Nigam",
+          "Stood Inr",
+          "Order Book",
+          "Mritunjay Pratap"
+        ]
+      },
+      "whisper": {
+        "words": 5076,
+        "sentences": 292,
+        "unique_financial_numbers": 44,
+        "management_tone": {
+          "positive_pct": 44.7,
+          "neutral_pct": 54.3,
+          "negative_pct": 1.1,
+          "overall": "BULLISH",
+          "average_tone_score": 0.426,
+          "sample_size": 94
+        },
+        "qa_tone": {
+          "positive_pct": 16.0,
+          "neutral_pct": 78.5,
+          "negative_pct": 5.5,
+          "overall": "NEUTRAL",
+          "average_tone_score": 0.097,
+          "sample_size": 163
+        },
+        "tone_gap_alert": 0.329,
+        "red_flags_count": 2,
+        "key_themes": [
+          "International Market",
+          "Long Term",
+          "People Per",
+          "Term Value",
+          "Explore Fresh",
+          "Revenue Operation"
+        ]
+      },
+      "comparative_metrics": {
+        "token_jaccard_similarity": 0.4505,
+        "financial_number_recall": 0.29,
+        "mgmt_tone_abs_diff": 0.19,
+        "qa_tone_abs_diff": 0.097,
+        "tone_gap_concordance": true,
+        "theme_overlap_count": 0
+      },
+      "phonetic_distortions": [
+        {
+          "expected": "crores?",
+          "whisper_heard": "per hour",
+          "gt_has_expected": true,
+          "sample_whisper_snippet": "5 people per hour building actual"
+        },
+        {
+          "expected": "PAT",
+          "whisper_heard": "fact",
+          "gt_has_expected": true,
+          "sample_whisper_snippet": "situation and the fact of that situation"
+        },
+        {
+          "expected": "PAT",
+          "whisper_heard": "back",
+          "gt_has_expected": true,
+          "sample_whisper_snippet": "Back by a solid order"
+        },
+        {
+          "expected": "PAT",
+          "whisper_heard": "part",
+          "gt_has_expected": true,
+          "sample_whisper_snippet": "show to the bidding part"
+        },
+        {
+          "expected": "Numaligarh Refinery / NRL",
+          "whisper_heard": "an hour",
+          "gt_has_expected": false,
+          "sample_whisper_snippet": "000 six an hour"
+        }
+      ]
+    }
+  ]
+}

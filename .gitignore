@@ -99,4 +99,7 @@ gha-creds-*.json
 backend/*.db*
 .gradle/
 **/android/.gradle/
+**/concall_benchmarks/
+backend/data/
+backend/docs/
 
