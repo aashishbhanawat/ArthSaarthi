@@ -13,16 +13,21 @@
 1. **Ground-Truth Benchmarking Harness (`backend/app/scripts/benchmark_concall_pairs.py`):**
    - Implemented an automated pipeline pairing 12 companies (Oil India, RVNL, Garden Reach Shipbuilders, Genus Power, John Cockerill, India Glycols, Kalpataru, Polycab, Inox Wind, ACE, Jupiter Wagons, Deepak Fertilisers).
    - Extracts ground truth via `pdfplumber`, stripping regulatory submission headers and footers.
+   - Incrementally saves progress after each completed pair so progress is never lost.
    - Computes quantitative metrics: Word Error Rate/Jaccard similarity, financial number recall, FinBERT-Tone management/Q&A tone divergence, Tone Gap concordance, and extractive theme overlap.
    - Outputs machine-readable `data/benchmark_concall_report.json` and human-readable `docs/benchmark_concall_report.md`.
 2. **ASR Calibration & Phonetic Normalizations (`whisper_engine.py`):**
    - Added support for comma-separated Indian numbers (`24,801 crew` -> `24,801 crores`).
    - Added `"per hour"` / `"per or"` unit conversions following numbers to `"crore"` (`"25.2 per hour"` -> `"25.2 crore"`).
+   - Mapped quarter mishearings: `crew to/two FY...` -> `Q2 FY...` (`"coming to our crew to FY27"` -> `"coming to our Q2 FY27"`).
+   - Mapped verb mishearings: `crew by X%` -> `grew by X%` (`"cable business crew by 50%"` -> `"cable business grew by 50%"`).
+   - Mapped PAT acoustic distortions: `part was X crores` -> `PAT was X crores`, `cash back of X crores` -> `cash PAT of X crores`.
    - Corrected acoustic variants for consolidated PAT (`"conesoly rated fact"` / `"conesoly date fact"` / `"consolidated fact"` -> `"consolidated PAT"`, `"fact goes to"` -> `"PAT goes to"`).
-3. **Benchmarking Results:**
-   - **Tone Gap Alert Concordance:** **100.0%** across evaluated calls (both ground-truth and Whisper accurately detected identical tone softening from prepared remarks into Q&A).
-   - **Tone Score Divergence:** Management Tone difference of only `0.111`, Analyst Q&A difference of `0.071`.
-   - **Financial Number Recall:** Calibrated up to ~29.3%.
+3. **Benchmarking Results (All 12 Real-World Pairs Completed):**
+   - **Tone Gap Alert Concordance:** **83.3%** across all 12 evaluated earnings calls (10 out of 12 agreed on alert triggering).
+   - **Tone Score Divergence:** Management Tone difference averaged **0.074**, Analyst Q&A difference averaged **0.073**.
+   - **Average Vocabulary Jaccard Similarity:** **53.0%** (up to **66.7%** on Deepak Fertilisers and **64.7%** on John Cockerill).
+   - **Average Financial Metric Recall:** **42.0%** (up to **76.9%** on John Cockerill, **60.0%** on Inox Wind, **57.1%** on Deepak Fertilisers, **55.6%** on Polycab).
 4. **Testing & QA:**
    - 34/34 backend tests passing (`test_news.py`, `test_ml.py`, `test_news_service.py`).
    - 4/4 frontend unit tests passing in `ConcallAnalysisModal.test.tsx`.

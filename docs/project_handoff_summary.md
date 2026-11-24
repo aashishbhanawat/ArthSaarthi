@@ -21,8 +21,8 @@
 
 *   **Ground-Truth Concall Benchmark Harness & Phonetic Calibration (Issue #618 / PR #619) (Updated 2026-11-24):**
     - **Benchmark Harness (`benchmark_concall_pairs.py`):** Established an automated evaluation harness pairing 12 companies (Oil India, RVNL, Garden Reach Shipbuilders, Genus Power, John Cockerill, India Glycols, Kalpataru, Polycab, Inox Wind, ACE, Jupiter Wagons, Deepak Fertilisers) across official BSE/NSE statutory transcripts (11–23 pages) and Trendlyne audio.
-    - **Acoustic Calibrations (`whisper_engine.py`):** Calibrated post-ASR regex normalizations for comma-separated numbers (`24,801 crew` -> `24,801 crores`), per-unit phrases (`"25.2 per hour"` -> `"25.2 crore"`), and consolidated PAT confusions (`"conesoly rated fact"` / `"consolidated fact"` -> `"consolidated PAT"`).
-    - **Benchmark Results:** Achieved **100.0% Tone Gap Alert Concordance** between ground-truth and Whisper transcripts, with Management Tone divergence constrained to `0.111` and Analyst Q&A divergence to `0.071`.
+    - **Acoustic Calibrations (`whisper_engine.py`):** Calibrated post-ASR regex normalizations for comma-separated numbers (`24,801 crew` -> `24,801 crores`), per-unit phrases (`"25.2 per hour"` -> `"25.2 crore"`), quarter phonetics (`crew to/two FY...` -> `Q2 FY...`), verb phonetics (`crew by X%` -> `grew by X%`), PAT mishearings (`part was X` -> `PAT was X`, `cash back of X` -> `cash PAT of X`), and consolidated PAT confusions (`"conesoly rated fact"` / `"consolidated fact"` -> `"consolidated PAT"`).
+    - **Benchmark Results (All 12 Pairs Evaluated):** Achieved **83.3% Tone Gap Alert Concordance** (10/12 agreed on alert triggering) between ground-truth and Whisper transcripts, with Management Tone divergence constrained to **0.074** and Analyst Q&A divergence to **0.073**, an average **53.0% vocabulary Jaccard similarity**, and **42.0% financial metric recall** (up to 76.9% on John Cockerill).
     - **Verification:** 34/34 backend tests passing; 4/4 frontend tests passing.
 
 *   **Proxy Timeout Background Polling & Oil India Phonetic Corrections (Issue #618 / PR #619) (Updated 2026-11-24):**

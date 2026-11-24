@@ -4,12 +4,12 @@ Empirical ground-truth evaluation comparing official BSE/NSE statutory conferenc
 
 ## 1. Executive Summary
 
-- **Total Concall Pairs Evaluated:** 2
-- **Average Vocabulary Jaccard Similarity:** 47.9%
-- **Average Financial Number Recall (Crores / % / Units):** 29.1%
-- **Average Management Tone Divergence (|PDF - Whisper|):** 0.111
-- **Average Analyst Q&A Tone Divergence (|PDF - Whisper|):** 0.071
-- **Tone Gap Alert Concordance Rate:** 100.0%
+- **Total Concall Pairs Evaluated:** 12
+- **Average Vocabulary Jaccard Similarity:** 53.0%
+- **Average Financial Number Recall (Crores / % / Units):** 42.0%
+- **Average Management Tone Divergence (|PDF - Whisper|):** 0.074
+- **Average Analyst Q&A Tone Divergence (|PDF - Whisper|):** 0.073
+- **Tone Gap Alert Concordance Rate:** 83.3%
 
 ## 2. Comparative Benchmark Scorecard
 
@@ -17,6 +17,16 @@ Empirical ground-truth evaluation comparing official BSE/NSE statutory conferenc
 |---|---|---|---|---|---|---|---|---|---|
 | 1 | **Oil India Limited** | Q2 FY27 | 8367 | 6598 | 50.8% | 29.3% | +0.17 / +0.14 | +0.07 / +0.03 | ✅ Yes |
 | 2 | **Rail Vikas Nigam Limited** | Q2 FY27 | 4986 | 5076 | 45.1% | 29.0% | +0.24 / +0.43 | +0.00 / +0.10 | ✅ Yes |
+| 3 | **Garden Reach Shipbuilders & Engineers** | Q2 FY27 | 8304 | 8212 | 49.6% | 30.3% | +0.05 / +0.04 | +0.13 / +0.08 | ✅ Yes |
+| 4 | **Genus Power Infrastructures** | Q2 FY27 | 6506 | 6329 | 55.7% | 50.0% | +0.36 / +0.28 | +0.18 / +0.18 | ⚠️ No |
+| 5 | **John Cockerill India** | Q3 CY26 | 5154 | 4980 | 64.7% | 76.9% | +0.41 / +0.45 | +0.10 / +0.17 | ✅ Yes |
+| 6 | **India Glycols Limited** | Q2 FY27 | 7748 | 8034 | 57.4% | 23.3% | +0.22 / +0.20 | -0.02 / +0.12 | ⚠️ No |
+| 7 | **Kalpataru Limited** | Q2 FY27 | 6048 | 2707 | 10.3% | 0.0% | +0.00 / +0.24 | +0.00 / +0.15 | ✅ Yes |
+| 8 | **Polycab India Limited** | Q2 FY27 | 9186 | 9296 | 62.4% | 55.6% | +0.59 / +0.65 | +0.31 / +0.28 | ✅ Yes |
+| 9 | **Inox Wind Limited** | Q2 FY27 | 8438 | 8123 | 58.2% | 60.0% | +0.33 / +0.36 | +0.11 / +0.14 | ✅ Yes |
+| 10 | **Action Construction Equipment** | Q2 FY27 | 9727 | 9547 | 57.4% | 52.4% | +0.51 / +0.56 | +0.02 / +0.12 | ✅ Yes |
+| 11 | **Jupiter Wagons Limited** | Q2 FY27 | 4741 | 4853 | 57.8% | 40.0% | +0.42 / +0.48 | +0.07 / +0.18 | ✅ Yes |
+| 12 | **Deepak Fertilisers & Petrochem** | Q2 FY27 | 7312 | 7321 | 66.7% | 57.1% | +0.42 / +0.51 | +0.16 / +0.10 | ✅ Yes |
 
 ## 3. Top Observed Phonetic Mishearings on Indian Accents
 
@@ -29,6 +39,10 @@ The following phonetic distortions were mined across the concall pairs and calib
 | `PAT` | `part` | "Part of the sentence I" |
 | `crores?` | `per hour` | "5 people per hour building actual" |
 | `Numaligarh Refinery / NRL` | `an hour` | "000 six an hour" |
+| `crores?` | `store` | "collector of wood store So" |
+| `crores?` | `corona` | "lighter point three corona maker so that it" |
+| `crores?` | `crew` | "coming to our crew to FY27 financial" |
+| `Numaligarh Refinery / NRL` | `loop` | "it is later out loop has raised India" |
 
 ## 4. Architectural Calibration & Recommendations
 

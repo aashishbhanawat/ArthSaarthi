@@ -281,6 +281,8 @@ def mine_phonetic_confusions(ground_truth_text: str, whisper_text: str) -> List[
     suspect_tokens = [
         ("crores?", ["corona", "coronas", "store", "stores", "grower", "crew", "crews", "per row", "per hour"]),
         ("top line", ["stop line"]),
+        ("grew by", ["crew by"]),
+        ("Q2 FY", ["crew to", "crew two"]),
         ("PAT", ["fact", "back", "part"]),
         ("Numaligarh Refinery / NRL", ["an hour loop", "an hour", "loop"]),
         ("bidding margin / margin discipline", ["mental margin"]),
@@ -339,10 +341,10 @@ def benchmark_pair(pair: Dict[str, Any], force: bool = False) -> Dict[str, Any]:
     wh_qa_score = wh_nlp["qa_tone"]["average_tone_score"]
     qa_score_diff = abs(gt_qa_score - wh_qa_score)
 
-    tone_gap_alignment = (
-        (gt_nlp["tone_gap_alert"] > 0 and wh_nlp["tone_gap_alert"] > 0)
-        or (gt_nlp["tone_gap_alert"] == 0 and wh_nlp["tone_gap_alert"] == 0)
-    )
+    # Tone Gap Concordance: Check if both Ground Truth and Whisper agree on triggering a Tone Gap Alert (gap >= 0.10)
+    gt_alert_triggered = gt_nlp["tone_gap_alert"] >= 0.10
+    wh_alert_triggered = wh_nlp["tone_gap_alert"] >= 0.10
+    tone_gap_alignment = (gt_alert_triggered == wh_alert_triggered)
 
     # 6. Compare Extractive Intelligence
     gt_themes = set(t.lower() for t in gt_nlp.get("key_themes", []))
@@ -476,46 +478,17 @@ def generate_markdown_report(report_data: Dict[str, Any], output_path: Path):
     logger.info("Wrote Markdown benchmark report to %s", output_path)
 
 
-def main():
-    parser = argparse.ArgumentParser(description="Benchmark Concall Ground-Truth Pairs")
-    parser.add_argument("--limit", type=int, default=None, help="Limit number of pairs to evaluate")
-    parser.add_argument("--pair", type=int, default=None, help="Benchmark specific pair ID (1-12)")
-    parser.add_argument("--force", action="store_true", help="Force re-downloading and re-transcription")
-    parser.add_argument("--export-json", type=str, default="data/benchmark_concall_report.json")
-    parser.add_argument("--export-md", type=str, default="docs/benchmark_concall_report.md")
-    args = parser.parse_args()
-
-    ensure_cache_dirs()
-
-    pairs_to_run = BENCHMARK_PAIRS
-    if args.pair is not None:
-        pairs_to_run = [p for p in BENCHMARK_PAIRS if p["id"] == args.pair]
-        if not pairs_to_run:
-            logger.error("No pair found with ID %d", args.pair)
-            sys.exit(1)
-    elif args.limit is not None:
-        pairs_to_run = pairs_to_run[:args.limit]
-
-    logger.info("Starting Concall Intelligence Benchmarking on %d pair(s)...", len(pairs_to_run))
-    results = []
-    for p in pairs_to_run:
-        try:
-            r = benchmark_pair(p, force=args.force)
-            results.append(r)
-        except Exception as e:
-            logger.error("Failed benchmarking pair #%d (%s): %s", p["id"], p["company"], e, exc_info=True)
-
+def save_progress_report(results: List[Dict[str, Any]], export_json: str, export_md: str):
+    """Computes summary statistics and saves both JSON and Markdown reports."""
     if not results:
-        logger.error("No benchmark results generated.")
-        sys.exit(1)
-
-    # Compute Aggregate Summary
-    total = len(results)
-    avg_jaccard = sum(r["comparative_metrics"]["token_jaccard_similarity"] for r in results) / total
-    avg_num_recall = sum(r["comparative_metrics"]["financial_number_recall"] for r in results) / total
-    avg_mgmt_diff = sum(r["comparative_metrics"]["mgmt_tone_abs_diff"] for r in results) / total
-    avg_qa_diff = sum(r["comparative_metrics"]["qa_tone_abs_diff"] for r in results) / total
-    concordance_count = sum(1 for r in results if r["comparative_metrics"]["tone_gap_concordance"])
+        return
+    results_sorted = sorted(results, key=lambda x: x["id"])
+    total = len(results_sorted)
+    avg_jaccard = sum(r["comparative_metrics"]["token_jaccard_similarity"] for r in results_sorted) / total
+    avg_num_recall = sum(r["comparative_metrics"]["financial_number_recall"] for r in results_sorted) / total
+    avg_mgmt_diff = sum(r["comparative_metrics"]["mgmt_tone_abs_diff"] for r in results_sorted) / total
+    avg_qa_diff = sum(r["comparative_metrics"]["qa_tone_abs_diff"] for r in results_sorted) / total
+    concordance_count = sum(1 for r in results_sorted if r["comparative_metrics"]["tone_gap_concordance"])
     concordance_rate = (concordance_count / total) * 100
 
     summary = {
@@ -529,31 +502,74 @@ def main():
 
     full_report = {
         "summary": summary,
-        "pairs": results,
+        "pairs": results_sorted,
     }
 
-    json_path = Path(args.export_json)
+    json_path = Path(export_json)
     json_path.parent.mkdir(parents=True, exist_ok=True)
     json_content = json.dumps(full_report, indent=2)
     json_path.write_text(json_content, encoding="utf-8")
-    logger.info("Wrote JSON benchmark report to %s", json_path)
-    # Mirror to workspace root if accessible
-    root_json = Path("..") / args.export_json
+
+    root_json = Path("..") / export_json
     if root_json.parent.exists():
         try:
             root_json.write_text(json_content, encoding="utf-8")
         except Exception:
             pass
 
-    md_path = Path(args.export_md)
+    md_path = Path(export_md)
     generate_markdown_report(full_report, md_path)
-    root_md = Path("..") / args.export_md
+    root_md = Path("..") / export_md
     if root_md.parent.exists():
         try:
             generate_markdown_report(full_report, root_md)
         except Exception:
             pass
-    logger.info("Benchmarking successfully completed!")
+    logger.info("Progress saved: %d pair(s) scored in %s and %s", total, json_path, md_path)
+
+
+def main():
+    parser = argparse.ArgumentParser(description="Benchmark Concall Ground-Truth Pairs")
+    parser.add_argument("--limit", type=int, default=None, help="Limit number of pairs to evaluate")
+    parser.add_argument("--pair", type=int, default=None, help="Benchmark specific pair ID (1-12)")
+    parser.add_argument("--force", action="store_true", help="Force re-downloading and re-transcription")
+    parser.add_argument("--export-json", type=str, default="data/benchmark_concall_report.json")
+    parser.add_argument("--export-md", type=str, default="docs/benchmark_concall_report.md")
+    args = parser.parse_args()
+
+    ensure_cache_dirs()
+
+    # Load existing completed pairs to avoid losing historical benchmarks
+    existing_map: Dict[int, Dict[str, Any]] = {}
+    json_path = Path(args.export_json)
+    if json_path.exists():
+        try:
+            existing_data = json.loads(json_path.read_text(encoding="utf-8"))
+            for p in existing_data.get("pairs", []):
+                existing_map[p["id"]] = p
+        except Exception:
+            pass
+
+    pairs_to_run = BENCHMARK_PAIRS
+    if args.pair is not None:
+        pairs_to_run = [p for p in BENCHMARK_PAIRS if p["id"] == args.pair]
+        if not pairs_to_run:
+            logger.error("No pair found with ID %d", args.pair)
+            sys.exit(1)
+    elif args.limit is not None:
+        pairs_to_run = pairs_to_run[:args.limit]
+
+    logger.info("Starting Concall Intelligence Benchmarking on %d pair(s)...", len(pairs_to_run))
+    for p in pairs_to_run:
+        try:
+            r = benchmark_pair(p, force=args.force)
+            existing_map[r["id"]] = r
+            # Save incrementally after each pair completes
+            save_progress_report(list(existing_map.values()), args.export_json, args.export_md)
+        except Exception as e:
+            logger.error("Failed benchmarking pair #%d (%s): %s", p["id"], p["company"], e, exc_info=True)
+
+    logger.info("Benchmarking successfully completed across %d total pair(s)!", len(existing_map))
 
 
 if __name__ == "__main__":
