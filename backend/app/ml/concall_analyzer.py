@@ -1,7 +1,7 @@
 import collections
 import math
 import re
-from typing import Any, Dict, List, Set, Tuple
+from typing import Any, Dict, List, Optional, Set, Tuple
 
 from app.ml.sentiment_engine import sentiment_engine
 
@@ -11,10 +11,14 @@ class ConcallAnalyzer:
     Extractive Intelligence Engine for Earnings Conference Calls & Corporate Disclosures.
     Operates 100% locally on edge without requiring generative Large Language Models:
     1. Structural sectioning (Management Discussion vs. Analyst Q&A)
-    2. FinBERT Tone & Sentiment Profiling
-    3. Deterministic Guidance, Capex, and Margin Extraction
-    4. Graph-Centrality Extractive Summarization (TextRank / TF-IDF) with Concrete Statement Scoring
-    5. Salient Discussion Theme & Domain Topic Mining
+    2. FinBERT-Tone Sentiment & Tone Profiling (Continuous Polarity [-1.0, +1.0])
+    3. Prepared Remarks vs. Q&A Tone Divergence Detection (Tone Gap Alert)
+    4. Loughran-McDonald Hedging & Financial Uncertainty Index
+    5. 4-Aspect Financial Sentiment Scorecard (Demand, Margins, Guidance, CapEx)
+    6. Extractive Red Flags & Cautionary Risk Statements
+    7. Deterministic Guidance, Capex, and Margin Extraction
+    8. Graph-Centrality Extractive Summarization (TextRank / TF-IDF) with Concrete Statement Scoring
+    9. Salient Discussion Theme & Domain Topic Mining
     """
 
     # Phrases marking the transition from management remarks to Q&A session
@@ -59,6 +63,14 @@ class ConcallAnalyzer:
     SPEAKER_PREFIX_PATTERN = re.compile(
         r"^(?:(?:[A-Z][a-zA-Z\s\.\-']{1,35}|Operator|Moderator|Analyst|Management)\s*:\s*|(?:[QA]\s*-\s*[A-Z][a-zA-Z\s\.\-']{1,35}\s*:\s*))"
     )
+
+    # Topic anchors for aspect-level sentiment routing
+    TOPIC_ANCHORS = {
+        "demand_revenue": "revenue growth order book volume demand customer sales pipeline bookings market share shipments delivery",
+        "margins_costs": "ebitda gross margin operating profit cost raw material inflation pricing realization overheads input costs",
+        "guidance_outlook": "full year guidance outlook visibility target forecast next quarter fiscal forward trajectory expectations",
+        "capex_debt": "capital expenditure capex gigafactory debt repayment working capital liquidity cash flow borrowings deleveraging",
+    }
 
     # Corporate stop words and artifacts for topic/theme extraction
     STOP_WORDS: Set[str] = {
@@ -220,8 +232,8 @@ class ConcallAnalyzer:
 
     def analyze_tone(self, sentences: List[str]) -> Dict[str, Any]:
         """
-        Computes sentiment percentage breakdown across a collection of sentences
-        using FinBERT INT8 ONNX or fallback FinancialLexicon.
+        Computes sentiment percentage breakdown and continuous tone score across sentences
+        using FinBERT-Tone INT8 ONNX or fallback FinancialLexicon.
         """
         if not sentences:
             return {
@@ -229,10 +241,12 @@ class ConcallAnalyzer:
                 "neutral_pct": 100.0,
                 "negative_pct": 0.0,
                 "overall": "NEUTRAL",
+                "average_tone_score": 0.0,
                 "sample_size": 0,
             }
 
         counts = {"POSITIVE": 0, "NEUTRAL": 0, "NEGATIVE": 0}
+        tone_scores: List[float] = []
         scored_sentences = [
             s for s in sentences
             if not self._is_boilerplate_or_filler(s) and not self._is_analyst_question(s)
@@ -245,11 +259,13 @@ class ConcallAnalyzer:
             res = sentiment_engine.analyze(cleaned)
             lbl = getattr(res, "label", "NEUTRAL")
             counts[lbl] = counts.get(lbl, 0) + 1
+            tone_scores.append(getattr(res, "tone_score", 0.0))
 
         total = sum(counts.values()) or 1
         pos_pct = round((counts["POSITIVE"] / total) * 100, 1)
         neu_pct = round((counts["NEUTRAL"] / total) * 100, 1)
         neg_pct = round((counts["NEGATIVE"] / total) * 100, 1)
+        avg_tone = round(float(sum(tone_scores) / len(tone_scores)), 3) if tone_scores else 0.0
 
         if pos_pct >= neg_pct + 15.0 and pos_pct >= 35.0:
             overall = "BULLISH"
@@ -265,8 +281,101 @@ class ConcallAnalyzer:
             "neutral_pct": neu_pct,
             "negative_pct": neg_pct,
             "overall": overall,
+            "average_tone_score": avg_tone,
             "sample_size": len(scored_sentences),
         }
+
+    def calculate_tone_gap(self, mgmt_score: float, qa_score: float) -> Tuple[float, str]:
+        """
+        Measures tone divergence between Prepared Remarks and Q&A (high-alpha signal).
+        A large positive gap indicates management turned defensive under questioning.
+        """
+        gap = round(mgmt_score - qa_score, 3)
+        if gap >= 0.20:
+            summary = (
+                f"Tone Gap Alert (+{gap:.2f}): Management tone turned defensive under analyst questioning "
+                f"(Opening: {mgmt_score:+.2f} vs Q&A: {qa_score:+.2f})."
+            )
+        elif gap <= -0.20:
+            summary = (
+                f"Constructive Q&A Shift ({gap:+.2f}): Analyst Q&A discussion was notably more positive than opening remarks "
+                f"(Opening: {mgmt_score:+.2f} vs Q&A: {qa_score:+.2f})."
+            )
+        else:
+            summary = (
+                f"Consistent Tone: Opening remarks and analyst Q&A remained aligned "
+                f"(Opening: {mgmt_score:+.2f} vs Q&A: {qa_score:+.2f})."
+            )
+        return gap, summary
+
+    def compute_hedging_rate(self, text: str) -> float:
+        """Computes Loughran-McDonald financial uncertainty density per 100 words."""
+        return sentiment_engine.lexicon.compute_uncertainty_rate(text)
+
+    def score_aspects(self, sentences: List[str]) -> Dict[str, float]:
+        """
+        Calculates topic-level sentiment scores across 4 key financial buckets:
+        Demand/Revenue, Margins/Costs, Guidance/Outlook, and CapEx/Debt.
+        """
+        anchor_bags = {
+            topic: set(words.split())
+            for topic, words in self.TOPIC_ANCHORS.items()
+        }
+
+        topic_scores: Dict[str, List[float]] = {topic: [] for topic in self.TOPIC_ANCHORS}
+
+        for s in sentences:
+            if self._is_boilerplate_or_filler(s) or self._is_analyst_question(s):
+                continue
+            cleaned = self._clean_sentence(s)
+            s_words = set(re.findall(r"\b[a-zA-Z]{3,}\b", cleaned.lower()))
+            if not s_words:
+                continue
+
+            best_topic = None
+            max_overlap = 0
+            for topic, anchor_words in anchor_bags.items():
+                overlap = len(s_words.intersection(anchor_words))
+                if overlap > max_overlap and overlap >= 1:
+                    max_overlap = overlap
+                    best_topic = topic
+
+            if best_topic is not None:
+                res = sentiment_engine.analyze(cleaned)
+                topic_scores[best_topic].append(res.tone_score)
+
+        return {
+            topic: round(float(sum(scores) / len(scores)), 2)
+            for topic, scores in topic_scores.items()
+            if scores
+        }
+
+    def extract_red_flags(self, sentences: List[str], n: int = 3) -> List[Dict[str, Any]]:
+        """
+        Extracts the top N most cautious or negative verbatim management statements.
+        Combines FinBERT tone scoring with Loughran-McDonald uncertainty indicators.
+        """
+        scored_candidates: List[Tuple[float, str]] = []
+        for s in sentences:
+            cleaned = self._clean_sentence(s)
+            if len(cleaned) < 40 or len(cleaned.split()) < 8:
+                continue
+            if self._is_boilerplate_or_filler(cleaned) or self._is_analyst_question(cleaned):
+                continue
+
+            res = sentiment_engine.analyze(cleaned)
+            uncertainty_rate = sentiment_engine.lexicon.compute_uncertainty_rate(cleaned)
+            # Penalize tone score further if uncertainty words are present
+            risk_score = res.tone_score - (0.25 if uncertainty_rate > 0 else 0.0)
+
+            if res.tone_score < 0.0 or uncertainty_rate > 0:
+                scored_candidates.append((risk_score, cleaned))
+
+        scored_candidates.sort(key=lambda x: x[0])  # Lowest (most cautious) first
+        return [
+            {"text": text, "score": round(score, 2)}
+            for score, text in scored_candidates[:n]
+        ]
 
     def mine_guidance_metrics(self, text: str) -> List[Dict[str, str]]:
         """
@@ -327,10 +436,8 @@ class ConcallAnalyzer:
 
         for s in raw_sents:
             cleaned = self._clean_sentence(s)
-            # Require minimum substance length
             if len(cleaned) < 40 or len(cleaned.split()) < 8:
                 continue
-            # Strictly filter analyst questions and conversational boilerplate
             if self._is_analyst_question(cleaned) or self._is_boilerplate_or_filler(cleaned):
                 continue
             candidates.append(cleaned)
@@ -338,7 +445,6 @@ class ConcallAnalyzer:
         if len(candidates) <= n:
             return candidates
 
-        # Tokenize candidates into word bags
         word_bags: List[List[str]] = []
         doc_freq: collections.Counter = collections.Counter()
         for sent in candidates:
@@ -352,7 +458,6 @@ class ConcallAnalyzer:
 
         num_docs = len(candidates)
 
-        # Compute TF-IDF vectors
         vectors: List[Dict[str, float]] = []
         for bag in word_bags:
             term_freq = collections.Counter(bag)
@@ -360,11 +465,9 @@ class ConcallAnalyzer:
             for word, count in term_freq.items():
                 idf = math.log((num_docs + 1) / (doc_freq[word] + 1)) + 1.0
                 vec[word] = count * idf
-            # Normalize vector
             norm = math.sqrt(sum(v * v for v in vec.values())) or 1.0
             vectors.append({w: v / norm for w, v in vec.items()})
 
-        # Pairwise Cosine Similarity Centrality Scores
         centrality_scores = [0.0] * num_docs
         for i in range(num_docs):
             for j in range(i + 1, num_docs):
@@ -372,8 +475,6 @@ class ConcallAnalyzer:
                 centrality_scores[i] += sim
                 centrality_scores[j] += sim
 
-        # Concrete Statement Scoring Boost
-        # Statements with verified financial metrics and operational facts receive heavy priority
         for i, sent in enumerate(candidates):
             has_metric = bool(
                 re.search(
@@ -391,18 +492,14 @@ class ConcallAnalyzer:
             )
 
             if has_metric and has_biz_term:
-                # Top priority: Contains both concrete figures and business metrics
                 centrality_scores[i] = (centrality_scores[i] + 0.5) * 3.0
             elif has_metric or has_biz_term:
-                # Moderate priority: Contains figures or business signals
                 centrality_scores[i] = (centrality_scores[i] + 0.2) * 1.8
             else:
-                # Penalize generic narrative sentences with no financial signal
                 centrality_scores[i] *= 0.4
 
-        # Rank and pick top N sentences preserving original narrative flow
         ranked_indices = sorted(range(num_docs), key=lambda idx: centrality_scores[idx], reverse=True)[:n]
-        ranked_indices.sort()  # Restore original transcript order
+        ranked_indices.sort()
 
         return [candidates[idx] for idx in ranked_indices]
 
@@ -452,12 +549,23 @@ class ConcallAnalyzer:
 
     def analyze(self, text: str) -> Dict[str, Any]:
         """
-        Runs full end-to-end non-LLM concall intelligence analysis.
+        Runs full end-to-end non-LLM quantitative concall intelligence analysis.
         """
         mgmt_sents, qa_sents = self.segment_transcript(text)
 
         mgmt_tone = self.analyze_tone(mgmt_sents)
         qa_tone = self.analyze_tone(qa_sents)
+
+        tone_gap, divergence_summary = self.calculate_tone_gap(
+            mgmt_tone.get("average_tone_score", 0.0),
+            qa_tone.get("average_tone_score", 0.0),
+        )
+
+        hedge_rate = self.compute_hedging_rate(text)
+        all_substantive_sents = mgmt_sents + qa_sents
+        topic_scores = self.score_aspects(all_substantive_sents)
+        red_flags = self.extract_red_flags(all_substantive_sents, n=3)
+
         guidance = self.mine_guidance_metrics(text)
         takeaways = self.extract_top_sentences(text, n=5)
         topics = self.extract_topics(text, n=6)
@@ -465,6 +573,11 @@ class ConcallAnalyzer:
         return {
             "management_tone": mgmt_tone,
             "qa_tone": qa_tone,
+            "tone_gap_alert": tone_gap,
+            "tone_divergence_summary": divergence_summary,
+            "hedge_rate_per_100w": hedge_rate,
+            "topic_sentiment": topic_scores,
+            "red_flags": red_flags,
             "guidance_metrics": guidance,
             "top_takeaways": takeaways,
             "key_themes": topics,

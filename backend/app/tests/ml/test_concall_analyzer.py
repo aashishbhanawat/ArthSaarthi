@@ -112,8 +112,33 @@ def test_concall_analyzer_end_to_end():
     assert "guidance_metrics" in result
     assert "top_takeaways" in result
     assert "key_themes" in result
+    assert "tone_gap_alert" in result
+    assert "tone_divergence_summary" in result
+    assert "hedge_rate_per_100w" in result
+    assert "topic_sentiment" in result
+    assert "red_flags" in result
     assert len(result["guidance_metrics"]) > 0
     assert len(result["top_takeaways"]) > 0
+    assert isinstance(result["topic_sentiment"], dict)
+
+
+def test_concall_aspect_scoring_and_tone_gap():
+    sample = """
+    Management: Revenue for the full year grew 18% with strong order book volume and sales pipeline.
+    Our EBITDA margins expanded 140 bps despite raw material cost inflation.
+    Capex for the gigafactory is on track at ₹1,200 crore and working capital debt was reduced.
+    We are guiding for 15% revenue growth next quarter.
+    
+    Question-and-Answer Session:
+    Analyst: Are you seeing any demand headwinds or margin pressure in aftermarket?
+    Management: We see lingering commodity volatility and cautious customer sentiment creating near-term pressure.
+    """
+    res = concall_analyzer.analyze(sample)
+    assert "demand_revenue" in res["topic_sentiment"]
+    assert "margins_costs" in res["topic_sentiment"]
+    assert res["hedge_rate_per_100w"] > 0
+    assert res["tone_gap_alert"] is not None
+    assert len(res["red_flags"]) > 0
 
 
 def test_whisper_engine_status():

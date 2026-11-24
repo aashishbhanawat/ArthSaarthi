@@ -7,6 +7,8 @@ import {
   ChatBubbleLeftRightIcon,
   TagIcon,
   CurrencyRupeeIcon,
+  ExclamationTriangleIcon,
+  ChartBarIcon,
 } from '@heroicons/react/24/outline';
 import { ConcallAnalysis, MarketNewsArticle } from '../../types/marketNews';
 import { analyzeConcall } from '../../services/newsApi';
@@ -82,13 +84,36 @@ export const ConcallAnalysisModal: React.FC<ConcallAnalysisModalProps> = ({
     }
   };
 
+  const formatAspectScore = (score: number) => {
+    const isPos = score > 0.05;
+    const isNeg = score < -0.05;
+    const colorClass = isPos
+      ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300'
+      : isNeg
+      ? 'bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300'
+      : 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300';
+    const sign = score > 0 ? '+' : '';
+    return (
+      <span className={`px-2 py-0.5 rounded text-[11px] font-bold ${colorClass}`}>
+        {sign}{score.toFixed(2)}
+      </span>
+    );
+  };
+
+  const aspectLabels: Record<string, string> = {
+    demand_revenue: 'Demand & Revenue',
+    margins_costs: 'Margins & Costs',
+    guidance_outlook: 'Guidance & Outlook',
+    capex_debt: 'CapEx & Balance Sheet',
+  };
+
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-5">
       <div className="relative w-full max-w-3xl rounded-2xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-2xl flex flex-col max-h-[90vh] overflow-hidden">
         {/* Header */}
         <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-800 flex items-start justify-between bg-gray-50/50 dark:bg-gray-900/50">
           <div>
-            <div className="flex items-center gap-2 mb-1">
+            <div className="flex items-center gap-2 mb-1 flex-wrap">
               <span className="px-2 py-0.5 text-[10px] font-bold rounded bg-purple-100 text-purple-800 dark:bg-purple-950/80 dark:text-purple-300 border border-purple-200 dark:border-purple-800">
                 🎙️ Concall Intelligence
               </span>
@@ -100,6 +125,11 @@ export const ConcallAnalysisModal: React.FC<ConcallAnalysisModalProps> = ({
               {analysis && (
                 <span className="text-[11px] text-gray-500 dark:text-gray-400">
                   Source: {analysis.transcription_source}
+                </span>
+              )}
+              {analysis?.hedge_rate_per_100w !== undefined && analysis.hedge_rate_per_100w !== null && (
+                <span className="text-[10px] font-medium px-2 py-0.5 rounded bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
+                  Hedging: {analysis.hedge_rate_per_100w}w / 100w
                 </span>
               )}
             </div>
@@ -158,7 +188,7 @@ export const ConcallAnalysisModal: React.FC<ConcallAnalysisModalProps> = ({
                 Running Edge Concall Intelligence...
               </p>
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                Parsing sections, evaluating FinBERT tone, and extracting guidance metrics
+                Parsing sections, evaluating FinBERT-Tone polarity, and calculating quantitative metrics
               </p>
             </div>
           )}
@@ -195,6 +225,31 @@ export const ConcallAnalysisModal: React.FC<ConcallAnalysisModalProps> = ({
 
           {analysis && !loading && (
             <>
+              {/* Tone Divergence Gap Alert Banner */}
+              {analysis.tone_divergence_summary && (
+                <div
+                  className={`p-3.5 rounded-xl border flex items-start gap-2.5 text-xs ${
+                    (analysis.tone_gap_alert || 0) >= 0.20
+                      ? 'bg-amber-50 dark:bg-amber-950/30 border-amber-300 dark:border-amber-800/70 text-amber-900 dark:text-amber-200'
+                      : 'bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800/60 text-blue-900 dark:text-blue-200'
+                  }`}
+                >
+                  <ExclamationTriangleIcon
+                    className={`w-4 h-4 flex-shrink-0 mt-0.5 ${
+                      (analysis.tone_gap_alert || 0) >= 0.20
+                        ? 'text-amber-600 dark:text-amber-400'
+                        : 'text-blue-600 dark:text-blue-400'
+                    }`}
+                  />
+                  <div>
+                    <span className="font-bold">
+                      {(analysis.tone_gap_alert || 0) >= 0.20 ? 'Tone Gap Alert: ' : 'Tone Flow: '}
+                    </span>
+                    {analysis.tone_divergence_summary}
+                  </div>
+                </div>
+              )}
+
               {/* 1. Tone & Sentiment Gauges */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 {/* Management Tone */}
@@ -240,7 +295,50 @@ export const ConcallAnalysisModal: React.FC<ConcallAnalysisModalProps> = ({
                 </div>
               </div>
 
-              {/* 2. Guidance & Capex Highlights */}
+              {/* 2. 4-Aspect Sentiment Scorecard */}
+              {analysis.topic_sentiment && Object.keys(analysis.topic_sentiment).length > 0 && (
+                <div>
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-gray-600 dark:text-gray-400 mb-2.5 flex items-center gap-1.5">
+                    <ChartBarIcon className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+                    Aspect Financial Sentiment Scorecard
+                  </h4>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                    {Object.entries(analysis.topic_sentiment).map(([topicKey, score]) => (
+                      <div
+                        key={topicKey}
+                        className="p-3 rounded-lg border border-gray-200 dark:border-gray-800 bg-gray-50/70 dark:bg-gray-900/40 flex flex-col justify-between"
+                      >
+                        <span className="text-[11px] font-medium text-gray-600 dark:text-gray-400 mb-1.5">
+                          {aspectLabels[topicKey] || topicKey}
+                        </span>
+                        <div>{formatAspectScore(score)}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* 3. Cautionary Statements / Extractive Red Flags */}
+              {analysis.red_flags && analysis.red_flags.length > 0 && (
+                <div>
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-rose-700 dark:text-rose-400 mb-2.5 flex items-center gap-1.5">
+                    <ExclamationTriangleIcon className="w-4 h-4 text-rose-600 dark:text-rose-400" />
+                    Cautionary Remarks & Risk Flags
+                  </h4>
+                  <div className="space-y-2">
+                    {analysis.red_flags.map((rf, idx) => (
+                      <div
+                        key={idx}
+                        className="p-3 rounded-lg border border-rose-200 dark:border-rose-900/60 bg-rose-50/40 dark:bg-rose-950/20 text-xs text-gray-800 dark:text-gray-200 leading-relaxed"
+                      >
+                        <p className="font-medium italic">"{rf.text}"</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* 4. Guidance & Capex Highlights */}
               {analysis.guidance_metrics && analysis.guidance_metrics.length > 0 && (
                 <div>
                   <h4 className="text-xs font-bold uppercase tracking-wider text-gray-600 dark:text-gray-400 mb-2.5 flex items-center gap-1.5">
@@ -265,7 +363,7 @@ export const ConcallAnalysisModal: React.FC<ConcallAnalysisModalProps> = ({
                 </div>
               )}
 
-              {/* 3. Top Extracted Key Takeaways */}
+              {/* 5. Top Extracted Key Takeaways */}
               {analysis.top_takeaways && analysis.top_takeaways.length > 0 && (
                 <div>
                   <h4 className="text-xs font-bold uppercase tracking-wider text-gray-600 dark:text-gray-400 mb-2.5 flex items-center gap-1.5">
@@ -288,7 +386,7 @@ export const ConcallAnalysisModal: React.FC<ConcallAnalysisModalProps> = ({
                 </div>
               )}
 
-              {/* 4. Top Discussion Topics */}
+              {/* 6. Top Discussion Topics */}
               {analysis.key_themes && analysis.key_themes.length > 0 && (
                 <div>
                   <h4 className="text-xs font-bold uppercase tracking-wider text-gray-600 dark:text-gray-400 mb-2 flex items-center gap-1.5">

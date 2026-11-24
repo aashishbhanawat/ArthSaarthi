@@ -35,12 +35,12 @@ class ModelManager:
     CATALOG = {
         "finbert_int8": {
             "id": "finbert_int8",
-            "name": "FinBERT INT8 Quantized",
-            "description": "State-of-the-art financial sentiment transformer fine-tuned on corporate earnings calls and financial news.",
+            "name": "FinBERT-Tone INT8 Quantized",
+            "description": "State-of-the-art financial tone transformer fine-tuned on corporate earnings calls and corporate disclosures (HKUST FinBERT-Tone INT8).",
             "size_mb": 105.2,
-            # Verified HuggingFace ONNX quantized release mirror
-            "download_url": "https://huggingface.co/nicechester/finbert-sentiment-onnx-quantized/resolve/main/onnx/model_quantized.onnx",
-            "vocab_url": "https://huggingface.co/nicechester/finbert-sentiment-onnx-quantized/resolve/main/vocab.txt",
+            # Verified HuggingFace Optimum quantized release of yiyanghkust/finbert-tone
+            "download_url": "https://huggingface.co/nickmuchi/quantized-optimum-finbert-tone/resolve/main/model_quantized.onnx",
+            "vocab_url": "https://huggingface.co/nickmuchi/quantized-optimum-finbert-tone/resolve/main/vocab.txt",
             "filename": "finbert_int8.onnx",
             "vocab_filename": "vocab.txt",
             "engine_type": "finbert_onnx",

@@ -57,6 +57,7 @@ class ToneBreakdown(BaseModel):
     neutral_pct: float
     negative_pct: float
     overall: str
+    average_tone_score: float = 0.0
     sample_size: int = 0
 
 
@@ -65,12 +66,22 @@ class GuidanceMetric(BaseModel):
     text: str
 
 
+class RedFlagItem(BaseModel):
+    text: str
+    score: float
+
+
 class ConcallAnalysisResponse(BaseModel):
     article_id: str
     title: str
     quarter: Optional[str] = None
     management_tone: ToneBreakdown
     qa_tone: ToneBreakdown
+    tone_gap_alert: Optional[float] = None
+    tone_divergence_summary: Optional[str] = None
+    hedge_rate_per_100w: Optional[float] = None
+    topic_sentiment: Optional[Dict[str, float]] = None
+    red_flags: List[RedFlagItem] = []
     guidance_metrics: List[GuidanceMetric] = []
     top_takeaways: List[str] = []
     key_themes: List[str] = []

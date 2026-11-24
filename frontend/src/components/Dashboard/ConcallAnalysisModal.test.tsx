@@ -33,6 +33,7 @@ const mockAnalysisResult: ConcallAnalysis = {
     neutral_pct: 20.0,
     negative_pct: 5.0,
     overall: 'BULLISH',
+    average_tone_score: 0.65,
     sample_size: 10,
   },
   qa_tone: {
@@ -40,8 +41,21 @@ const mockAnalysisResult: ConcallAnalysis = {
     neutral_pct: 30.0,
     negative_pct: 20.0,
     overall: 'BALANCED',
+    average_tone_score: 0.25,
     sample_size: 8,
   },
+  tone_gap_alert: 0.40,
+  tone_divergence_summary: 'Tone Gap Alert (+0.40): Management tone turned defensive under analyst questioning.',
+  hedge_rate_per_100w: 1.25,
+  topic_sentiment: {
+    demand_revenue: 0.55,
+    margins_costs: -0.20,
+    guidance_outlook: 0.35,
+    capex_debt: 0.45,
+  },
+  red_flags: [
+    { text: 'Raw material volatility impacted automotive margins slightly.', score: -0.35 },
+  ],
   guidance_metrics: [
     { category: 'Capex', text: 'Planned capex of ₹1,200 crore for gigafactory' },
     { category: 'Margin Outlook', text: 'EBITDA margins improved to 12.8%' },
@@ -86,6 +100,12 @@ describe('ConcallAnalysisModal', () => {
       expect(screen.getByText('Top Key Takeaways (Extracted Sentences)')).toBeInTheDocument();
       expect(screen.getByText(/Commercial production from the new facility/i)).toBeInTheDocument();
       expect(screen.getByText('#Lithium Cells')).toBeInTheDocument();
+      expect(screen.getAllByText(/Tone Gap Alert/i).length).toBeGreaterThanOrEqual(1);
+      expect(screen.getByText(/Hedging: 1.25w \/ 100w/i)).toBeInTheDocument();
+      expect(screen.getByText('Aspect Financial Sentiment Scorecard')).toBeInTheDocument();
+      expect(screen.getByText('Demand & Revenue')).toBeInTheDocument();
+      expect(screen.getByText('Cautionary Remarks & Risk Flags')).toBeInTheDocument();
+      expect(screen.getByText(/"Raw material volatility impacted automotive margins slightly."/i)).toBeInTheDocument();
     });
   });
 

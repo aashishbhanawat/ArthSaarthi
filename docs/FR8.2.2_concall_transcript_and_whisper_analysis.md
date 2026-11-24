@@ -32,18 +32,33 @@ While generative Large Language Models (LLMs) are deferred to v2.0.0, investors 
 
 ### FR8.2.2.3: Pure Non-LLM Extractive Intelligence Pipeline
 * **Section Segmentation:** Automatically divide transcripts into *Management Discussion* and *Analyst Q&A*.
-* **FinBERT Tone & Sentiment Profiling:** Run the existing edge `finbert_int8` ONNX engine to compute:
+* **FinBERT-Tone Sentiment Profiling:** Run the edge `finbert_int8` ONNX engine (fine-tuned on corporate earnings calls - HKUST FinBERT-Tone) to compute:
   - *Management Confidence Score* (% Positive, % Neutral, % Negative).
   - *Analyst Q&A Sentiment* (Assessing analyst skepticism vs. management clarity).
+  - *Continuous Polarity Score* ($P(\text{Positive}) - P(\text{Negative})$ in $[-1.0, +1.0]$).
+* **4-Aspect Financial Sentiment Scorecard:**
+  - Categorizes sentences into 4 core financial buckets using TF-IDF cosine similarity against anchor phrase vectors:
+    1. Demand & Revenue
+    2. Margins & Input Costs
+    3. Guidance & Targets
+    4. CapEx & Balance Sheet
+  - Computes an independent tone score for each aspect.
+* **Tone Divergence Gap Alert:**
+  - Automatically measures the gap between Opening Remarks and Analyst Q&A ($\text{Tone Gap} = \text{Prepared} - \text{Q&A}$).
+  - Alerts the user when management tone turns defensive under analyst questioning ($\text{Tone Gap} > +0.20$).
+* **Loughran-McDonald Hedging & Uncertainty Index:**
+  - Calculates `hedge_rate_per_100w` (frequency of uncertainty words like *headwinds, volatility, pressure, slowdown* per 100 words).
+* **Extractive Red Flags:**
+  - Extracts the top 2-3 most cautious or negative verbatim management statements from the call.
 * **Guidance & Capex Pattern Mining:** Deterministic financial regex engine extracting:
   - Capex figures (`₹... Cr / Crore`, expansion projects).
   - Margin outlook (`...% EBITDA`, `bps` expansion/contraction).
   - Revenue & Volume growth guidance (`...% YoY/CAGR`).
   - Debt & Deleveraging targets.
 * **Extractive Summarization (TextRank / TF-IDF Centrality):**
-  - Graph-based sentence centrality ranking selecting the top 5–7 most salient verbatim sentences.
+  - Graph-based sentence centrality ranking selecting the top 5 most salient verbatim sentences.
   - Zero hallucination risk: all sentences are quoted verbatim from management.
-* **Key Theme Extraction:** N-gram TF-IDF keyword extraction filtering corporate pleasantries and ranking the 5–8 dominant operational topics.
+* **Key Theme Extraction:** N-gram TF-IDF keyword extraction filtering corporate pleasantries, executive speaker names, and corporate suffixes to rank dominant operational topics.
 
 ### FR8.2.2.4: Storage & Caching
 * Persist the structured analysis in `MarketNewsArticle.metadata_json["concall_analysis"]`.
@@ -53,6 +68,10 @@ While generative Large Language Models (LLMs) are deferred to v2.0.0, investors 
 * Add an **"Analyze Concall"** / **"View Analysis"** action to each concall card in the Research Feed.
 * Open a responsive modal with:
   - **Tone Gauge & Sentiment Breakdown** (Management Tone vs. Q&A Tone).
+  - **Tone Divergence Banner** (Highlighting Q&A defensive shifts).
+  - **Aspect Sentiment Scorecard** (Demand, Margins, Guidance, CapEx).
+  - **Loughran-McDonald Hedging Density Badge**.
+  - **Cautionary Red Flags Card**.
   - **Key Guidance & Capex Badges**.
   - **Top Extracted Sentences / Key Takeaways**.
   - **Discussion Topic Tags**.

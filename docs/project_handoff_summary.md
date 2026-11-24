@@ -4,9 +4,9 @@
 
 ## 1. Current Project Status
 
-*   **Overall Status:** Release v1.5.0 In Progress — Concall Transcript & Whisper Audio Analysis with Edge ML (Issue #618 / FR8.2.2) Implemented & Verified.
+*   **Overall Status:** Release v1.5.0 In Progress — FinBERT-Tone Migration & Quantitative Concall Intelligence Layer (Issue #618 / PR #619) Implemented & Verified.
 
-**Latest Achievement:** Implemented pure non-LLM concall intelligence and extractive fundamental equity analysis. Added FinBERT tone profiling for management remarks vs. analyst Q&A, deterministic financial guidance & capex pattern mining, extractive TextRank graph-centrality summarization, topic clustering, and edge Whisper speech-to-text fallback when transcripts are not provided.
+**Latest Achievement:** Upgraded edge NLP engine to `yiyanghkust/finbert-tone` INT8 ONNX with dynamic label auto-detection. Implemented quantitative zero-LLM concall intelligence: Prepared vs Q&A Tone Divergence Alerts, Loughran-McDonald Hedging & Uncertainty Index, 4-Aspect Financial Sentiment Scorecards (Demand, Margins, Guidance, CapEx), and Extractive Red Flags.
 
 ## 2. Test Suite Status
 
@@ -18,6 +18,13 @@
 *   **E2E Tests (Playwright):** ✅ **Locators updated and verified**
 
 ## Recent Stabilization & Refinement Efforts
+
+*   **FinBERT-Tone Upgrade & Quantitative Concall Analytics (Issue #618 / PR #619) (Updated 2026-11-24):**
+    - **FinBERT-Tone Migration (`app/ml/model_manager.py`):** Switched edge transformer weights to Hugging Face Optimum release of `yiyanghkust/finbert-tone` INT8 ONNX, trained on 10,000+ concall and regulatory filing sentences.
+    - **Multi-Tier Sentiment Engine (`app/ml/sentiment_engine.py`):** Added continuous tone scoring ($P(\text{Pos}) - P(\text{Neg}) \in [-1, 1]$), Loughran-McDonald uncertainty index, and one-time auto-detecting label mapping (`_detect_label_mapping`) to transparently support both FinBERT-Tone and legacy ProsusAI models without sentiment inversion.
+    - **Quantitative Concall Intelligence (`app/ml/concall_analyzer.py`):** Implemented Prepared vs Q&A Tone Divergence alerting (`tone_gap = prepared_tone - qa_tone > +0.25`), Loughran-McDonald hedging word frequency density (`hedge_rate_per_100w`), 4-Aspect Sentiment Scorecard (Demand & Revenue, Margins & Costs, Guidance & Outlook, CapEx & Debt), and verbatim extractive Red Flags without generative hallucination.
+    - **UI & Schemas (`ConcallAnalysisModal.tsx`, `market_news.py`):** Integrated divergence alert banners, uncertainty badges, 4-pillar scorecard cards, and cautionary remarks in the frontend modal.
+    - **Verification:** 34/34 backend pytest tests passing; 58/58 frontend Jest test suites passing; linters and TypeScript clean.
 
 *   **Concall Transcript & Whisper Audio Analysis (Issue #618 / FR8.2.2) (Updated 2026-11-24):**
     - **Non-LLM Extractive Intelligence (`app/ml/concall_analyzer.py`):** Automatically segments call transcripts into Management Remarks and Analyst Q&A. Evaluates sentence-by-sentence polarity via local FinBERT INT8 ONNX (with lexicon fallback), mines forward capex/margin/growth/debt targets, and ranks verbatim sentences using TF-IDF sentence centrality (zero hallucination).

@@ -1,3 +1,32 @@
+## 2026-11-24: FinBERT-Tone Migration & Multi-Aspect Concall Intelligence (Issue #618 / PR #619)
+
+**Task:** Upgrade the edge ML transformer layer from generic news `ProsusAI/finbert` to earnings-calibrated `yiyanghkust/finbert-tone` INT8 ONNX. Implement a hybrid quantitative analysis layer for concalls: Prepared vs Q&A Tone Divergence Alert, Loughran-McDonald Hedging & Uncertainty Index, 4-Aspect Financial Sentiment Scorecard (Demand & Revenue, Margins & Costs, Guidance & Outlook, CapEx & Debt), and Extractive Cautionary Red Flags.  
+**AI Assistant:** Antigravity  
+**Role:** Lead Architect & Full-Stack Developer
+
+### Summary
+
+1. **FinBERT-Tone ONNX Model Catalog (`backend/app/ml/model_manager.py`):**
+   - Updated model download to Hugging Face Optimum release of `yiyanghkust/finbert-tone` (`https://huggingface.co/nickmuchi/quantized-optimum-finbert-tone/resolve/main/model_quantized.onnx` and `vocab.txt`), trained by HKUST on 10,000+ corporate filing & concall sentences.
+2. **Multi-Tier Sentiment Engine (`backend/app/ml/sentiment_engine.py`):**
+   - **Continuous Tone Scoring:** Added `tone_score: float` ($P(\text{Positive}) - P(\text{Negative}) \in [-1.0, 1.0]$) to `SentimentResult`.
+   - **Dynamic Label Mapping Auto-Detection:** Implemented `_detect_label_mapping(session)` that executes a one-time 0.5 ms test phrase probe at ONNX initialization, dynamically distinguishing `[0: Pos, 1: Neg, 2: Neu]` (ProsusAI) vs `[1: Pos, 2: Neg, 0: Neu]` (FinBERT-Tone), guaranteeing 100% backward compatibility.
+   - **Loughran-McDonald Lexicon:** Added `UNCERTAINTY_WORDS` dictionary and `compute_uncertainty_rate(text: str) -> float` for zero-download edge uncertainty evaluation.
+3. **Quantitative Concall Intelligence (`backend/app/ml/concall_analyzer.py`):**
+   - **Tone Divergence Gap (`calculate_tone_gap`):** Compares Prepared Remarks tone against Analyst Q&A tone (`tone_gap = prepared_tone - qa_tone`). Flags red alerts when management sounds significantly more guarded during unprepared analyst questioning ($> +0.25$).
+   - **Hedging & Uncertainty Density:** Computes Loughran-McDonald uncertainty words per 100 words in executive turns.
+   - **4-Aspect Financial Sentiment Scorecard (`score_aspects`):** Routes sentences into 4 core financial pillars (`demand_revenue`, `margins_costs`, `guidance_outlook`, `capex_debt`) via domain keyword anchors and calculates isolated aspect sentiment.
+   - **Extractive Red Flags (`extract_red_flags`):** Extracts top 2–3 most cautious/negative verbatim management statements for instant risk inspection without generative hallucinations.
+4. **API, Schemas & Frontend Integration:**
+   - Updated `MarketNewsArticle.metadata_json["concall_analysis"]` and Pydantic schemas (`RedFlagItem`, `ConcallAnalysisResponse`) with the quantitative breakdown.
+   - Updated `ConcallAnalysisModal.tsx` with Tone Divergence Alert Banner, Hedging Density Badge, 4-Aspect Sentiment Cards, and Cautionary Remarks List.
+5. **Testing & QA:**
+   - 34 backend unit & integration tests passing (`test_concall_analyzer.py`, `test_ml.py`, `test_news_service.py`).
+   - Frontend Jest tests passing for `ConcallAnalysisModal.test.tsx` (100%).
+   - All TypeScript and ESLint checks passing clean.
+
+---
+
 ## 2026-11-24: Refine Concall Intelligence Takeaways & Exempt Exchange Disclosures from Noise Filtering (Issue #618 / PR #619)
 
 **Task:** Refine Concall Intelligence extraction to eliminate speaker prefix artifacts, filter analyst queries, remove conversational filler, and boost concrete financial statements (metrics, percentages, capex, margins). Treat BSE/NSE statutory corporate filings as official disclosures by exempting them from general non-business noise filters and auto-classifying concall transcript/audio attachments.  

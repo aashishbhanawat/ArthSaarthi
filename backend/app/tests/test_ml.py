@@ -65,7 +65,29 @@ def test_sentiment_engine_fallback():
     engine = SentimentEngine()
     result = engine.analyze("HDFC Bank beats market estimates with robust loan growth")
     assert result.label == "POSITIVE"
-    assert result.engine in ["financial_lexicon", "finbert_onnx"]
+    assert result.engine in ["financial_lexicon", "finbert_onnx", "deterministic_rule"]
+    assert hasattr(result, "tone_score")
+
+
+def test_sentiment_engine_hybrid_rules_and_uncertainty():
+    engine = SentimentEngine()
+
+    # Layer 1: Broker recommendations and hard corporate catalysts
+    res_buy = engine.analyze("Motilal Oswal recommends Buy on REC with target price of Rs 600")
+    assert res_buy.label == "POSITIVE"
+    assert res_buy.engine == "deterministic_rule"
+    assert res_buy.tone_score > 0.5
+
+    res_fraud = engine.analyze("SEBI penalty imposed and promoter arrested in accounting fraud")
+    assert res_fraud.label == "NEGATIVE"
+    assert res_fraud.engine == "deterministic_rule"
+    assert res_fraud.tone_score < -0.5
+
+    # Uncertainty calculation
+    rate = engine.lexicon.compute_uncertainty_rate(
+        "Company faces significant headwinds and commodity volatility with cautious outlook"
+    )
+    assert rate > 0.0
 
 
 def test_model_manager_status(tmp_path):
