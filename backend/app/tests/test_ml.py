@@ -83,6 +83,17 @@ def test_sentiment_engine_hybrid_rules_and_uncertainty():
     assert res_fraud.engine == "deterministic_rule"
     assert res_fraud.tone_score < -0.5
 
+    # Price action movements
+    res_fall = engine.analyze("Exide Industries Share Price Fall: Price Action and Analysis - Univest")
+    assert res_fall.label == "NEGATIVE"
+    assert res_fall.engine == "deterministic_rule"
+    assert res_fall.tone_score < -0.5
+
+    res_surge = engine.analyze("Tata Power shares surge 8% to new 52-week high on massive solar contract")
+    assert res_surge.label == "POSITIVE"
+    assert res_surge.engine == "deterministic_rule"
+    assert res_surge.tone_score > 0.5
+
     # Uncertainty calculation
     rate = engine.lexicon.compute_uncertainty_rate(
         "Company faces significant headwinds and commodity volatility with cautious outlook"

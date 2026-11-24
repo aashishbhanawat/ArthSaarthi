@@ -19,6 +19,13 @@
 
 ## Recent Stabilization & Refinement Efforts
 
+*   **Exchange Deduplication, PDF Filing Link, Dividend Guard & Price Action Sentiment (Issue #618 / PR #619) (Updated 2026-11-24):**
+    - **Exchange Announcement Deduplication (`news_service.py`, `crud_news.py`):** Added `is_xbrl_stub`, `extract_core_exchange_subject`, and `are_exchange_subjects_similar`. Redundant NSE/BSE `Para A-XBRL` machine stubs are dropped when a substantive transcript or formal announcement exists, and incoming substantive filings automatically supersede existing XBRL stubs.
+    - **Read Filing PDF Link (`ResearchIntelligenceFeed.tsx`, `ConcallAnalysisModal.tsx`):** Added a direct "Read Filing PDF" link on feed cards and in the concall modal header whenever `metadata_json.transcript_url` or a direct PDF link is available.
+    - **Dividend Guard on Editorial News (`news_service.py`):** Added an editorial yield filter to prevent screening/editorial articles (e.g. Livemint "5 energy stocks with attractive dividend yield") from being tagged as `action_type = "DIVIDEND"`. Guaranteed that automated portfolio corporate actions (`stock_engine.py`) run strictly from official exchange endpoints and are never affected by news tags.
+    - **Price Movement Sentiment Engine (`sentiment_engine.py`):** Added deterministic price movement catalysts (`share price fall`, `shares plunge/slump/tank/crash`) so price drops evaluate as `NEGATIVE` rather than `NEUTRAL`.
+    - **Verification:** 27/27 backend tests passing (`test_news_service.py` & `test_ml.py`); 6/6 frontend Jest tests passing.
+
 *   **Announcement Classification for Results, Dividends & Major Changes (Issue #618 / PR #619) (Updated 2026-11-24):**
     - **Results & Quarter Auto-Classification:** Mapped exchange disclosures matching `financial results`, `quarterly results`, `investor presentation` to `category = "RESULT"`, extracting `quarter`.
     - **Corporate Action & Dividend Extraction (`news_service.py`):** Added `extract_corporate_metadata` extracting dividend per share, ex-date, record date, stock splits, bonuses, and buybacks.

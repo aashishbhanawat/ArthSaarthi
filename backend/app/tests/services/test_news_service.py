@@ -7,6 +7,7 @@ from app.services.news_service import (
     clean_html_text,
     extract_broker_metadata,
     extract_concall_metadata,
+    extract_corporate_metadata,
     parse_rss_xml,
 )
 
@@ -349,6 +350,41 @@ def test_corporate_action_and_result_metadata_extraction(db):
 
                 db.delete(article)
                 db.commit()
+
+
+def test_extract_corporate_metadata_dividend_guard():
+    # User's reported Livemint article: Editorial yield screening should NOT be tagged as DIVIDEND
+    editorial_meta = extract_corporate_metadata(
+        "5 energy stocks with attractive dividend yield - Hindustan Petroleum, Indian Oil, Bharat Petroleum, ONGC, to Gulf Oil",
+        "HPCL, Indian Oil, BPCL, ONGC and Gulf Oil Lubricants are highlighted for dividend income. HPCL delivered a 7.1% FY26 dividend yield...",
+        is_exchange_filing=False,
+    )
+    assert editorial_meta.get("action_type") is None
+
+    # Legitimate corporate dividend announcement
+    declared_meta = extract_corporate_metadata(
+        "TCS Board approves interim dividend of Rs 10.00 per share; fixes record date",
+        "Tata Consultancy Services declared an interim dividend of Rs 10 per equity share for FY25. Record date: 18-Oct-2024",
+        is_exchange_filing=False,
+    )
+    assert declared_meta.get("action_type") == "DIVIDEND"
+    assert declared_meta.get("dividend_amount") == 10.0
+    assert declared_meta.get("record_date") == "18-Oct-2024"
+
+
+def test_exchange_announcement_deduplication():
+    from app.services.news_service import are_exchange_subjects_similar, extract_core_exchange_subject, is_xbrl_stub
+
+    xbrl_title = "IGL SPIRITS LIMITED has informed the Exchange about Transcripts - earnings or quarterly calls |SUBJECT: Analyst/Investor Meet Para A-XBRL"
+    real_title = "IGL Spirits Limited has informed the Exchange about Transcript |SUBJECT: Analysts/Institutional Investor Meet/Con. Call Updates"
+
+    assert is_xbrl_stub(xbrl_title, "", "https://nsearchives.nseindia.com/corporate/xbrl/IGL_123.xml")
+    assert not is_xbrl_stub(real_title, "", "https://nsearchives.nseindia.com/corporate/IGL_concall.pdf")
+
+    sub_xbrl = extract_core_exchange_subject(xbrl_title, "")
+    sub_real = extract_core_exchange_subject(real_title, "")
+    assert are_exchange_subjects_similar(sub_xbrl, sub_real)
+
 
 
 

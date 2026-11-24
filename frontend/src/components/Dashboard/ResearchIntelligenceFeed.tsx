@@ -3,6 +3,7 @@ import {
   ArrowPathIcon,
   ArrowTopRightOnSquareIcon,
   DocumentChartBarIcon,
+  DocumentTextIcon,
   NewspaperIcon,
   SparklesIcon,
   SpeakerWaveIcon,
@@ -419,6 +420,17 @@ export const ResearchIntelligenceFeed: React.FC<ResearchIntelligenceFeedProps> =
                     >
                       <SpeakerWaveIcon className="w-3.5 h-3.5" />
                       Listen Concall Audio
+                    </a>
+                  )}
+                  {(item.metadata_json?.transcript_url || (item.url?.toLowerCase().endsWith('.pdf') ? item.url : null)) && (
+                    <a
+                      href={item.metadata_json?.transcript_url || item.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline"
+                    >
+                      <DocumentTextIcon className="w-3.5 h-3.5" />
+                      Read Filing PDF
                     </a>
                   )}
                   {item.category === 'CONCALL' && (

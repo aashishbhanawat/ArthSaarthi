@@ -1,3 +1,35 @@
+## 2026-11-24: Exchange Deduplication, PDF Filing Link, Dividend Guard & Price Action Sentiment (Issue #618 / PR #619)
+
+**Task:**
+1. Deduplicate exchange announcements (NSE `Para A-XBRL` compliance stubs vs formal transcripts/updates for the same company and event).
+2. Add a direct "Read Filing PDF" link button in both the feed card and the Concall Intelligence Modal.
+3. Guard corporate action metadata extraction so editorial stock screening / yield news (e.g. Livemint "5 energy stocks with attractive dividend yield") is excluded from `action_type = "DIVIDEND"`.
+4. Enhance news sentiment analysis for price movements so headlines describing share price falls evaluate as `NEGATIVE` (Bearish) and price surges as `POSITIVE` (Bullish).  
+**AI Assistant:** Antigravity  
+**Role:** Lead Architect & Full-Stack Developer
+
+### Summary
+
+1. **Exchange Announcement Deduplication (`backend/app/services/news_service.py`, `backend/app/crud/crud_news.py`):**
+   - **Root Cause:** Listed companies submit an XBRL-tagged filing (`...Para A-XBRL`) and a formal PDF announcement/transcript for the same disclosure event within a few hours. Because URLs differ, both entries entered the feed.
+   - **Resolution:** Added `is_xbrl_stub`, `extract_core_exchange_subject`, and `are_exchange_subjects_similar`. During feed sync and in `purge_noise_and_disambiguate`, redundant XBRL compliance stubs are dropped when a formal transcript or substantive announcement exists, and incoming substantive filings automatically supersede existing XBRL stubs.
+2. **Direct "Read Filing PDF" Links (`frontend/src/components/Dashboard/ResearchIntelligenceFeed.tsx`, `ConcallAnalysisModal.tsx`):**
+   - Added a "Read Filing PDF" link alongside "Listen Concall Audio" in the feed card when `metadata_json?.transcript_url` or a direct PDF link is available.
+   - Added a "Read Filing PDF" badge/link in the header of the Concall Analysis Modal alongside "Listen Audio".
+3. **Dividend Guard against Editorial Screener News (`news_service.py`, `crud_news.py`):**
+   - Clarified that automated corporate actions (in `stock_engine.py`) query official exchange APIs (`api.bseindia.com` and `nseindia.com/api/corporates-corporateActions`) and are never triggered by the news feed.
+   - In `extract_corporate_metadata()`, added an editorial yield guard: phrases like `dividend yield`, `dividend income`, `attractive dividend`, `dividend stocks` without declaration keywords (`declared`, `declaration of`, `approved`, `recommended`, `record date for dividend`) are excluded from `action_type = "DIVIDEND"`.
+   - In `purge_noise_and_disambiguate()`, retroactively stripped spurious dividend tags from existing editorial articles in the DB.
+4. **Price Action Sentiment Catalysts (`backend/app/ml/sentiment_engine.py`):**
+   - Expanded Layer 1 deterministic catalyst rules:
+     - `CATALYST_NEGATIVE_PATTERN`: Added `share price fall`, `shares plunge/slump/crash/tank/tumble/drop`, `price fall/drop/slump/crash`. Headlines like *"Exide Industries Share Price Fall: Price Action and Analysis - Univest"* now evaluate deterministically as `NEGATIVE`.
+     - `CATALYST_POSITIVE_PATTERN`: Added `shares surge/rally/soar/jump/skyrocket`, `all-time high`, `new 52-week high`.
+5. **Testing & QA:**
+   - Added unit test `test_extract_corporate_metadata_dividend_guard` and `test_exchange_announcement_deduplication`. All 27 backend tests passing.
+   - Frontend Jest tests passing (6/6 tests passing across `ResearchIntelligenceFeed.test.tsx` and `ConcallAnalysisModal.test.tsx`).
+
+---
+
 ## 2026-11-24: Announcement Classification & Metadata Extraction for Results, Dividends & Major Changes (Issue #618 / PR #619)
 
 **Task:** Expand announcement auto-detection beyond concalls to properly classify and tag:

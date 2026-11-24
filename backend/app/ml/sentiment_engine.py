@@ -158,11 +158,15 @@ class SentimentEngine:
         re.IGNORECASE,
     )
     CATALYST_POSITIVE_PATTERN = re.compile(
-        r"\b(?:dividend\s+of\s+rs|bonus\s+issue|order\s+win\s+of|awarded\s+contract|share\s+buyback)\b",
+        r"\b(?:dividend\s+of\s+rs|bonus\s+issue|order\s+win\s+of|awarded\s+contract|share\s+buyback"
+        r"|shares?\s+(?:surge|surged|surges|rally|rallied|rallies|soar|soared|soars|jump|jumped|jumps|skyrocket|skyrocketed)"
+        r"|all-time\s+high|new\s+52-week\s+high)\b",
         re.IGNORECASE,
     )
     CATALYST_NEGATIVE_PATTERN = re.compile(
-        r"\b(?:sebi\s+penalty|ed\s+raid|cbi\s+probe|fraud\s+allegation|arrested|insolvency\s+proceedings)\b",
+        r"\b(?:sebi\s+penalty|ed\s+raid|cbi\s+probe|fraud\s+allegation|arrested|insolvency\s+proceedings"
+        r"|share\s*price\s*fall|shares?\s+(?:plunge|plunged|plunges|slump|slumped|slumps|crash|crashed|crashes|tank|tanked|tanks|tumble|tumbled|tumbles|drop|dropped|drops|sink|sank|sinks)"
+        r"|price\s+(?:fall|drop|slump|tumble|decline|crash))\b",
         re.IGNORECASE,
     )
 

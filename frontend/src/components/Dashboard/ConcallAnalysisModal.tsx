@@ -9,6 +9,8 @@ import {
   CurrencyRupeeIcon,
   ExclamationTriangleIcon,
   ChartBarIcon,
+  DocumentTextIcon,
+  SpeakerWaveIcon,
 } from '@heroicons/react/24/outline';
 import { ConcallAnalysis, MarketNewsArticle } from '../../types/marketNews';
 import { analyzeConcall } from '../../services/newsApi';
@@ -126,6 +128,28 @@ export const ConcallAnalysisModal: React.FC<ConcallAnalysisModalProps> = ({
                 <span className="text-[11px] text-gray-500 dark:text-gray-400">
                   Source: {analysis.transcription_source}
                 </span>
+              )}
+              {(article.metadata_json?.transcript_url || (article.url?.toLowerCase().endsWith('.pdf') ? article.url : null)) && (
+                <a
+                  href={article.metadata_json?.transcript_url || article.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded bg-indigo-50 hover:bg-indigo-100 text-indigo-700 dark:bg-indigo-950/60 dark:hover:bg-indigo-900 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 transition-colors"
+                >
+                  <DocumentTextIcon className="w-3.5 h-3.5" />
+                  Read Filing PDF
+                </a>
+              )}
+              {article.metadata_json?.audio_url && (
+                <a
+                  href={article.metadata_json.audio_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded bg-purple-50 hover:bg-purple-100 text-purple-700 dark:bg-purple-950/60 dark:hover:bg-purple-900 dark:text-purple-300 border border-purple-200 dark:border-purple-800 transition-colors"
+                >
+                  <SpeakerWaveIcon className="w-3.5 h-3.5" />
+                  Listen Audio
+                </a>
               )}
               {analysis?.hedge_rate_per_100w !== undefined && analysis.hedge_rate_per_100w !== null && (
                 <span

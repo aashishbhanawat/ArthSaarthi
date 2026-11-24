@@ -219,16 +219,43 @@ def extract_concall_metadata(
     return meta
 
 
-def extract_corporate_metadata(title: str, summary: str) -> Dict[str, Any]:
+def extract_corporate_metadata(
+    title: str, summary: str, is_exchange_filing: bool = False
+) -> Dict[str, Any]:
     """
     Extracts structured metadata for corporate actions (dividends, splits, bonuses, buybacks)
     and major corporate governance changes (leadership changes, order wins, credit ratings).
+    Excludes editorial yield/screening news from being falsely tagged as dividend corporate actions.
     """
     meta: Dict[str, Any] = {}
     full = f"{title} {summary}"
 
+    # Check for general editorial dividend screening/yield articles
+    is_editorial_yield = bool(
+        re.search(
+            r"\b(?:dividend\s+yield|dividend\s+income|attractive\s+dividend|dividend\s+stocks?|dividend\s+picks?|stocks?\s+with\s+.*dividend|high\s+dividend\s+yield)\b",
+            full,
+            re.IGNORECASE,
+        )
+    )
+    has_div_declaration = bool(
+        re.search(
+            r"\b(?:interim\s+dividend|final\s+dividend|special\s+dividend|"
+            r"declared\s+dividend|declare\s+dividend|declaration\s+of\s+dividend|"
+            r"recommended\s+dividend|recommends\s+dividend|"
+            r"approved\s+dividend|approves\s+dividend|board\s+approves\s+dividend|"
+            r"dividend\s+of\s+(?:rs|inr|₹)|dividend\s*:\s*(?:rs|inr|₹)?\s*[\d.]+|"
+            r"purpose\s*:\s*dividend|purpose\s*[-–—:]\s*dividend|"
+            r"record\s+date\s+for\s+dividend|ex-dividend\s+date)\b",
+            full,
+            re.IGNORECASE,
+        )
+    )
+
     # 1. Dividend
-    if re.search(r"\b(?:interim\s+dividend|final\s+dividend|special\s+dividend|dividend)\b", full, re.IGNORECASE):
+    if (has_div_declaration or (is_exchange_filing and re.search(r"\bdividend\b", full, re.IGNORECASE))) and not (
+        is_editorial_yield and not has_div_declaration
+    ):
         meta["action_type"] = "DIVIDEND"
         div_match = re.search(
             r"(?:dividend\s*(?:of)?\s*[-–—:]?\s*(?:re\.?|rs\.?|inr|₹)?\s*([\d.]+)|(?:re\.?|rs\.?|inr|₹)\s*([\d.]+)\s*(?:/-)?\s*per\s*share)",
@@ -344,6 +371,41 @@ def peek_pdf_subject(pdf_url: str, client: Optional[httpx.Client] = None) -> Opt
     except Exception as e:
         logger.debug("Failed to peek PDF subject for %s: %s", pdf_url, e)
     return None
+
+
+def is_xbrl_stub(title: str, summary: str, url: str) -> bool:
+    """Detects if an announcement is an exchange XBRL compliance filing."""
+    full = f"{title} {summary}"
+    return bool(
+        re.search(r"\b(?:para\s+[a-z]-xbrl|xbrl)\b", full, re.IGNORECASE)
+        or url.lower().endswith(".xml")
+    )
+
+
+def extract_core_exchange_subject(title: str, summary: str) -> str:
+    """Normalizes the core regulatory subject from an exchange disclosure."""
+    full = f"{title} {summary}"
+    sub_match = re.search(r"(?:\|SUBJECT:|(?:^|\n)\s*Sub(?:ject)?\s*:)\s*([^\n\r|]+)", full, re.IGNORECASE)
+    subject = sub_match.group(1) if sub_match else title
+    cleaned = re.sub(
+        r"(?i)\b(?:has informed the exchange about|disclosure under regulation\s*\d+|para\s*[a-z]-xbrl|xbrl|updates?|intimation|regarding)\b",
+        " ",
+        subject,
+    )
+    cleaned = re.sub(r"[^\w\s]", " ", cleaned).lower()
+    return " ".join(cleaned.split())
+
+
+def are_exchange_subjects_similar(sub1: str, sub2: str) -> bool:
+    """Returns True if two exchange subjects describe the exact same event."""
+    words1 = [w[:5] for w in sub1.split() if len(w) >= 3 and w not in {"the", "and", "for", "with"}]
+    words2 = [w[:5] for w in sub2.split() if len(w) >= 3 and w not in {"the", "and", "for", "with"}]
+    if not words1 or not words2:
+        return False
+    s1, s2 = set(words1), set(words2)
+    overlap = len(s1 & s2)
+    min_len = min(len(s1), len(s2))
+    return min_len > 0 and (overlap / min_len) >= 0.5
 
 
 def _find_elem(node: ET.Element, *tags: str) -> Optional[ET.Element]:
@@ -585,6 +647,7 @@ class MarketNewsService:
 
         inserted_count = 0
         seen_urls: Set[str] = set()
+        seen_exchange_items: Dict[str, List[Dict[str, Any]]] = {}
 
         for item in raw_items:
             url = item["url"]
@@ -664,7 +727,7 @@ class MarketNewsService:
                 meta.update(extract_concall_metadata(title, summary, item.get("enclosure_url"), url=url))
 
             # Corporate action (dividends, splits, bonuses) and governance changes
-            corp_meta = extract_corporate_metadata(title, summary)
+            corp_meta = extract_corporate_metadata(title, summary, is_exchange_filing=is_exchange_filing)
             if corp_meta:
                 meta.update(corp_meta)
 
@@ -675,6 +738,84 @@ class MarketNewsService:
                     sentiment = "POSITIVE"
                 elif rec in ["SELL", "REDUCE"]:
                     sentiment = "NEGATIVE"
+
+            # Deduplicate exchange announcements: drop redundant Para A-XBRL stubs when substantive
+            # announcement/transcript exists, or update previous XBRL stub with formal filing.
+            if is_exchange_filing and matched_syms:
+                primary_sym = matched_syms[0]
+                norm_sub = extract_core_exchange_subject(title, summary)
+                incoming_is_xbrl = is_xbrl_stub(title, summary, url)
+                has_att = bool(meta.get("transcript_url") or url.lower().endswith(".pdf"))
+
+                batch_dup_found = False
+                for prev in seen_exchange_items.get(primary_sym, []):
+                    if are_exchange_subjects_similar(norm_sub, prev["norm_sub"]):
+                        if incoming_is_xbrl and not prev["is_xbrl"]:
+                            batch_dup_found = True
+                            break
+                        elif not incoming_is_xbrl and prev["is_xbrl"]:
+                            try:
+                                old_art = market_news.get(db, prev["id"])
+                                if old_art:
+                                    db.delete(old_art)
+                                    db.commit()
+                            except Exception:
+                                pass
+                            prev["is_xbrl"] = False
+                            prev["id"] = article_id
+                            break
+                        elif has_att and not prev["has_att"]:
+                            try:
+                                old_art = market_news.get(db, prev["id"])
+                                if old_art:
+                                    db.delete(old_art)
+                                    db.commit()
+                            except Exception:
+                                pass
+                            prev["has_att"] = True
+                            prev["id"] = article_id
+                            break
+                        else:
+                            batch_dup_found = True
+                            break
+                if batch_dup_found:
+                    continue
+
+                # Check recent exchange announcements in DB for the same symbol
+                since_time = pub_date - timedelta(hours=48)
+                recent_exchange_arts = market_news.find_recent_exchange_article(db, symbol=primary_sym, since=since_time)
+                db_dup_found = False
+                for r_art in recent_exchange_arts:
+                    r_norm_sub = extract_core_exchange_subject(r_art.title, r_art.summary or "")
+                    if are_exchange_subjects_similar(norm_sub, r_norm_sub):
+                        r_is_xbrl = is_xbrl_stub(r_art.title, r_art.summary or "", r_art.url)
+                        r_has_att = bool(
+                            (r_art.metadata_json or {}).get("transcript_url")
+                            or r_art.url.lower().endswith(".pdf")
+                        )
+                        if incoming_is_xbrl and not r_is_xbrl:
+                            db_dup_found = True
+                            break
+                        elif not incoming_is_xbrl and r_is_xbrl:
+                            db.delete(r_art)
+                            db.commit()
+                            break
+                        elif has_att and not r_has_att:
+                            db.delete(r_art)
+                            db.commit()
+                            break
+                        else:
+                            db_dup_found = True
+                            break
+                if db_dup_found:
+                    continue
+
+                seen_exchange_items.setdefault(primary_sym, []).append({
+                    "id": article_id,
+                    "norm_sub": norm_sub,
+                    "is_xbrl": incoming_is_xbrl,
+                    "has_att": has_att,
+                })
 
             obj_in = MarketNewsArticleCreate(
                 id=article_id,

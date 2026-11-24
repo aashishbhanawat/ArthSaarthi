@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta, timezone
+import re
 from typing import Any, Dict, List, Optional, Tuple
 
 import sqlalchemy as sa
@@ -142,6 +143,25 @@ class CRUDMarketNews:
             "latest_items": [MarketNewsArticleOut.model_validate(a) for a in latest],
         }
 
+    def find_recent_exchange_article(
+        self, db: Session, *, symbol: str, since: datetime
+    ) -> List[MarketNewsArticle]:
+        """Finds recent exchange disclosures for the symbol within the time window."""
+        return (
+            db.query(MarketNewsArticle)
+            .filter(
+                MarketNewsArticle.published_at >= since,
+                MarketNewsArticle.source.in_([
+                    "NSE Announcements",
+                    "NSE Corporate Actions",
+                    "BSE Announcements",
+                    "BSE Corporate Actions",
+                ]),
+                sa.cast(MarketNewsArticle.symbols, sa.String).ilike(f'%"{symbol}"%'),
+            )
+            .all()
+        )
+
     def prune_older_than(self, db: Session, *, days: int = 30) -> int:
         cutoff = datetime.now(timezone.utc) - timedelta(days=days)
         deleted = (
@@ -224,6 +244,99 @@ class CRUDMarketNews:
                     a.symbols = valid_syms
                     db.add(a)
                     updated_count += 1
+
+            # Clean up spurious dividend tags on editorial screening/yield articles
+            if a.metadata_json and a.metadata_json.get("action_type") == "DIVIDEND":
+                is_exchange = a.source in [
+                    "NSE Announcements",
+                    "NSE Corporate Actions",
+                    "BSE Announcements",
+                    "BSE Corporate Actions",
+                ]
+                is_editorial_yield = bool(
+                    re.search(
+                        r"\b(?:dividend\s+yield|dividend\s+income|attractive\s+dividend|dividend\s+stocks?|dividend\s+picks?|stocks?\s+with\s+.*dividend|high\s+dividend\s+yield)\b",
+                        full_text,
+                        re.IGNORECASE,
+                    )
+                )
+                has_div_declaration = bool(
+                    re.search(
+                        r"\b(?:interim\s+dividend|final\s+dividend|special\s+dividend|"
+                        r"declared\s+dividend|declare\s+dividend|declaration\s+of\s+dividend|"
+                        r"recommended\s+dividend|recommends\s+dividend|"
+                        r"approved\s+dividend|approves\s+dividend|board\s+approves\s+dividend|"
+                        r"dividend\s+of\s+(?:rs|inr|₹)|dividend\s*:\s*(?:rs|inr|₹)?\s*[\d.]+|"
+                        r"record\s+date\s+for\s+dividend|ex-dividend\s+date)\b",
+                        full_text,
+                        re.IGNORECASE,
+                    )
+                )
+                if not is_exchange and is_editorial_yield and not has_div_declaration:
+                    cleaned_meta = dict(a.metadata_json)
+                    cleaned_meta.pop("action_type", None)
+                    cleaned_meta.pop("dividend_amount", None)
+                    a.metadata_json = cleaned_meta if cleaned_meta else None
+                    db.add(a)
+                    updated_count += 1
+
+        # Deduplicate exchange announcements: remove redundant XBRL stubs when substantive filing exists
+        exchange_arts = (
+            db.query(MarketNewsArticle)
+            .filter(
+                MarketNewsArticle.source.in_([
+                    "NSE Announcements",
+                    "NSE Corporate Actions",
+                    "BSE Announcements",
+                    "BSE Corporate Actions",
+                ])
+            )
+            .order_by(MarketNewsArticle.published_at.desc())
+            .all()
+        )
+        seen_sym_filings: Dict[str, List[MarketNewsArticle]] = {}
+        for ea in exchange_arts:
+            syms = ea.symbols or []
+            is_xbrl = bool(
+                re.search(r"\b(?:para\s+[a-z]-xbrl|xbrl)\b", f"{ea.title} {ea.summary or ''}", re.IGNORECASE)
+                or ea.url.lower().endswith(".xml")
+            )
+            sub_raw = re.sub(
+                r"(?i)\b(?:has informed the exchange about|disclosure under regulation\s*\d+|para\s*[a-z]-xbrl|xbrl|updates?|intimation|regarding)\b",
+                " ",
+                f"{ea.title} {ea.summary or ''}",
+            )
+            ea_words = {w[:5] for w in re.sub(r"[^\w\s]", " ", sub_raw).lower().split() if len(w) >= 3 and w not in {"the", "and", "for", "with"}}
+
+            dropped = False
+            for s in syms:
+                for prev in seen_sym_filings.get(s, []):
+                    # Check subject overlap
+                    prev_sub_raw = re.sub(
+                        r"(?i)\b(?:has informed the exchange about|disclosure under regulation\s*\d+|para\s*[a-z]-xbrl|xbrl|updates?|intimation|regarding)\b",
+                        " ",
+                        f"{prev.title} {prev.summary or ''}",
+                    )
+                    prev_words = {w[:5] for w in re.sub(r"[^\w\s]", " ", prev_sub_raw).lower().split() if len(w) >= 3 and w not in {"the", "and", "for", "with"}}
+                    if ea_words and prev_words:
+                        overlap = len(ea_words & prev_words)
+                        min_len = min(len(ea_words), len(prev_words))
+                        if min_len > 0 and (overlap / min_len) >= 0.5:
+                            prev_is_xbrl = bool(
+                                re.search(r"\b(?:para\s+[a-z]-xbrl|xbrl)\b", f"{prev.title} {prev.summary or ''}", re.IGNORECASE)
+                                or prev.url.lower().endswith(".xml")
+                            )
+                            if is_xbrl and not prev_is_xbrl:
+                                db.delete(ea)
+                                deleted_count += 1
+                                dropped = True
+                                break
+                            elif not is_xbrl and prev_is_xbrl:
+                                db.delete(prev)
+                                deleted_count += 1
+                if dropped:
+                    break
+                seen_sym_filings.setdefault(s, []).append(ea)
 
         db.commit()
         return deleted_count, updated_count
