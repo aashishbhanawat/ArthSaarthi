@@ -7,7 +7,7 @@
 ### Summary
 
 1. **FinBERT-Tone ONNX Model Catalog (`backend/app/ml/model_manager.py`):**
-   - Updated model download to Hugging Face Optimum release of `yiyanghkust/finbert-tone` (`https://huggingface.co/nickmuchi/quantized-optimum-finbert-tone/resolve/main/model_quantized.onnx` and `vocab.txt`), trained by HKUST on 10,000+ corporate filing & concall sentences.
+   - Updated model download to Hugging Face Optimum release of `yiyanghkust/finbert-tone` (`https://huggingface.co/nickmuchi/quantized-optimum-finbert-tone/resolve/main/model.onnx` and `vocab.txt`), trained by HKUST on 10,000+ corporate filing & concall sentences.
 2. **Multi-Tier Sentiment Engine (`backend/app/ml/sentiment_engine.py`):**
    - **Continuous Tone Scoring:** Added `tone_score: float` ($P(\text{Positive}) - P(\text{Negative}) \in [-1.0, 1.0]$) to `SentimentResult`.
    - **Dynamic Label Mapping Auto-Detection:** Implemented `_detect_label_mapping(session)` that executes a one-time 0.5 ms test phrase probe at ONNX initialization, dynamically distinguishing `[0: Pos, 1: Neg, 2: Neu]` (ProsusAI) vs `[1: Pos, 2: Neg, 0: Neu]` (FinBERT-Tone), guaranteeing 100% backward compatibility.

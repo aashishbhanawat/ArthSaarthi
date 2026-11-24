@@ -37,9 +37,9 @@ class ModelManager:
             "id": "finbert_int8",
             "name": "FinBERT-Tone INT8 Quantized",
             "description": "State-of-the-art financial tone transformer fine-tuned on corporate earnings calls and corporate disclosures (HKUST FinBERT-Tone INT8).",
-            "size_mb": 105.2,
+            "size_mb": 174.2,
             # Verified HuggingFace Optimum quantized release of yiyanghkust/finbert-tone
-            "download_url": "https://huggingface.co/nickmuchi/quantized-optimum-finbert-tone/resolve/main/model_quantized.onnx",
+            "download_url": "https://huggingface.co/nickmuchi/quantized-optimum-finbert-tone/resolve/main/model.onnx",
             "vocab_url": "https://huggingface.co/nickmuchi/quantized-optimum-finbert-tone/resolve/main/vocab.txt",
             "filename": "finbert_int8.onnx",
             "vocab_filename": "vocab.txt",
