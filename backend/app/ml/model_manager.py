@@ -1,5 +1,6 @@
 import logging
 import os
+import shutil
 import threading
 from dataclasses import dataclass
 from pathlib import Path
@@ -24,6 +25,8 @@ class EdgeModelInfo:
     downloaded_bytes: int
     total_bytes: int
     error_message: Optional[str] = None
+    system_dependency: Optional[str] = None
+    system_dependency_satisfied: Optional[bool] = None
 
 
 class ModelManager:
@@ -53,6 +56,7 @@ class ModelManager:
             "download_url": "https://huggingface.co/onnx-community/whisper-tiny.en/resolve/main/onnx/encoder_model_quantized.onnx",
             "filename": "whisper_tiny_en_quantized.onnx",
             "engine_type": "whisper_onnx",
+            "system_dependency": "ffmpeg (CLI binary for audio extraction & resampling)",
         },
     }
 
@@ -89,9 +93,15 @@ class ModelManager:
         if not meta:
             raise ValueError(f"Unknown model ID: {model_id}")
 
+        dep = meta.get("system_dependency")
+        dep_satisfied = bool(shutil.which("ffmpeg")) if dep else None
+
         with self._lock:
             if model_id in self._active_downloads:
-                return self._active_downloads[model_id]
+                curr = self._active_downloads[model_id]
+                curr.system_dependency = dep
+                curr.system_dependency_satisfied = dep_satisfied
+                return curr
 
         target = self.models_dir / meta["filename"]
         if target.exists() and target.stat().st_size > 1000:
@@ -108,6 +118,8 @@ class ModelManager:
                 progress_percentage=100,
                 downloaded_bytes=size_bytes,
                 total_bytes=size_bytes,
+                system_dependency=dep,
+                system_dependency_satisfied=dep_satisfied,
             )
 
         return EdgeModelInfo(
@@ -122,6 +134,8 @@ class ModelManager:
             progress_percentage=0,
             downloaded_bytes=0,
             total_bytes=int(meta["size_mb"] * 1024 * 1024),
+            system_dependency=dep,
+            system_dependency_satisfied=dep_satisfied,
         )
 
     def list_models(self) -> List[EdgeModelInfo]:

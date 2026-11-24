@@ -19,6 +19,11 @@
 
 ## Recent Stabilization & Refinement Efforts
 
+*   **Audio-Only Button Guard & ffmpeg Dependency Visibility (Issue #618 / PR #619) (Updated 2026-11-24):**
+    - **Disabled Analyze Button for Audio-Only (`ConcallAnalysisModal.tsx`):** Safely disabled the "Analyze with Edge Engine" button on audio-only concalls to prevent client error 400s, guiding users to "Listen Audio" or "Paste Custom Transcript".
+    - **System Dependency Surfacing (`model_manager.py`, `ml.py`, `AIModelManagementCard.tsx`, `AIIntelligenceTab.tsx`):** Added `system_dependency` and `system_dependency_satisfied` to model management, displaying real-time detection of external binaries like `ffmpeg`.
+    - **Verification:** 31/31 backend tests passing; 8/8 frontend Jest tests passing.
+
 *   **Backend Logging Visibility & Uvicorn Stream Fix (Issue #618 / PR #619) (Updated 2026-11-24):**
     - **Alembic Logger Guard (`alembic/env.py`, `init_db.py`):** Prevented programmatic Alembic migrations from resetting the root logger level to `WARN` or disabling existing loggers (`disable_existing_loggers=False`, `configure_logger=False`).
     - **Live Access & Application Log Streaming (`main.py`, `entrypoint.sh`, `docker-compose.yml`):** Set `PYTHONUNBUFFERED=1`, configured `propagate=True` on `uvicorn.access` / `uvicorn.error`, and enabled `--access-log`.

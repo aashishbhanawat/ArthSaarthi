@@ -21,6 +21,7 @@ const mockArticle: MarketNewsArticle = {
   metadata_json: {
     quarter: 'Q2FY27',
     audio_url: 'https://example.com/exide.mp3',
+    transcript_url: 'https://example.com/exide-transcript.pdf',
   },
 };
 
@@ -128,5 +129,27 @@ describe('ConcallAnalysisModal', () => {
 
     expect(screen.getByText('Management Discussion Tone')).toBeInTheDocument();
     expect(screen.getByText(/75% Pos/i)).toBeInTheDocument();
+  });
+
+  test('disables analyze button when concall has only audio and no transcript', () => {
+    const audioOnlyArticle: MarketNewsArticle = {
+      ...mockArticle,
+      metadata_json: {
+        quarter: 'Q2FY27',
+        audio_url: 'https://example.com/podcast.mp3',
+      },
+    };
+
+    render(
+      <ConcallAnalysisModal
+        article={audioOnlyArticle}
+        isOpen={true}
+        onClose={jest.fn()}
+      />
+    );
+
+    const analyzeBtn = screen.getByRole('button', { name: /Analyze with Edge Engine/i });
+    expect(analyzeBtn).toBeDisabled();
+    expect(screen.getByText(/Automated audio-to-text requires system tool/i)).toBeInTheDocument();
   });
 });

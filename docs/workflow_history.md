@@ -1,3 +1,28 @@
+## 2026-11-24: Disable Concall Analyze for Audio-Only & Surface ffmpeg Dependency (Issue #618 / PR #619)
+
+**Task:**
+1. Disable the "Analyze with Edge Engine" button in `ConcallAnalysisModal.tsx` when an article only has an audio podcast link with no transcript or statutory PDF attached.
+2. Clearly explain and surface system requirements (`ffmpeg`) in the UI so users understand why direct audio transcription is unavailable.
+3. Add system dependency indicators to `AIModelManagementCard.tsx` and `AIIntelligenceTab.tsx`.  
+**AI Assistant:** Antigravity  
+**Role:** Lead Architect & Full-Stack Developer
+
+### Summary
+
+1. **UX Guard in Concall Modal (`frontend/src/components/Dashboard/ConcallAnalysisModal.tsx`):**
+   - For audio-only concalls (`isAudioOnly = true`), disabled the "Analyze with Edge Engine" button (`disabled={isAudioOnly}`) with a tooltip explaining that transcript text or statutory PDF is required.
+   - Displayed an informative banner informing the user that automated audio-to-text requires the `ffmpeg` system binary and local STT runtime, directing them to listen to the podcast or paste the transcript.
+2. **Surfacing System Dependencies (`backend/app/ml/model_manager.py`, `backend/app/api/v1/endpoints/ml.py`):**
+   - Added `system_dependency` and `system_dependency_satisfied` to `EdgeModelInfo` and `EdgeModelResponse`.
+   - Populated `system_dependency = "ffmpeg (CLI binary for audio extraction & resampling)"` and dynamically checked `shutil.which("ffmpeg")`.
+3. **AI Model Management UI (`AIModelManagementCard.tsx`, `AIIntelligenceTab.tsx`):**
+   - Rendered a `System Requirement` indicator badge showing either `✅ Detected` or `⚠️ Missing in PATH` so administrators and users immediately know whether external tools like `ffmpeg` are installed.
+4. **Testing & QA:**
+   - 31/31 backend tests passing (`test_ml.py`, `test_news.py`, `test_concall_analyzer.py`).
+   - 8/8 frontend tests passing (`ConcallAnalysisModal.test.tsx`, `AIModelManagementCard.test.tsx`, `AIIntelligenceTab.test.tsx`).
+
+---
+
 ## 2026-11-24: Backend Logging Visibility & Uvicorn Stream Fix (Issue #618 / PR #619)
 
 **Task:** Resolve issue where `docker compose logs` was missing application logs and HTTP failure details after `Starting Uvicorn server...`.  

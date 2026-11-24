@@ -211,9 +211,14 @@ export const ConcallAnalysisModal: React.FC<ConcallAnalysisModalProps> = ({
                 No Concall Analysis Generated Yet
               </h4>
               {isAudioOnly ? (
-                <p className="text-xs text-gray-500 dark:text-gray-400 max-w-md mx-auto mt-1 mb-5">
-                  Official audio podcast is available to listen. To analyze management tone, forward guidance, and key takeaways, switch to the &apos;Paste Transcript&apos; tab or attach the BSE PDF filing.
-                </p>
+                <div className="max-w-md mx-auto mt-1 mb-5 space-y-2">
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    Official audio podcast is available to listen. To analyze management tone, forward guidance, and key takeaways, switch to the &apos;Paste Transcript&apos; tab or attach the BSE PDF filing.
+                  </p>
+                  <p className="text-[11px] text-amber-800 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 rounded-lg p-2 text-left">
+                    ℹ️ <strong>System Note:</strong> Automated audio-to-text requires system tool <code>ffmpeg</code> and speech-to-text runtime. Direct audio analysis is disabled to prevent mock estimates.
+                  </p>
+                </div>
               ) : (
                 <p className="text-xs text-gray-500 dark:text-gray-400 max-w-md mx-auto mt-1 mb-5">
                   Analyze management tone, forward guidance, and extracted key takeaways using edge ML and statutory PDF filing transcripts.
@@ -244,9 +249,15 @@ export const ConcallAnalysisModal: React.FC<ConcallAnalysisModalProps> = ({
                 </button>
                 <button
                   onClick={() => handleRunAnalysis()}
+                  disabled={isAudioOnly}
+                  title={
+                    isAudioOnly
+                      ? 'Analysis is disabled for audio-only podcasts (requires ffmpeg). Please paste transcript text to analyze.'
+                      : undefined
+                  }
                   className={`px-4 py-2 text-xs font-semibold rounded-lg transition-colors flex items-center gap-1.5 ${
                     isAudioOnly
-                      ? 'border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 font-medium'
+                      ? 'border border-gray-200 dark:border-gray-800 text-gray-400 dark:text-gray-500 bg-gray-100 dark:bg-gray-800/40 cursor-not-allowed opacity-60'
                       : 'bg-purple-600 text-white hover:bg-purple-700 shadow-sm'
                   }`}
                 >
