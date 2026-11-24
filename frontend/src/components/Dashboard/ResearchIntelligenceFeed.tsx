@@ -340,6 +340,47 @@ export const ResearchIntelligenceFeed: React.FC<ResearchIntelligenceFeedProps> =
                       {item.metadata_json.quarter}
                     </span>
                   )}
+                  {item.category === 'RESULT' && item.metadata_json?.quarter && (
+                    <span className="px-2 py-0.5 text-xs font-semibold rounded bg-indigo-100 text-indigo-800 dark:bg-indigo-950/70 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800/60">
+                      📊 {item.metadata_json.quarter} Results
+                    </span>
+                  )}
+                  {item.metadata_json?.action_type === 'DIVIDEND' && (
+                    <span className="px-2 py-0.5 text-xs font-semibold rounded bg-emerald-100 text-emerald-800 dark:bg-emerald-950/70 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60 flex items-center gap-1">
+                      💰 Dividend{item.metadata_json.dividend_amount !== undefined ? `: ₹${Number(item.metadata_json.dividend_amount).toFixed(2)}` : ''}
+                      {item.metadata_json.ex_date && <span className="text-[10px] opacity-75">({item.metadata_json.ex_date})</span>}
+                    </span>
+                  )}
+                  {item.metadata_json?.action_type === 'SPLIT' && (
+                    <span className="px-2 py-0.5 text-xs font-semibold rounded bg-cyan-100 text-cyan-800 dark:bg-cyan-950/70 dark:text-cyan-300 border border-cyan-200 dark:border-cyan-800/60">
+                      ✂️ Stock Split
+                    </span>
+                  )}
+                  {item.metadata_json?.action_type === 'BONUS' && (
+                    <span className="px-2 py-0.5 text-xs font-semibold rounded bg-pink-100 text-pink-800 dark:bg-pink-950/70 dark:text-pink-300 border border-pink-200 dark:border-pink-800/60">
+                      🎁 Bonus Issue
+                    </span>
+                  )}
+                  {item.metadata_json?.action_type === 'BUYBACK' && (
+                    <span className="px-2 py-0.5 text-xs font-semibold rounded bg-purple-100 text-purple-800 dark:bg-purple-950/70 dark:text-purple-300 border border-purple-200 dark:border-purple-800/60">
+                      🔄 Buyback
+                    </span>
+                  )}
+                  {item.metadata_json?.change_type === 'MANAGEMENT_CHANGE' && (
+                    <span className="px-2 py-0.5 text-xs font-semibold rounded bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-300 border border-slate-300 dark:border-slate-700">
+                      👔 Leadership Change
+                    </span>
+                  )}
+                  {item.metadata_json?.change_type === 'ORDER_WIN' && (
+                    <span className="px-2 py-0.5 text-xs font-semibold rounded bg-amber-100 text-amber-800 dark:bg-amber-950/70 dark:text-amber-300 border border-amber-200 dark:border-amber-800/60">
+                      🚀 Order Win
+                    </span>
+                  )}
+                  {item.metadata_json?.change_type === 'CREDIT_RATING' && (
+                    <span className="px-2 py-0.5 text-xs font-semibold rounded bg-blue-100 text-blue-800 dark:bg-blue-950/70 dark:text-blue-300 border border-blue-200 dark:border-blue-800/60">
+                      📈 Rating Update
+                    </span>
+                  )}
                 </div>
               </div>
 

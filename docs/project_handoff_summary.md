@@ -19,6 +19,13 @@
 
 ## Recent Stabilization & Refinement Efforts
 
+*   **Announcement Classification for Results, Dividends & Major Changes (Issue #618 / PR #619) (Updated 2026-11-24):**
+    - **Results & Quarter Auto-Classification:** Mapped exchange disclosures matching `financial results`, `quarterly results`, `investor presentation` to `category = "RESULT"`, extracting `quarter`.
+    - **Corporate Action & Dividend Extraction (`news_service.py`):** Added `extract_corporate_metadata` extracting dividend per share, ex-date, record date, stock splits, bonuses, and buybacks.
+    - **Governance & Change Tags:** Tagged leadership changes (`MANAGEMENT_CHANGE`), order wins (`ORDER_WIN`), and credit ratings (`CREDIT_RATING`).
+    - **UI Badges (`ResearchIntelligenceFeed.tsx`):** Rendered rich badges for dividends (`💰 Dividend: ₹X.XX`), stock splits (`✂️`), leadership changes (`👔`), and order wins (`🚀`).
+    - **Verification:** 15/15 tests passing in `test_news_service.py`; 4/4 passing in `ResearchIntelligenceFeed.test.tsx`.
+
 *   **BSE Filing Page 1 Subject Peeking for Generic Descriptions (Issue #618 / PR #619) (Updated 2026-11-24):**
     - **Opaque Description Detection:** Resolved issue where companies upload concall transcripts to BSE with placeholder descriptions (`<description>Please find enclosed.</description>` like `IGL Spirits Ltd`).
     - **Page 1 PDF Peeking (`news_service.py`):** Added `peek_pdf_subject` using `pdfplumber` to inspect Page 1 of PDF filings for user-tracked stocks, extracting the SEBI `Sub:` line (e.g. `Transcript of Q2 & H1 FY27 Earnings`), enriching the title/summary, and auto-upgrading `category = "CONCALL"`.

@@ -1,3 +1,40 @@
+## 2026-11-24: Announcement Classification & Metadata Extraction for Results, Dividends & Major Changes (Issue #618 / PR #619)
+
+**Task:** Expand announcement auto-detection beyond concalls to properly classify and tag:
+1. Financial Results (`category = "RESULT"`, quarter metadata).
+2. Dividends & Corporate Actions (dividend amount per share, ex-date, record date, stock splits, bonuses, buybacks).
+3. Major Corporate Changes (leadership changes, order wins, credit ratings).
+4. Render distinctive visual badges in the Research Intelligence Feed.  
+**AI Assistant:** Antigravity  
+**Role:** Lead Architect & Full-Stack Developer
+
+### Summary
+
+1. **Financial Results Auto-Detection (`backend/app/services/news_service.py`):**
+   - Automatically classifies filings matching `financial results`, `unaudited results`, `audited results`, `quarterly results`, `investor presentation` into `category = "RESULT"` so they appear in the dedicated "Quarterly Results" tab.
+   - Extracts reporting quarter (`Q1-Q4 FYXX`) into `metadata_json.quarter`.
+2. **Corporate Actions & Dividends Structured Extraction (`news_service.py`):**
+   - Added `extract_corporate_metadata()`:
+     - **Dividends:** Extracts `action_type: "DIVIDEND"`, numerical `dividend_amount` per share (e.g. ₹0.75), `ex_date`, and `record_date`.
+     - **Splits / Bonus / Buyback:** Identifies `SPLIT`, `BONUS`, `BUYBACK`, and `RIGHTS`.
+3. **Major Corporate & Governance Changes (`news_service.py`):**
+   - **Leadership Changes:** Detects appointment/resignation of CFO, CEO, MD, Director, Auditor, Company Secretary (`change_type: "MANAGEMENT_CHANGE"`).
+   - **Order Wins / Expansion:** Identifies commercial order wins, plant commissioning, capacity expansion (`change_type: "ORDER_WIN"`).
+   - **Credit Ratings:** Identifies rating upgrades/downgrades (`change_type: "CREDIT_RATING"`).
+4. **Frontend Research Intelligence Badges (`frontend/src/components/Dashboard/ResearchIntelligenceFeed.tsx`):**
+   - Added distinctive badges on feed cards:
+     - `📊 QX Results`
+     - `💰 Dividend: ₹X.XX (Ex-Date: DD-Mon)`
+     - `✂️ Stock Split` / `🎁 Bonus Issue` / `🔄 Buyback`
+     - `👔 Leadership Change`
+     - `🚀 Order Win`
+     - `📈 Rating Update`
+5. **Testing & QA:**
+   - Added unit test `test_corporate_action_and_result_metadata_extraction` (15/15 tests passing in `test_news_service.py`).
+   - Frontend tests passing (`ResearchIntelligenceFeed.test.tsx`, 4/4 passed).
+
+---
+
 ## 2026-11-24: BSE Filing Page 1 Subject Peeking for Generic Descriptions (Issue #618 / PR #619)
 
 **Task:** Resolve issue where BSE announcements contain generic/opaque descriptions (e.g., `<description>Please find enclosed.</description>` as seen in `IGL Spirits Ltd (545013)` concall filing). Implement automated Page 1 inspection (`peek_pdf_subject`) to extract SEBI `Sub:` line and auto-classify concall transcripts.  

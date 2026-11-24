@@ -219,6 +219,84 @@ def extract_concall_metadata(
     return meta
 
 
+def extract_corporate_metadata(title: str, summary: str) -> Dict[str, Any]:
+    """
+    Extracts structured metadata for corporate actions (dividends, splits, bonuses, buybacks)
+    and major corporate governance changes (leadership changes, order wins, credit ratings).
+    """
+    meta: Dict[str, Any] = {}
+    full = f"{title} {summary}"
+
+    # 1. Dividend
+    if re.search(r"\b(?:interim\s+dividend|final\s+dividend|special\s+dividend|dividend)\b", full, re.IGNORECASE):
+        meta["action_type"] = "DIVIDEND"
+        div_match = re.search(
+            r"(?:dividend\s*(?:of)?\s*[-–—:]?\s*(?:re\.?|rs\.?|inr|₹)?\s*([\d.]+)|(?:re\.?|rs\.?|inr|₹)\s*([\d.]+)\s*(?:/-)?\s*per\s*share)",
+            full,
+            re.IGNORECASE,
+        )
+        if div_match:
+            try:
+                amt_str = div_match.group(1) or div_match.group(2)
+                meta["dividend_amount"] = float(amt_str)
+            except (ValueError, TypeError):
+                pass
+    # 2. Stock Split
+    elif re.search(r"\b(?:face\s*value\s*split|sub-division|sub\s*division|stock\s*split)\b", full, re.IGNORECASE):
+        meta["action_type"] = "SPLIT"
+    # 3. Bonus Issue
+    elif re.search(r"\bbonus\s*(?:issue|shares)\b", full, re.IGNORECASE):
+        meta["action_type"] = "BONUS"
+    # 4. Buyback
+    elif re.search(r"\bbuy\s*back\b", full, re.IGNORECASE):
+        meta["action_type"] = "BUYBACK"
+    # 5. Rights Issue
+    elif re.search(r"\brights\s*issue\b", full, re.IGNORECASE):
+        meta["action_type"] = "RIGHTS"
+
+    # Ex-Date & Record Date
+    ex_match = re.search(
+        r"ex[- ]?date\s*:\s*([0-9]{1,2}[- ][A-Za-z]{3}[- ][0-9]{2,4}|[0-9]{1,2}/[0-9]{1,2}/[0-9]{4})",
+        full,
+        re.IGNORECASE,
+    )
+    if ex_match:
+        meta["ex_date"] = ex_match.group(1).strip()
+
+    rd_match = re.search(
+        r"record\s*date\s*:\s*([0-9]{1,2}[- ][A-Za-z]{3}[- ][0-9]{2,4}|[0-9]{1,2}/[0-9]{1,2}/[0-9]{4})",
+        full,
+        re.IGNORECASE,
+    )
+    if rd_match:
+        meta["record_date"] = rd_match.group(1).strip()
+
+    # 6. Management / Governance Changes
+    if re.search(
+        r"\b(?:appointment|resignation|cessation)\s+of\s+(?:.*?\b)?(?:director|managing\s+director|md|ceo|chief\s+executive|cfo|chief\s+financial|auditor|company\s+secretary|kmp)\b",
+        full,
+        re.IGNORECASE,
+    ):
+        meta["change_type"] = "MANAGEMENT_CHANGE"
+    # 7. Order Win / Commercial Capacity Expansion
+    elif re.search(
+        r"\b(?:order\s*win|bagged\s*order|contract\s*award|commercial\s*production|capacity\s*expansion|new\s*plant|commissioning)\b",
+        full,
+        re.IGNORECASE,
+    ):
+        meta["change_type"] = "ORDER_WIN"
+    # 8. Credit Rating
+    elif re.search(r"\b(?:credit\s*rating|rating\s*upgrade|rating\s*downgrade|crisil|care\s*ratings?|icra|ind-ra)\b", full, re.IGNORECASE):
+        meta["change_type"] = "CREDIT_RATING"
+
+    # 9. Quarter extraction for results
+    q_match = re.search(r"\b(Q[1-4]\s*(?:FY\s*\d{2,4}|\d{4})?)\b", full, re.IGNORECASE)
+    if q_match:
+        meta["quarter"] = q_match.group(1).upper()
+
+    return meta
+
+
 def _is_generic_exchange_description(desc: str) -> bool:
     """Returns True if the exchange description is opaque placeholder text."""
     d = desc.lower().strip()
@@ -535,19 +613,25 @@ class MarketNewsService:
             full_text = f"{title} {summary}"
             matched_syms = self.match_symbols(full_text, symbol_mappings)
 
-            # Auto-detect concall transcripts and audio recording disclosures from exchange announcements
-            if is_exchange_filing and re.search(
+            # Auto-detect concall transcripts and financial results from announcements
+            if re.search(
                 r"\b(?:transcript|audio\s*recording|earnings\s*(?:call|conference)|concall)\b",
                 full_text,
                 re.IGNORECASE,
             ):
                 category = "CONCALL"
+            elif re.search(
+                r"\b(?:financial\s*results?|unaudited\s*results?|audited\s*results?|quarterly\s*results?|half[-\s]*yearly\s*results?|earnings\s*release|investor\s*presentation)\b",
+                full_text,
+                re.IGNORECASE,
+            ):
+                category = "RESULT"
 
             # If exchange description is opaque boilerplate (e.g. "Please find enclosed."),
             # peek at Page 1 of the PDF filing for user-tracked stocks to discover the actual SEBI Subject
             if (
                 is_exchange_filing
-                and (matched_syms or category == "CONCALL")
+                and (matched_syms or category in ["CONCALL", "RESULT"])
                 and (url.lower().endswith(".pdf") or "corpfiling" in url.lower())
                 and _is_generic_exchange_description(summary)
             ):
@@ -561,8 +645,16 @@ class MarketNewsService:
                     elif re.search(r"\b(?:financial\s*results?|investor\s*presentation)\b", peeked, re.IGNORECASE):
                         category = "RESULT"
                         title = f"{title} - {peeked}"
+                    elif re.search(r"\b(?:dividend|bonus|split|sub-division|buyback)\b", peeked, re.IGNORECASE):
+                        title = f"{title} - {peeked}"
 
             # Filter syndicated duplicate headlines across sources (strictly for general editorial NEWS)
+            if not is_exchange_filing and category == "NEWS" and headline_deduplicator.is_duplicate(title):
+                continue
+
+            # Filter non-financial noise & exam/recruitment/crime spam (exempt official exchange filings)
+            if not is_exchange_filing and not relevance_filter.is_financial_relevant(title, summary, category=category):
+                continue
 
             # Extra metadata extraction
             meta: Dict[str, Any] = {}
@@ -570,6 +662,11 @@ class MarketNewsService:
                 meta.update(extract_broker_metadata(title, summary))
             elif category == "CONCALL":
                 meta.update(extract_concall_metadata(title, summary, item.get("enclosure_url"), url=url))
+
+            # Corporate action (dividends, splits, bonuses) and governance changes
+            corp_meta = extract_corporate_metadata(title, summary)
+            if corp_meta:
+                meta.update(corp_meta)
 
             sentiment = calculate_sentiment(full_text)
             if category == "BROKER_REPORT" and "recommendation" in meta:

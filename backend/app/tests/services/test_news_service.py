@@ -291,4 +291,64 @@ def test_bse_generic_description_peek_subject(db):
                     db.commit()
 
 
+def test_corporate_action_and_result_metadata_extraction(db):
+    from app.models.market_news import MarketNewsArticle
+    from app.services.news_service import extract_corporate_metadata
+
+    # 1. Dividend
+    div_meta = extract_corporate_metadata(
+        "Fusion CX Limited - Ex-Date: 27-Nov-2026",
+        "SERIES:EQ |PURPOSE:DIVIDEND - RE 0.75 PER SHARE |FACE VALUE:1 |RECORD DATE:27-Nov-2026",
+    )
+    assert div_meta["action_type"] == "DIVIDEND"
+    assert div_meta["dividend_amount"] == 0.75
+    assert div_meta["ex_date"] == "27-Nov-2026"
+    assert div_meta["record_date"] == "27-Nov-2026"
+
+    # 2. Split
+    split_meta = extract_corporate_metadata(
+        "VARVEE GLOBAL LIMITED - Ex-Date: 27-Nov-2026",
+        "PURPOSE:FACE VALUE SPLIT (SUB-DIVISION) - FROM RS 5/- PER SHARE TO RS 2/- PER SHARE",
+    )
+    assert split_meta["action_type"] == "SPLIT"
+
+    # 3. Leadership Change
+    mgmt_meta = extract_corporate_metadata(
+        "Infosys Limited (500209)",
+        "Resignation of Chief Financial Officer and KMP of the Company",
+    )
+    assert mgmt_meta["change_type"] == "MANAGEMENT_CHANGE"
+
+    # 4. Result Auto-Detection in sync_all_feeds
+    service = MarketNewsService()
+    result_url = "https://example.com/results-announcement-q2"
+    result_item = [
+        {
+            "title": "Tata Motors Ltd (500570)",
+            "url": result_url,
+            "summary": "Outcome of Board Meeting - Unaudited Financial Results for Q2FY27 and Investor Presentation",
+            "published_at": None,
+            "source": "BSE Announcements",
+            "category": "NEWS",
+            "enclosure_url": None,
+        }
+    ]
+
+    with patch.object(service, "fetch_feed_items", return_value=result_item):
+        with patch.object(service, "get_active_portfolio_symbols", return_value={"TATAMOTORS"}):
+            with patch.object(service, "get_symbol_keyword_mappings", return_value={"Tata Motors": "TATAMOTORS"}):
+                fetched, inserted = service.sync_all_feeds(db, max_targeted_symbols=0)
+                assert inserted >= 1
+
+                article = db.query(MarketNewsArticle).filter(MarketNewsArticle.url == result_url).first()
+                assert article is not None
+                # Auto-detected as RESULT category
+                assert article.category == "RESULT"
+                assert article.metadata_json is not None
+                assert article.metadata_json.get("quarter") == "Q2FY27"
+
+                db.delete(article)
+                db.commit()
+
+
 
