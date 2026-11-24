@@ -19,6 +19,13 @@
 
 ## Recent Stabilization & Refinement Efforts
 
+*   **Concall Tone Flow Calibration, Density Guard & BSE PDF Integration (Issue #618 / PR #619) (Updated 2026-11-24):**
+    - **Tone Flow Calibration:** Separated Management remarks into opening remarks (`mgmt_prepared_sentences`) and Q&A answers (`mgmt_qa_sentences`). Calibrated tone divergence threshold to `0.10` so shifts (e.g. Opening: +0.20 vs Q&A: +0.06 $\implies$ +0.14 gap) trigger the Tone Gap Alert amber banner in both backend and frontend modal.
+    - **Information Density Guard (`concall_analyzer.py`):** Added `is_high_signal_sentence` requiring $\ge 11$ words and concrete operational/financial metric anchors, pruning filler sentences from Cautionary Remarks and Top Takeaways.
+    - **Discussion Themes Filter:** Added `THEME_STOP_PHRASES` to exclude boilerplate numerical phrases (`#Double Digit`, `#Full Year`, `#Next Year`).
+    - **BSE PDF Auto-Extraction (`news.py`):** Integrated automatic PDF download and text parsing via `pdfplumber` when `transcript_url` is present in BSE corporate announcements.
+    - **Verification:** 17/17 backend pytest tests passing; frontend Jest tests passing (100%); verified against 18-page Exide Industries PDF.
+
 *   **Automatic Concall Speaker Discovery & Boundary Repair (Issue #618 / PR #619) (Updated 2026-11-24):**
     - **Speaker Discovery Engine (`concall_analyzer.py`):** Parses header blocks (`MANAGEMENT:`), moderator analyst introductions (`from the line of <Name>`), and turn frequency heuristics to classify speakers into Management vs Analyst streams without manual hardcoding or LLMs.
     - **Pure Management Extraction:** Feeds `mgmt_sentences` strictly into Cautionary Remarks (`red_flags`), Top Takeaways, and Guidance metrics, completely preventing analyst inquiries (e.g. Pramod Amthe) from polluting risk flags.

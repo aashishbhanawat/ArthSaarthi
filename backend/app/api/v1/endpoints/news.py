@@ -183,11 +183,36 @@ def analyze_concall(
     if not transcript and "concall_analysis" in meta:
         return ConcallAnalysisResponse(**meta["concall_analysis"])
 
-    # 3. Check for pre-existing transcript in metadata
+    # 3. Check for pre-existing transcript in metadata or fetch from transcript_url (e.g. BSE PDF filing)
     if not transcript:
         if meta.get("transcript_text"):
             transcript = meta["transcript_text"]
             source = "TRANSCRIPT"
+        elif meta.get("transcript_url"):
+            t_url = meta["transcript_url"]
+            try:
+                import io
+                import httpx
+                import pdfplumber
+                pdf_headers = {
+                    "User-Agent": (
+                        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                        "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+                    ),
+                    "Accept": "application/pdf,*/*",
+                }
+                with httpx.Client(headers=pdf_headers, timeout=30.0, follow_redirects=True) as client:
+                    resp = client.get(t_url)
+                    if resp.status_code == 200:
+                        with pdfplumber.open(io.BytesIO(resp.content)) as pdf:
+                            pages_text = [p.extract_text() or "" for p in pdf.pages]
+                            full_pdf_text = "\n".join(pages_text).strip()
+                            if full_pdf_text:
+                                transcript = full_pdf_text
+                                source = "BSE_PDF" if "bseindia" in t_url.lower() else "TRANSCRIPT_PDF"
+                                meta["transcript_text"] = transcript
+            except Exception as e:
+                logger.warning("Failed to download or parse PDF transcript from %s: %s", t_url, e)
 
     # 4. Check for audio URL and Whisper fallback
     if not transcript and meta.get("audio_url"):

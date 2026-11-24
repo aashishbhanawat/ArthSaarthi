@@ -244,21 +244,21 @@ export const ConcallAnalysisModal: React.FC<ConcallAnalysisModalProps> = ({
               {analysis.tone_divergence_summary && (
                 <div
                   className={`p-3.5 rounded-xl border flex items-start gap-2.5 text-xs ${
-                    (analysis.tone_gap_alert || 0) >= 0.20
+                    (analysis.tone_gap_alert || 0) >= 0.10
                       ? 'bg-amber-50 dark:bg-amber-950/30 border-amber-300 dark:border-amber-800/70 text-amber-900 dark:text-amber-200'
                       : 'bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800/60 text-blue-900 dark:text-blue-200'
                   }`}
                 >
                   <ExclamationTriangleIcon
                     className={`w-4 h-4 flex-shrink-0 mt-0.5 ${
-                      (analysis.tone_gap_alert || 0) >= 0.20
+                      (analysis.tone_gap_alert || 0) >= 0.10
                         ? 'text-amber-600 dark:text-amber-400'
                         : 'text-blue-600 dark:text-blue-400'
                     }`}
                   />
                   <div>
                     <span className="font-bold">
-                      {(analysis.tone_gap_alert || 0) >= 0.20 ? 'Tone Gap Alert: ' : 'Tone Flow: '}
+                      {(analysis.tone_gap_alert || 0) >= 0.10 ? 'Tone Gap Alert: ' : 'Tone Flow: '}
                     </span>
                     {analysis.tone_divergence_summary}
                   </div>

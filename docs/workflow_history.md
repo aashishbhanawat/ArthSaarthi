@@ -1,3 +1,32 @@
+## 2026-11-24: Concall Tone Flow Calibration, Density Guard & Theme Noise Filtering (Issue #618 / PR #619)
+
+**Task:** Refine concall intelligence output: 
+1. Calibrate Tone Flow divergence to compare management's scripted opening remarks against management's spontaneous Q&A answers (threshold lowered from 0.20 to 0.10 for realistic FinBERT-Tone distributions).
+2. Implement Information Density Guard (`is_high_signal_sentence`) requiring $\ge 11$ words and concrete operational/financial anchors to prune conversational filler from Risk Flags and Top Takeaways.
+3. Exclude boilerplate numerical adjectives (`#Double Digit`, `#Full Year`, `#Next Year`) from Core Discussion Themes.
+4. Auto-extract full text from BSE corporate announcement PDF filings (`transcript_url`) using `pdfplumber`.
+
+**AI Assistant:** Antigravity  
+**Role:** Lead Architect & Full-Stack Developer
+
+### Summary
+
+1. **Tone Flow Calibration & Prepared vs Q&A Comparison (`backend/app/ml/concall_analyzer.py`, `frontend/src/components/Dashboard/ConcallAnalysisModal.tsx`):**
+   - **Management Prepared vs Q&A Comparison:** Separated Management remarks into scripted opening remarks (`mgmt_prepared_sentences`) and spontaneous Q&A answers (`mgmt_qa_sentences`). Tone Flow gap measures the divergence between management's opening stance and Q&A answers, while analyst queries isolate institutional skepticism for the Analyst Q&A gauge.
+   - **Threshold Calibration:** Lowered tone divergence threshold from `0.20` to `0.10` in both backend and frontend modal, reflecting typical FinBERT-Tone net score distributions ([-0.25, +0.35]) and triggering Tone Gap Alerts on genuine softening (e.g. Opening: +0.20 vs Q&A: +0.06 $\implies$ +0.14 gap).
+2. **Information Density Guard (`backend/app/ml/concall_analyzer.py`):**
+   - Implemented `is_high_signal_sentence()` requiring `len(words) >= 11`, non-interrogative, and matching concrete operational/financial entities (`INFO_ANCHORS` covering metrics, %, INR/$, GWh, EBITDA, ROCE, margin, demand, capacity, warranty, OEM, capex, revenue, utilization, antimony, lithium, etc.).
+   - Pruned low-information filler from Cautionary Remarks (e.g., *"So whenever we are weak, we are trying to come back."*) and Takeaways (e.g., *"The 2-wheeler and 3-wheeler will be a pack business."*), substituting high-value disclosures (antimony cost hits, warranty risks, 25% demand drop).
+3. **Discussion Theme Stop-Phrases (`backend/app/ml/concall_analyzer.py`):**
+   - Added `THEME_STOP_PHRASES` (`"double digit"`, `"single digit"`, `"full year"`, `"first quarter"`, etc.) and filtered bigrams starting with generic adjectives (`double`, `single`, `first`, `next`, `past`), ensuring themes remain focused exclusively on genuine product/segment topics (`Gigawatt Hour`, `Lead Acid`, `Cell Manufacturing`, `Punched Grid`, `Home Inverter`).
+4. **BSE PDF Filing Transcript Auto-Extraction (`backend/app/api/v1/endpoints/news.py`):**
+   - In `analyze_concall`, added automatic downloading and text extraction for `metadata_json.transcript_url` using `pdfplumber` for official BSE announcement PDF filings (`https://www.bseindia.com/xml-data/corpfiling/AttachHis/...pdf`), enabling seamless 1-click analysis of exchange transcripts.
+5. **Testing & Real PDF Verification:**
+   - Evaluated on real 18-page Exide Industries concall PDF: Management Opening remarks (+0.20 Bullish) vs Management Q&A (+0.06 Neutral) correctly yielded Tone Gap Alert (+0.14); Risk Flags and Takeaways strictly captured high-density operational facts; `#Double Digit` was purged from themes.
+   - All backend pytest tests passing (17/17 passed); frontend Jest modal tests passing (100%).
+
+---
+
 ## 2026-11-24: Automatic Concall Speaker Discovery & Boundary Line-Wrap Normalization (Issue #618 / PR #619)
 
 **Task:** Integrate zero-LLM automatic speaker discovery to partition concall transcripts into Management vs. Analyst turns, preventing analyst remarks (e.g., Pramod Amthe's question) from entering Cautionary Remarks or Top Takeaways. Repair PDF line-wrap punctuation drops to prevent run-on sentence splits.  

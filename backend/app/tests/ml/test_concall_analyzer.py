@@ -170,6 +170,35 @@ def test_concall_hedging_lexicon_expansion():
     assert rate > 10.0
 
 
+def test_concall_high_signal_and_theme_stop_phrases():
+    # 1. High signal density guard
+    filler = "So whenever we are weak, we are trying to come back."
+    assert not concall_analyzer.is_high_signal_sentence(filler)
+
+    short_pack = "The 2-wheeler and 3-wheeler will be a pack business."
+    assert not concall_analyzer.is_high_signal_sentence(short_pack)
+
+    substantive = "Operating profitability was impacted due to high input costs in the quarter on account of a considerable increase in the cost of antimony."
+    assert concall_analyzer.is_high_signal_sentence(substantive)
+
+    # 2. Tone Gap Calibration (>= 0.10 threshold)
+    gap, summary = concall_analyzer.calculate_tone_gap(0.08, -0.03)
+    assert gap == 0.11
+    assert "Tone Gap Alert (+0.11)" in summary
+    assert "Management tone softened during Q&A" in summary
+
+    # 3. Discussion theme stop phrases
+    transcript_with_adjectives = """
+    Management: We expect double digit volume growth and double digit margin expansion next year and full year.
+    Our primary business focus remains on lithium ion battery chemistry and punched grid design.
+    """
+    topics = concall_analyzer.extract_topics(transcript_with_adjectives, n=5)
+    for topic in topics:
+        assert "Double Digit" not in topic
+        assert "Full Year" not in topic
+        assert "Next Year" not in topic
+
+
 def test_whisper_engine_status():
     status = whisper_engine.get_status()
     assert status["model_id"] == "whisper_tiny_en"

@@ -112,6 +112,22 @@ class ConcallAnalyzer:
         "well", "much", "many", "couple", "ramp", "minimum", "maximum", "target",
     }
 
+    INFO_ANCHORS = re.compile(
+        r"(?:\d+%|\bINR\b|\$\d+|\b₹\d+|\b\d+\s*(?:cr|crore|lakh|bn|mn|bps|gwh|mwh|mw|gw)\b|"
+        r"\bEBITDA\b|\bROCE\b|\bmargin|\bdemand\b|\bcapacity\b|\bwarranty\b|\bOEM|\bcapex\b|"
+        r"\brevenue|\butilization\b|\bantimony\b|\blithium\b|\bgrowth\b|\bprofit|\bcost|"
+        r"\bpricing\b|\bheadwind|\bvolatil)",
+        re.I,
+    )
+
+    THEME_STOP_PHRASES = {
+        "double digit", "single digit", "last year", "next year",
+        "current year", "first quarter", "fourth quarter", "second quarter",
+        "third quarter", "full year", "going forward", "few years", "couple years",
+        "next couple", "past year", "previous year", "director finance",
+        "chief financial", "managing director", "conference call", "earnings call",
+    }
+
     HONORIFICS = re.compile(r"\b(?:mr|ms|mrs|dr|shri|smt|ca)\.?\s*", re.IGNORECASE)
 
     def _clean_transcript(self, text: str) -> str:
@@ -191,7 +207,7 @@ class ConcallAnalyzer:
             r"(?:^|\s)([A-Z][a-zA-Z.]+(?:\s+[A-Z][a-zA-Z.]+){0,3})\s*:\s*"
         )
         matches = list(turn_pattern.finditer(cleaned))
-        turns: List[Tuple[str, str]] = []
+        turns: List[Tuple[str, str, int]] = []
         speaker_turn_counts: collections.Counter = collections.Counter()
 
         for i, m in enumerate(matches):
@@ -202,13 +218,13 @@ class ConcallAnalyzer:
             start = m.end()
             end = matches[i + 1].start() if i + 1 < len(matches) else len(cleaned)
             utterance = cleaned[start:end].strip()
-            turns.append((norm, utterance))
+            turns.append((norm, utterance, m.start()))
             if norm not in {"moderator", "operator"} and norm not in analyst_names:
                 speaker_turn_counts[norm] += 1
 
-        # Check for explicit management tags in dialogue turns (e.g. "Management:", "Executive:")
-        for spk, _ in turns:
-            if any(term in spk for term in {"management", "executive", "mgmt", "cfo", "ceo", "director"}):
+        # Check for explicit management tags in dialogue turns (e.g. "Management:", "Executive:", "Opening Remarks:")
+        for spk, _, _ in turns:
+            if any(term in spk for term in {"management", "executive", "mgmt", "cfo", "ceo", "director", "opening remarks", "prepared remarks", "presentation"}):
                 mgmt_names.add(spk)
 
         # Fallback: If Pass A found nothing, anyone answering >= 2 separate turns is Management
@@ -222,11 +238,27 @@ class ConcallAnalyzer:
             if len(parts) >= 2:
                 mgmt_first_last.add(f"{parts[0]} {parts[-1]}")
 
-        # Route every turn into Management vs Analyst buckets
-        mgmt_sents: List[str] = []
-        analyst_sents: List[str] = []
+        analyst_first_last: Set[str] = set()
+        for name in analyst_names:
+            parts = name.split()
+            if len(parts) >= 2:
+                analyst_first_last.add(f"{parts[0]} {parts[-1]}")
 
-        for spk, utterance in turns:
+        # Identify where Q&A session starts in cleaned text
+        qa_char_pos = -1
+        for pat in self.QA_DELIMITERS:
+            m_qa = re.search(pat, cleaned, re.IGNORECASE)
+            if m_qa:
+                qa_char_pos = m_qa.start()
+                break
+
+        # Route every turn into Management (Prepared vs Q&A) vs Analyst buckets
+        mgmt_prepared_sents: List[str] = []
+        mgmt_qa_sents: List[str] = []
+        analyst_sents: List[str] = []
+        seen_first_analyst = False
+
+        for spk, utterance, start_pos in turns:
             if spk in {"moderator", "operator"}:
                 continue
             parts = spk.split()
@@ -239,18 +271,29 @@ class ConcallAnalyzer:
                 if len(s.strip()) >= 20
             ]
 
-            if spk in mgmt_names or fl in mgmt_first_last:
+            is_qa = (start_pos >= qa_char_pos) if qa_char_pos != -1 else seen_first_analyst
+
+            if spk in mgmt_names or fl in mgmt_first_last or (not is_qa and spk not in analyst_names and fl not in analyst_first_last):
                 for s in raw_turn_sents:
                     if not self._is_analyst_question(s):
-                        mgmt_sents.append(s)
+                        if is_qa:
+                            mgmt_qa_sents.append(s)
+                        else:
+                            mgmt_prepared_sents.append(s)
             else:
-                for s in raw_turn_sents:
-                    analyst_sents.append(s)
+                if spk in analyst_names or fl in analyst_first_last or is_qa:
+                    seen_first_analyst = True
+                    for s in raw_turn_sents:
+                        analyst_sents.append(s)
+
+        mgmt_sents = mgmt_prepared_sents + mgmt_qa_sents
 
         return {
             "discovered_management": sorted(mgmt_names),
             "discovered_analysts": sorted(analyst_names),
             "mgmt_sentences": mgmt_sents,
+            "mgmt_prepared_sentences": mgmt_prepared_sents,
+            "mgmt_qa_sentences": mgmt_qa_sents,
             "analyst_sentences": analyst_sents,
         }
 
@@ -315,6 +358,17 @@ class ConcallAnalyzer:
             if re.search(pat, s_lower):
                 return True
         return False
+
+    def is_high_signal_sentence(self, sent: str) -> bool:
+        """
+        Information Density Guard: Prunes low-information conversational filler and brief
+        dialogue turns. Requires minimum 11 words, non-interrogative, and at least one
+        concrete operational/financial entity anchor.
+        """
+        words = sent.split()
+        if len(words) < 11 or sent.strip().endswith("?"):
+            return False
+        return bool(self.INFO_ANCHORS.search(sent))
 
     def segment_transcript(self, text: str) -> Tuple[List[str], List[str]]:
         """
@@ -422,22 +476,22 @@ class ConcallAnalyzer:
     def calculate_tone_gap(self, mgmt_score: float, qa_score: float) -> Tuple[float, str]:
         """
         Measures tone divergence between Prepared Remarks and Q&A (high-alpha signal).
-        A large positive gap indicates management turned defensive under questioning.
+        A positive gap indicates management tone softened or became cautious under questioning.
         """
         gap = round(mgmt_score - qa_score, 3)
-        if gap >= 0.20:
+        if gap >= 0.10:
             summary = (
-                f"Tone Gap Alert (+{gap:.2f}): Management tone turned defensive under analyst questioning "
+                f"Tone Gap Alert (+{gap:.2f}): Management tone softened during Q&A "
                 f"(Opening: {mgmt_score:+.2f} vs Q&A: {qa_score:+.2f})."
             )
-        elif gap <= -0.20:
+        elif gap <= -0.10:
             summary = (
-                f"Constructive Q&A Shift ({gap:+.2f}): Analyst Q&A discussion was notably more positive than opening remarks "
+                f"Constructive Q&A Shift ({gap:+.2f}): Management sounded more upbeat during Q&A "
                 f"(Opening: {mgmt_score:+.2f} vs Q&A: {qa_score:+.2f})."
             )
         else:
             summary = (
-                f"Consistent Tone: Opening remarks and analyst Q&A remained aligned "
+                f"Consistent Tone: Opening remarks and Q&A remained aligned "
                 f"(Opening: {mgmt_score:+.2f} vs Q&A: {qa_score:+.2f})."
             )
         return gap, summary
@@ -488,8 +542,10 @@ class ConcallAnalyzer:
         """
         Extracts the top N most cautious or negative verbatim management statements.
         Combines FinBERT tone scoring with Loughran-McDonald uncertainty indicators.
+        Enforces Information Density Guard so vague conversational filler is excluded.
         """
         scored_candidates: List[Tuple[float, str]] = []
+        high_density_candidates: List[Tuple[float, str]] = []
         for s in sentences:
             cleaned = self._clean_sentence(s)
             if len(cleaned) < 40 or len(cleaned.split()) < 8:
@@ -504,11 +560,14 @@ class ConcallAnalyzer:
 
             if res.tone_score < 0.0 or uncertainty_rate > 0:
                 scored_candidates.append((risk_score, cleaned))
+                if self.is_high_signal_sentence(cleaned):
+                    high_density_candidates.append((risk_score, cleaned))
 
-        scored_candidates.sort(key=lambda x: x[0])  # Lowest (most cautious) first
+        candidates_to_use = high_density_candidates if high_density_candidates else scored_candidates
+        candidates_to_use.sort(key=lambda x: x[0])  # Lowest (most cautious) first
         return [
             {"text": text, "score": round(score, 2)}
-            for score, text in scored_candidates[:n]
+            for score, text in candidates_to_use[:n]
         ]
 
     def mine_guidance_metrics(
@@ -571,6 +630,7 @@ class ConcallAnalyzer:
         """
         raw_sents = candidate_sentences if candidate_sentences is not None else self._split_sentences(text)
         candidates: List[str] = []
+        high_density: List[str] = []
 
         for s in raw_sents:
             cleaned = self._clean_sentence(s)
@@ -579,6 +639,11 @@ class ConcallAnalyzer:
             if self._is_analyst_question(cleaned) or self._is_boilerplate_or_filler(cleaned):
                 continue
             candidates.append(cleaned)
+            if self.is_high_signal_sentence(cleaned):
+                high_density.append(cleaned)
+
+        if high_density:
+            candidates = high_density
 
         if len(candidates) <= 1:
             return candidates
@@ -714,7 +779,15 @@ class ConcallAnalyzer:
         unique_topics: List[str] = []
 
         for bg, _ in counter.most_common():
-            w_set = set(bg.split())
+            bg_lower = bg.lower()
+            if bg_lower in self.THEME_STOP_PHRASES:
+                continue
+            words_in_bg = bg_lower.split()
+            if any(w in {"digit", "digits", "year", "years", "quarter", "quarters", "month", "months"} for w in words_in_bg):
+                continue
+            if words_in_bg and words_in_bg[0] in {"double", "single", "first", "second", "third", "fourth", "next", "last", "current", "full", "past", "few", "couple"}:
+                continue
+            w_set = set(words_in_bg)
             if any(w_set == existing for existing in seen_word_sets):
                 continue
             seen_word_sets.append(w_set)
@@ -731,18 +804,29 @@ class ConcallAnalyzer:
         """
         speaker_data = self.discover_speakers(text)
         mgmt_sents = speaker_data["mgmt_sentences"]
+        mgmt_prepared_sents = speaker_data.get("mgmt_prepared_sentences", [])
+        mgmt_qa_sents = speaker_data.get("mgmt_qa_sentences", [])
         qa_sents = speaker_data["analyst_sentences"]
 
         # Fallback if no speakers were identified (e.g. raw text without speaker tags)
         if not mgmt_sents:
             mgmt_sents, qa_sents = self.segment_transcript(text)
+            mgmt_prepared_sents = mgmt_sents
+            mgmt_qa_sents = []
 
-        mgmt_tone = self.analyze_tone(mgmt_sents)
-        qa_tone = self.analyze_tone(qa_sents)
+        mgmt_tone = self.analyze_tone(mgmt_prepared_sents if mgmt_prepared_sents else mgmt_sents)
+        mgmt_qa_tone = self.analyze_tone(mgmt_qa_sents) if mgmt_qa_sents else None
+        analyst_tone = self.analyze_tone(qa_sents)
 
+        # Tone divergence compares Prepared Remarks vs Management Q&A Answers (fallback to Analyst Q&A)
+        qa_comparison_score = (
+            mgmt_qa_tone.get("average_tone_score", 0.0)
+            if (mgmt_qa_tone and mgmt_qa_tone.get("sample_size", 0) > 0)
+            else analyst_tone.get("average_tone_score", 0.0)
+        )
         tone_gap, divergence_summary = self.calculate_tone_gap(
             mgmt_tone.get("average_tone_score", 0.0),
-            qa_tone.get("average_tone_score", 0.0),
+            qa_comparison_score,
         )
 
         all_substantive_sents = mgmt_sents + qa_sents
@@ -760,7 +844,7 @@ class ConcallAnalyzer:
 
         return {
             "management_tone": mgmt_tone,
-            "qa_tone": qa_tone,
+            "qa_tone": analyst_tone,
             "tone_gap_alert": tone_gap,
             "tone_divergence_summary": divergence_summary,
             "hedge_rate_per_100w": hedge_rate,
