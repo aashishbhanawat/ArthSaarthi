@@ -203,3 +203,72 @@ def test_analyze_concall_api(client, db):
     assert res_cached.json()["article_id"] == concall_id
 
 
+def test_analyze_concall_audio_only_without_transcript_returns_400(client, db):
+    user, password = create_random_user(db)
+    token = get_access_token(client, user.email, password)
+    headers = {"Authorization": f"Bearer {token}"}
+
+    audio_only_id = f"audio-only-{uuid.uuid4().hex[:8]}"
+    article = MarketNewsArticleCreate(
+        id=audio_only_id,
+        title="Rail Vikas Nigam Results Earnings Call for Q2FY27",
+        summary="Audio podcast of Q2 concall.",
+        url=f"https://example.com/rvnl-call-{audio_only_id}",
+        source="Trendlyne Concalls",
+        category="CONCALL",
+        published_at=datetime.now(timezone.utc),
+        symbols=["RVNL"],
+        sentiment="NEUTRAL",
+        metadata_json={
+            "quarter": "Q2FY27",
+            "audio_url": "https://example.com/rvnl.mp3",
+        },
+    )
+    crud.market_news.create_or_update(db, obj_in=article)
+
+    # Calling analyze-concall with no transcript and whisper unavailable should return 400
+    with patch("shutil.which", return_value=None):
+        res = client.post(
+            f"/api/v1/news/{audio_only_id}/analyze-concall",
+            headers=headers,
+            json={},
+        )
+        assert res.status_code == 400
+        assert "Only audio podcast is available" in res.json()["detail"]
+
+
+def test_purge_removes_fake_whisper_analysis(db: Session) -> None:
+    fake_whisper_id = f"fake-whisper-{uuid.uuid4().hex[:8]}"
+    article = MarketNewsArticleCreate(
+        id=fake_whisper_id,
+        title="GHCL Ltd. Results Earnings Call for Q2FY27",
+        summary="Conference call.",
+        url=f"https://example.com/ghcl-{fake_whisper_id}",
+        source="Trendlyne Concalls",
+        category="CONCALL",
+        published_at=datetime.now(timezone.utc),
+        symbols=["GHCL"],
+        sentiment="NEUTRAL",
+        metadata_json={
+            "quarter": "Q2FY27",
+            "audio_url": "https://example.com/ghcl.mp3",
+            "transcript_text": "Management opening remarks: We are pleased to report...",
+            "concall_analysis": {
+                "transcription_source": "WHISPER_AUDIO",
+                "management_tone": {"overall": "NEUTRAL"},
+            },
+        },
+    )
+    crud.market_news.create_or_update(db, obj_in=article)
+
+    # Execute purge
+    deleted, updated = crud.market_news.purge_noise_and_disambiguate(db)
+    assert updated >= 1
+
+    cleaned = crud.market_news.get(db, fake_whisper_id)
+    assert cleaned is not None
+    meta = cleaned.metadata_json or {}
+    assert "concall_analysis" not in meta
+    assert "transcript_text" not in meta
+
+

@@ -1,5 +1,6 @@
 import logging
 import os
+import shutil
 import tempfile
 from pathlib import Path
 
@@ -23,7 +24,12 @@ class WhisperEngine:
 
     @property
     def is_available(self) -> bool:
-        """Returns True if the Whisper model is downloaded and active."""
+        """
+        Returns True if ffmpeg and speech-to-text model are available.
+        Audio transcription requires ffmpeg binary for audio decoding and resampling.
+        """
+        if not shutil.which("ffmpeg"):
+            return False
         return model_manager.is_model_available(self.MODEL_ID)
 
     def get_status(self) -> dict:
@@ -43,9 +49,8 @@ class WhisperEngine:
         """
         if not self.is_available:
             raise RuntimeError(
-                f"Whisper model '{self.MODEL_ID}' is not downloaded. "
-                "Please download the model from Admin > System Maintenance > AI Model Management "
-                "or paste the transcript text directly."
+                "Audio transcription requires ffmpeg and speech-to-text runtime. "
+                "Please paste the official conference call transcript or upload the BSE filing PDF directly."
             )
 
         model_path = model_manager.get_model_path(self.MODEL_ID)
@@ -104,24 +109,16 @@ class WhisperEngine:
         """
         Internal transcription runner. Handles audio extraction and inference.
         """
-        # When running in tests or headless server without raw audio files,
-        # provides deterministic transcript extraction or fallback.
         if isinstance(audio_path, str) and not os.path.exists(audio_path):
             raise FileNotFoundError(f"Audio file not found: {audio_path}")
 
-        # Basic audio length / existence validation
         file_size = os.path.getsize(audio_path)
         if file_size == 0:
             return ""
 
-        return (
-            "Management opening remarks: We are pleased to report strong performance for the quarter. "
-            "Revenue grew 16% year-on-year driven by robust demand across domestic OEM markets. "
-            "EBITDA margins improved by 120 bps to 12.5%. "
-            "Capex for the phase 1 expansion is ₹1,200 crore and is on schedule. "
-            "Question and Answer Session: "
-            "Analyst: What is your guidance for raw material costs? "
-            "Management: We anticipate raw material prices to stabilize with minimal impact on margins."
+        raise RuntimeError(
+            "Audio transcription requires ffmpeg and speech-to-text runtime. "
+            "Please paste the official conference call transcript or upload the BSE filing PDF directly."
         )
 
 

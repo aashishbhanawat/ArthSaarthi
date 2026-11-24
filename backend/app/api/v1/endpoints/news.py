@@ -222,13 +222,16 @@ def analyze_concall(
                 source = "WHISPER_AUDIO"
                 meta["transcript_text"] = transcript
             except Exception as e:
-                logger.warning("Whisper audio transcription failed: %s. Falling back to summary.", e)
-                transcript = f"{article.title}. {article.summary or ''}"
-                source = "SUMMARY"
+                logger.warning("Whisper audio transcription failed: %s", e)
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Audio transcription failed: {str(e)}. Please paste the official conference call transcript text.",
+                )
         else:
-            logger.info("Whisper model not downloaded. Falling back to title and summary.")
-            transcript = f"{article.title}. {article.summary or ''}"
-            source = "SUMMARY"
+            raise HTTPException(
+                status_code=400,
+                detail="Only audio podcast is available for this concall. Please paste the conference call transcript text in the 'Paste Transcript' tab or read the statutory BSE/NSE filing PDF.",
+            )
 
     # 5. Last fallback: analyze title and summary
     if not transcript:

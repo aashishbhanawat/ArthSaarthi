@@ -35,6 +35,13 @@ export const ConcallAnalysisModal: React.FC<ConcallAnalysisModalProps> = ({
   const [showPasteTab, setShowPasteTab] = useState<boolean>(false);
   const [customText, setCustomText] = useState<string>('');
 
+  const isAudioOnly = Boolean(
+    article.metadata_json?.audio_url &&
+    !article.metadata_json?.transcript_url &&
+    !article.metadata_json?.transcript_text &&
+    !article.url?.toLowerCase().endsWith('.pdf')
+  );
+
   if (!isOpen) return null;
 
   const handleRunAnalysis = async (textOverride?: string) => {
@@ -195,26 +202,56 @@ export const ConcallAnalysisModal: React.FC<ConcallAnalysisModalProps> = ({
 
           {!analysis && !loading && (
             <div className="text-center py-10 px-4 rounded-xl border border-dashed border-gray-300 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/20">
-              <SparklesIcon className="w-10 h-10 text-purple-600 dark:text-purple-400 mx-auto mb-3" />
+              {isAudioOnly ? (
+                <SpeakerWaveIcon className="w-10 h-10 text-purple-600 dark:text-purple-400 mx-auto mb-3" />
+              ) : (
+                <SparklesIcon className="w-10 h-10 text-purple-600 dark:text-purple-400 mx-auto mb-3" />
+              )}
               <h4 className="text-base font-semibold text-gray-900 dark:text-white">
                 No Concall Analysis Generated Yet
               </h4>
-              <p className="text-xs text-gray-500 dark:text-gray-400 max-w-md mx-auto mt-1 mb-5">
-                Analyze management tone, forward guidance, and extracted key takeaways using edge ML and Whisper speech-to-text.
-              </p>
+              {isAudioOnly ? (
+                <p className="text-xs text-gray-500 dark:text-gray-400 max-w-md mx-auto mt-1 mb-5">
+                  Official audio podcast is available to listen. To analyze management tone, forward guidance, and key takeaways, switch to the &apos;Paste Transcript&apos; tab or attach the BSE PDF filing.
+                </p>
+              ) : (
+                <p className="text-xs text-gray-500 dark:text-gray-400 max-w-md mx-auto mt-1 mb-5">
+                  Analyze management tone, forward guidance, and extracted key takeaways using edge ML and statutory PDF filing transcripts.
+                </p>
+              )}
               <div className="flex flex-wrap items-center justify-center gap-3">
+                {isAudioOnly && article.metadata_json?.audio_url && (
+                  <a
+                    href={article.metadata_json.audio_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-4 py-2 text-xs font-semibold rounded-lg bg-purple-600 text-white hover:bg-purple-700 shadow-sm transition-colors flex items-center gap-1.5"
+                  >
+                    <SpeakerWaveIcon className="w-4 h-4" />
+                    Listen Audio
+                  </a>
+                )}
+                <button
+                  onClick={() => setShowPasteTab(!showPasteTab)}
+                  className={`px-4 py-2 text-xs font-medium rounded-lg border transition-colors flex items-center gap-1.5 ${
+                    isAudioOnly
+                      ? 'border-purple-300 dark:border-purple-700 bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 hover:bg-purple-100 dark:hover:bg-purple-900/40 font-semibold'
+                      : 'border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
+                  }`}
+                >
+                  <DocumentTextIcon className="w-4 h-4" />
+                  Paste Custom Transcript
+                </button>
                 <button
                   onClick={() => handleRunAnalysis()}
-                  className="px-4 py-2 text-xs font-semibold rounded-lg bg-purple-600 text-white hover:bg-purple-700 shadow-sm transition-colors flex items-center gap-1.5"
+                  className={`px-4 py-2 text-xs font-semibold rounded-lg transition-colors flex items-center gap-1.5 ${
+                    isAudioOnly
+                      ? 'border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 font-medium'
+                      : 'bg-purple-600 text-white hover:bg-purple-700 shadow-sm'
+                  }`}
                 >
                   <SparklesIcon className="w-4 h-4" />
                   Analyze with Edge Engine
-                </button>
-                <button
-                  onClick={() => setShowPasteTab(!showPasteTab)}
-                  className="px-4 py-2 text-xs font-medium rounded-lg border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-                >
-                  Paste Custom Transcript
                 </button>
               </div>
             </div>

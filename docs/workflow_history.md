@@ -1,3 +1,42 @@
+## 2026-11-24: Whisper Mock Transcription Elimination, Audio-Only Guard & DB Purge (Issue #618 / PR #619)
+
+**Task:** 
+1. Resolve identical mock concall outputs appearing across audio podcast entries (e.g. `Rail Vikas Nigam`, `Mishra Dhatu Nigam`, `GHCL Ltd.`).
+2. Eradicate hardcoded mock sample strings from `whisper_engine.py`.
+3. Require `ffmpeg` and speech-to-text runtime before reporting `is_available = True`.
+4. Return HTTP 400 with helpful guidance if an audio-only concall has no transcript or STT runtime.
+5. Retroactively purge any mock `WHISPER_AUDIO` analyses from the database.
+6. Enhance `ConcallAnalysisModal.tsx` to clearly prompt users when only an audio podcast is available, providing direct buttons to listen to the audio or paste the conference call transcript text.  
+**AI Assistant:** Antigravity  
+**Role:** Lead Architect & Full-Stack Developer
+
+### Summary
+
+1. **Root Cause Analysis:**
+   - Early scaffolding in `whisper_engine._transcribe_with_model` returned a hardcoded mock text sample when called (`"Management opening remarks: We are pleased to report strong performance for the quarter..."`).
+   - The backend container lacked `ffmpeg` binary and speech-to-text libraries, but `whisper_engine.is_available` returned `True` based solely on the existence of an incomplete ONNX encoder weight file.
+   - When users clicked "Analyze Concall" on audio podcast entries (from Trendlyne), this fake sample was executed and cached into `metadata_json["concall_analysis"]`.
+2. **Hardcoded Mock Removal & Runtime Guard (`backend/app/ml/whisper_engine.py`):**
+   - Removed the mock text completely.
+   - Updated `is_available` to require `shutil.which("ffmpeg")` in addition to model weights.
+   - Updated `transcribe_audio_file` and `_transcribe_with_model` to raise a clean `RuntimeError("Audio transcription requires ffmpeg and speech-to-text runtime. Please paste the official conference call transcript or upload the BSE filing PDF directly.")`.
+3. **Endpoint Validation (`backend/app/api/v1/endpoints/news.py`):**
+   - In `analyze_concall`, if an article only has `audio_url` and no transcript or statutory PDF is present:
+     - When `whisper_engine.is_available` is `False`, returns HTTP 400 with `detail="Only audio podcast is available for this concall. Please paste the conference call transcript text in the 'Paste Transcript' tab or read the statutory BSE/NSE filing PDF."`.
+4. **Database Purge of Mock WHISPER_AUDIO Analyses (`backend/app/crud/crud_news.py`):**
+   - In `purge_noise_and_disambiguate()`, retroactively scans all articles and strips `concall_analysis` and `transcript_text` from `metadata_json` if `transcription_source == "WHISPER_AUDIO"`.
+   - Executed live DB purge in `pms-backend`: 54 noise items deleted and 27 updated.
+5. **Modal UX Improvement (`frontend/src/components/Dashboard/ConcallAnalysisModal.tsx`):**
+   - Added `isAudioOnly` check.
+   - For audio-only concalls without transcripts, displays:
+     `"Official audio podcast is available to listen. To analyze management tone, forward guidance, and key takeaways, switch to the 'Paste Transcript' tab or attach the BSE PDF filing."`
+   - Added direct buttons to "Listen Audio", "Paste Transcript", and "Analyze with Edge Engine".
+6. **Testing & QA:**
+   - Added backend tests in `test_news.py` and `test_concall_analyzer.py` for audio-only 400 handling, runtime check, and DB purge.
+   - 50/50 backend tests passing; 6/6 frontend Jest tests passing.
+
+---
+
 ## 2026-11-24: Indian Corporate Result Title Variations & Date-Based Quarter Inference (Issue #618 / PR #619)
 
 **Task:** Resolve issue where BSE announcements like `Citurgia Biochemicals Ltd (506373) - UNAUDITED FINANCE RESULT FOR THE QUARTER AND HALF YEAR ENDED 30.09.2026` were not getting categorized into "Quarterly Results" (`category = "RESULT"`).  

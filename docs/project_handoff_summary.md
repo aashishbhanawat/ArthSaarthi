@@ -19,6 +19,13 @@
 
 ## Recent Stabilization & Refinement Efforts
 
+*   **Whisper Mock Transcription Elimination, Audio-Only Guard & DB Purge (Issue #618 / PR #619) (Updated 2026-11-24):**
+    - **Hardcoded Mock Elimination (`whisper_engine.py`):** Removed stubbed mock earnings sentences. Configured `is_available` to require `shutil.which("ffmpeg")` and full speech-to-text runtime before reporting true availability.
+    - **Audio-Only 400 Guard (`news.py`):** When only an audio podcast link is present and no STT runtime is configured, returns HTTP 400 detailing that only audio is available and prompting the user to paste the transcript or read the statutory PDF filing.
+    - **Retroactive DB Purge (`crud_news.py`):** `purge_noise_and_disambiguate()` automatically strips any mock `WHISPER_AUDIO` analyses from `metadata_json`.
+    - **Modal UX Upgrade (`ConcallAnalysisModal.tsx`):** Clearly prompts the user when only an audio podcast is attached, offering direct "Listen Audio" and "Paste Transcript" actions.
+    - **Verification:** 50/50 backend pytest tests passing; 6/6 frontend Jest tests passing.
+
 *   **Result Title Variations & Date-Based Quarter Inference (Issue #618 / PR #619) (Updated 2026-11-24):**
     - **Result Auto-Classification:** Expanded result patterns to capture `"FINANCE RESULT"`, `"FOR THE QUARTER AND HALF YEAR ENDED"`, and `STATEMENT OF UNAUDITED/AUDITED RESULTS`.
     - **Date-Based Quarter Inference (`extract_quarter_from_text`):** Automatically maps statutory filing dates (e.g. `ENDED 30.09.2026` for Citurgia Biochemicals) to Indian fiscal quarters (`Q2 FY27`).

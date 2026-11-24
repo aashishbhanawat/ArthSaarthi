@@ -278,6 +278,15 @@ class CRUDMarketNews:
                 db.add(a)
                 updated_count += 1
 
+            # Purge mock/fake WHISPER_AUDIO analyses retroactively
+            meta_curr = dict(a.metadata_json or {})
+            if meta_curr.get("concall_analysis", {}).get("transcription_source") == "WHISPER_AUDIO":
+                meta_curr.pop("concall_analysis", None)
+                meta_curr.pop("transcript_text", None)
+                a.metadata_json = meta_curr if meta_curr else None
+                db.add(a)
+                updated_count += 1
+
             # Clean up spurious dividend tags on editorial screening/yield articles
             if a.metadata_json and a.metadata_json.get("action_type") == "DIVIDEND":
                 is_exchange = a.source in [
