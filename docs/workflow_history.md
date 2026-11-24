@@ -1,3 +1,31 @@
+## 2026-11-24: Indian Corporate Result Title Variations & Date-Based Quarter Inference (Issue #618 / PR #619)
+
+**Task:** Resolve issue where BSE announcements like `Citurgia Biochemicals Ltd (506373) - UNAUDITED FINANCE RESULT FOR THE QUARTER AND HALF YEAR ENDED 30.09.2026` were not getting categorized into "Quarterly Results" (`category = "RESULT"`).  
+**AI Assistant:** Antigravity  
+**Role:** Lead Architect & Full-Stack Developer
+
+### Summary
+
+1. **Root Cause Analysis:**
+   - In BSE corporate disclosures, companies often phrase results as `"UNAUDITED FINANCE RESULT"` instead of `"FINANCIAL RESULTS"`.
+   - Furthermore, companies specify the period as `"ENDED 30.09.2026"` rather than explicitly writing `"Q2"`.
+   - The result category regex missed the phrase `"FINANCE RESULT"`, and quarter extraction lacked date-based inference.
+2. **Result Title Pattern Generalization (`backend/app/services/news_service.py`):**
+   - Expanded regex to match `financ(?:ial|e)\s*results?`, `unaudited\s+(?:\w+\s+)?results?`, `audited\s+(?:\w+\s+)?results?`, `results?\s+for\s+the\s+quarter`, and `(?:quarter|half\s*year)\s*ended\s*[-–—:]?\s*\d{1,2}[./-]\d{1,2}[./-]\d{2,4}`.
+3. **Date-Based Quarter Inference (`extract_quarter_from_text`):**
+   - Automatically maps reporting end dates to Indian fiscal quarters (April 1 - March 31):
+     - `30.06` $\implies$ `Q1 FY(YY+1)`
+     - `30.09` $\implies$ `Q2 FY(YY+1)` (e.g. `30.09.2026` $\implies$ `Q2 FY27`)
+     - `31.12` $\implies$ `Q3 FY(YY+1)`
+     - `31.03` $\implies$ `Q4 FY(YY)`
+4. **Retroactive Upgrade in DB (`backend/app/crud/crud_news.py`):**
+   - In `purge_noise_and_disambiguate()`, retroactively reclassifies existing articles in the database matching result patterns into `category = "RESULT"`, infers their quarter, and attaches `transcript_url` when a PDF link is present.
+5. **Testing & QA:**
+   - Added unit test `test_citurgia_result_classification` verifying date-based quarter inference (`Q2 FY27`), auto-categorization into `RESULT`, and `transcript_url` attachment.
+   - All 29 backend tests passing.
+
+---
+
 ## 2026-11-24: News Tracker Noise Purge, Ticker Disambiguation (HGS, GICRE, VEDL) & Cross-Exchange Deduplication (Issue #618 / PR #619)
 
 **Task:**

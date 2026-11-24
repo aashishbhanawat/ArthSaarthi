@@ -230,6 +230,44 @@ def extract_concall_metadata(
     return meta
 
 
+def extract_quarter_from_text(text: str) -> Optional[str]:
+    """
+    Extracts financial reporting quarter from text (e.g. 'Q2 FY27', 'Q2FY25',
+    or date-based reporting like 'ended 30.09.2026' -> 'Q2 FY27').
+    """
+    if not text:
+        return None
+    # 1. Explicit Q1-Q4 / FYXX patterns
+    q_match = re.search(r"\b(Q[1-4]\s*(?:FY\s*\d{2,4}|\d{4})?)\b", text, re.IGNORECASE)
+    if q_match:
+        return q_match.group(1).upper()
+
+    # 2. Date-based quarter inference for Indian reporting (April 1 to March 31 fiscal year)
+    # Ended 30.06 -> Q1; Ended 30.09 -> Q2; Ended 31.12 -> Q3; Ended 31.03 -> Q4
+    date_match = re.search(
+        r"(?:quarter|half\s*year|year)\s*ended\s*[-–—:]?\s*([0-3]?[0-9])[./-]([0-1]?[0-9])[./-](\d{2,4})",
+        text,
+        re.IGNORECASE,
+    )
+    if date_match:
+        try:
+            month = int(date_match.group(2))
+            yr = int(date_match.group(3))
+            if yr < 100:
+                yr += 2000
+            if month in [4, 5, 6]:
+                return f"Q1 FY{str(yr + 1)[-2:]}"
+            elif month in [7, 8, 9]:
+                return f"Q2 FY{str(yr + 1)[-2:]}"
+            elif month in [10, 11, 12]:
+                return f"Q3 FY{str(yr + 1)[-2:]}"
+            elif month in [1, 2, 3]:
+                return f"Q4 FY{str(yr)[-2:]}"
+        except (ValueError, TypeError):
+            pass
+    return None
+
+
 def extract_corporate_metadata(
     title: str, summary: str, is_exchange_filing: bool = False
 ) -> Dict[str, Any]:
@@ -328,9 +366,9 @@ def extract_corporate_metadata(
         meta["change_type"] = "CREDIT_RATING"
 
     # 9. Quarter extraction for results
-    q_match = re.search(r"\b(Q[1-4]\s*(?:FY\s*\d{2,4}|\d{4})?)\b", full, re.IGNORECASE)
-    if q_match:
-        meta["quarter"] = q_match.group(1).upper()
+    q_str = extract_quarter_from_text(full)
+    if q_str:
+        meta["quarter"] = q_str
 
     return meta
 
@@ -732,7 +770,18 @@ class MarketNewsService:
             ):
                 category = "CONCALL"
             elif re.search(
-                r"\b(?:financial\s*results?|unaudited\s*results?|audited\s*results?|quarterly\s*results?|half[-\s]*yearly\s*results?|earnings\s*release|investor\s*presentation)\b",
+                r"\b(?:"
+                r"financ(?:ial|e)\s*results?"
+                r"|unaudited\s+(?:\w+\s+)?results?"
+                r"|audited\s+(?:\w+\s+)?results?"
+                r"|quarterly\s*results?"
+                r"|half[-\s]*yearly\s*results?"
+                r"|annual\s*results?"
+                r"|earnings\s*release"
+                r"|investor\s*presentation"
+                r"|results?\s+for\s+the\s+quarter"
+                r"|(?:quarter|half\s*year)\s*ended\s*[-–—:]?\s*\d{1,2}[./-]\d{1,2}[./-]\d{2,4}"
+                r")\b",
                 full_text,
                 re.IGNORECASE,
             ):
@@ -773,6 +822,9 @@ class MarketNewsService:
                 meta.update(extract_broker_metadata(title, summary))
             elif category == "CONCALL":
                 meta.update(extract_concall_metadata(title, summary, item.get("enclosure_url"), url=url))
+            elif category == "RESULT":
+                if (url.lower().endswith(".pdf") or "corpfiling" in url.lower()) and not meta.get("transcript_url"):
+                    meta["transcript_url"] = url
 
             # Corporate action (dividends, splits, bonuses) and governance changes
             corp_meta = extract_corporate_metadata(title, summary, is_exchange_filing=is_exchange_filing)

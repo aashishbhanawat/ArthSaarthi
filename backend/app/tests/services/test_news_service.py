@@ -402,5 +402,50 @@ def test_generic_name_blacklist():
     assert "bank of india" in GENERIC_NAME_BLACKLIST
 
 
+def test_citurgia_result_classification(db):
+    from app.models.market_news import MarketNewsArticle
+    from app.services.news_service import extract_corporate_metadata, extract_quarter_from_text
+
+    desc = "UNAUDITED FINANCE RESULT FOR THE QUARTER AND HALF YEAR ENDED 30.09.2026"
+    title = "Citurgia Biochemicals Ltd (506373)"
+    pdf_url = "https://www.bseindia.com/xml-data/corpfiling/AttachLive/54847877-fcd2-4c2a-aca8-95238196a22b.pdf"
+
+    # 1. Date-based quarter inference: 30.09.2026 is Q2 FY27
+    assert extract_quarter_from_text(desc) == "Q2 FY27"
+
+    meta = extract_corporate_metadata(title, desc, is_exchange_filing=True)
+    assert meta.get("quarter") == "Q2 FY27"
+
+    # 2. Feed sync auto-classification as RESULT
+    service = MarketNewsService()
+    raw_item = [
+        {
+            "title": title,
+            "url": pdf_url,
+            "summary": desc,
+            "published_at": None,
+            "source": "BSE Announcements",
+            "category": "NEWS",
+            "enclosure_url": None,
+        }
+    ]
+
+    with patch.object(service, "fetch_feed_items", return_value=raw_item):
+        with patch.object(service, "get_active_portfolio_symbols", return_value={"CITURGIBIO"}):
+            with patch.object(service, "get_symbol_keyword_mappings", return_value={"Citurgia Biochemicals": "CITURGIBIO"}):
+                fetched, inserted = service.sync_all_feeds(db, max_targeted_symbols=0)
+                assert inserted >= 1
+
+                article = db.query(MarketNewsArticle).filter(MarketNewsArticle.url == pdf_url).first()
+                assert article is not None
+                assert article.category == "RESULT"
+                assert article.metadata_json is not None
+                assert article.metadata_json.get("quarter") == "Q2 FY27"
+                assert article.metadata_json.get("transcript_url") == pdf_url
+
+                db.delete(article)
+                db.commit()
+
+
 
 

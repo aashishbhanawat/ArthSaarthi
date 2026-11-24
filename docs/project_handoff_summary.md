@@ -19,6 +19,12 @@
 
 ## Recent Stabilization & Refinement Efforts
 
+*   **Result Title Variations & Date-Based Quarter Inference (Issue #618 / PR #619) (Updated 2026-11-24):**
+    - **Result Auto-Classification:** Expanded result patterns to capture `"FINANCE RESULT"`, `"FOR THE QUARTER AND HALF YEAR ENDED"`, and `STATEMENT OF UNAUDITED/AUDITED RESULTS`.
+    - **Date-Based Quarter Inference (`extract_quarter_from_text`):** Automatically maps statutory filing dates (e.g. `ENDED 30.09.2026` for Citurgia Biochemicals) to Indian fiscal quarters (`Q2 FY27`).
+    - **Retroactive DB Upgrade (`crud_news.py`):** Automatically upgrades existing results disclosures in the database to `category = "RESULT"` with quarter and filing PDF links.
+    - **Verification:** 29/29 backend pytest tests passing.
+
 *   **News Tracker Noise Purge, Ticker Disambiguation (HGS, GICRE, VEDL) & Cross-Exchange Deduplication (Issue #618 / PR #619) (Updated 2026-11-24):**
     - **SEO / Tracker Page Noise Filter (`relevance_filter.py`):** Added `TRACKER_AND_SEO_PATTERNS` to drop automated quote pages from HDFC Sky, Upstox, Yahoo Finance, and Simply Wall St (`Share Price Today`, `stock price, news, quote and history`, `stock major holders`, `Stock Price & Chart`, etc.).
     - **Ticker Disambiguation & Industry Name Blacklist (`news_service.py`, `relevance_filter.py`):** Added `GENERIC_NAME_BLACKLIST` to prevent generic phrases ("General Insurance", "Life Insurance", "Oil and Gas") from corrupting company mappings. Disambiguated `GICRE` (preventing false ICICI Lombard matches), `HGS` (preventing SME `HGS (India)` matches), and `VEDL` (preventing `Vedanta Oil and Gas` matches).

@@ -250,6 +250,34 @@ class CRUDMarketNews:
                     deleted_count += 1
                     continue
 
+            # Retroactively reclassify RESULT category if not already set (e.g. UNAUDITED FINANCE RESULT)
+            if a.category != "RESULT" and re.search(
+                r"\b(?:"
+                r"financ(?:ial|e)\s*results?"
+                r"|unaudited\s+(?:\w+\s+)?results?"
+                r"|audited\s+(?:\w+\s+)?results?"
+                r"|quarterly\s*results?"
+                r"|half[-\s]*yearly\s*results?"
+                r"|annual\s*results?"
+                r"|investor\s*presentation"
+                r"|results?\s+for\s+the\s+quarter"
+                r"|(?:quarter|half\s*year)\s*ended\s*[-–—:]?\s*\d{1,2}[./-]\d{1,2}[./-]\d{2,4}"
+                r")\b",
+                full_text,
+                re.IGNORECASE,
+            ):
+                a.category = "RESULT"
+                from app.services.news_service import extract_quarter_from_text
+                q_inferred = extract_quarter_from_text(full_text)
+                meta = dict(a.metadata_json or {})
+                if q_inferred and not meta.get("quarter"):
+                    meta["quarter"] = q_inferred
+                if (a.url.lower().endswith(".pdf") or "corpfiling" in a.url.lower()) and not meta.get("transcript_url"):
+                    meta["transcript_url"] = a.url
+                a.metadata_json = meta if meta else None
+                db.add(a)
+                updated_count += 1
+
             # Clean up spurious dividend tags on editorial screening/yield articles
             if a.metadata_json and a.metadata_json.get("action_type") == "DIVIDEND":
                 is_exchange = a.source in [
