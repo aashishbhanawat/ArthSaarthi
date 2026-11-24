@@ -193,14 +193,24 @@ def extract_broker_metadata(title: str, summary: str) -> Dict[str, Any]:
     return meta
 
 
-def extract_concall_metadata(title: str, summary: str, enclosure_url: Optional[str]) -> Dict[str, Any]:
+def extract_concall_metadata(
+    title: str,
+    summary: str,
+    enclosure_url: Optional[str],
+    url: Optional[str] = None,
+) -> Dict[str, Any]:
     """
     Extracts quarter, concall audio link, and transcript metadata.
-    e.g. 'REC Limited - Q2 FY25 Earnings Call Podcast'
+    e.g. 'REC Limited - Q2 FY25 Earnings Call Podcast' or BSE/NSE transcript attachments.
     """
     meta: Dict[str, Any] = {}
-    if enclosure_url:
-        meta["audio_url"] = enclosure_url
+    target_link = enclosure_url or url
+    if target_link:
+        lower_link = target_link.lower()
+        if lower_link.endswith(".pdf") or "corpfiling" in lower_link or "transcript" in lower_link:
+            meta["transcript_url"] = target_link
+        else:
+            meta["audio_url"] = target_link
 
     quarter_match = re.search(r"\b(Q[1-4]\s*(?:FY\s*\d{2,4}|\d{4})?)\b", title, re.IGNORECASE)
     if quarter_match:
@@ -461,14 +471,31 @@ class MarketNewsService:
             summary = item["summary"]
             category = item["category"]
             source = item["source"]
-            pub_date = item["published_at"]
+            pub_date = item.get("published_at") or datetime.now(timezone.utc)
 
-            # Filter syndicated duplicate headlines across sources (strictly for NEWS category)
-            if category == "NEWS" and headline_deduplicator.is_duplicate(title):
+            # Official stock exchange disclosures (NSE / BSE) are statutory regulatory filings,
+            # not editorial or syndicated news articles.
+            is_exchange_filing = source in [
+                "NSE Announcements",
+                "NSE Corporate Actions",
+                "BSE Announcements",
+                "BSE Corporate Actions",
+            ]
+
+            # Auto-detect concall transcripts and audio recording disclosures from exchange announcements
+            if is_exchange_filing and re.search(
+                r"\b(?:transcript|audio\s*recording|earnings\s*(?:call|conference)|concall)\b",
+                title,
+                re.IGNORECASE,
+            ):
+                category = "CONCALL"
+
+            # Filter syndicated duplicate headlines across sources (strictly for general editorial NEWS)
+            if not is_exchange_filing and category == "NEWS" and headline_deduplicator.is_duplicate(title):
                 continue
 
-            # Filter non-financial noise & exam/recruitment/crime spam
-            if not relevance_filter.is_financial_relevant(title, summary, category=category):
+            # Filter non-financial noise & exam/recruitment/crime spam (exempt official exchange filings)
+            if not is_exchange_filing and not relevance_filter.is_financial_relevant(title, summary, category=category):
                 continue
 
             # Match symbols
@@ -480,7 +507,7 @@ class MarketNewsService:
             if category == "BROKER_REPORT":
                 meta.update(extract_broker_metadata(title, summary))
             elif category == "CONCALL":
-                meta.update(extract_concall_metadata(title, summary, item.get("enclosure_url")))
+                meta.update(extract_concall_metadata(title, summary, item.get("enclosure_url"), url=url))
 
             sentiment = calculate_sentiment(full_text)
             if category == "BROKER_REPORT" and "recommendation" in meta:

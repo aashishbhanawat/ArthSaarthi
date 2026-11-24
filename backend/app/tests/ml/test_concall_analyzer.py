@@ -52,6 +52,44 @@ def test_concall_extractive_summarization():
     assert not any("Ladies and gentlemen" in t for t in takeaways)
 
 
+def test_concall_filtering_and_concrete_takeaways():
+    noisy_transcript = """
+    Exide Industries Limited
+    May 2024 Page 1 of 18
+    Operator: Ladies and gentlemen, welcome to Exide Industries Limited conference call.
+    Avik Roy: So let me take the first one.
+    So I would say, if you look at complete mobility, complete mobility full year, they contribute to about, let's say, one-third of our business, 35% of our business has almost grown by 15%, both put together, 4-wheeler and 2- wheeler.
+    What will be the range of utilization at which the business will be breakeven for the lithium-ion cell?
+    We will be the first one.
+    Now the business is like this, the 2-wheeler and 3-wheeler will be a pack business.
+    Our target is to ramp up slowly over the couple of years to a minimum 80% utilization and a running factory.
+    Our capital expenditure for the gigawatt hour lithium cell plant is INR 3,602 crores.
+    """
+    takeaways = concall_analyzer.extract_top_sentences(noisy_transcript, n=3)
+    assert len(takeaways) > 0
+
+    # Speaker prefix should be stripped
+    assert not any(t.startswith("Avik Roy:") for t in takeaways)
+    # Analyst questions should be excluded
+    assert not any("?" in t for t in takeaways)
+    assert not any(t.startswith("What will be") for t in takeaways)
+    # Conversational filler should be excluded
+    assert not any("So let me take the first one" in t for t in takeaways)
+    assert not any(t == "We will be the first one." for t in takeaways)
+
+    # Concrete statement containing 35% or 3,602 crores or 80% utilization should be captured
+    assert any("35%" in t or "3,602" in t or "80%" in t for t in takeaways)
+
+    # Topics should exclude PDF headers/footers, date artifacts, and speaker names
+    topics = concall_analyzer.extract_topics(noisy_transcript, n=5)
+    for topic in topics:
+        assert "Avik" not in topic
+        assert "Roy" not in topic
+        assert "Page" not in topic
+        assert "May" not in topic
+        assert "Limited" not in topic
+
+
 def test_concall_topic_extraction():
     topics = concall_analyzer.extract_topics(SAMPLE_CONCALL_TRANSCRIPT, n=5)
     assert len(topics) > 0

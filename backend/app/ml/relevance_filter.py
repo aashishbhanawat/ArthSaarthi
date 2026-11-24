@@ -120,9 +120,9 @@ class RelevanceFilter:
     def is_financial_relevant(self, title: str, summary: Optional[str] = None, category: str = "NEWS") -> bool:
         """
         Evaluates whether an article has genuine financial market or economic relevance.
-        Broker reports and concalls are inherently relevant.
+        Broker reports, concalls, earnings results, and exchange actions are inherently relevant.
         """
-        if category in ["BROKER_REPORT", "CONCALL"]:
+        if category in ["BROKER_REPORT", "CONCALL", "RESULT", "CORPORATE_ACTION"]:
             return not self.is_noise(title, summary)
 
         if self.is_noise(title, summary):

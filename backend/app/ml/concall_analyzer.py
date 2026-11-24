@@ -13,8 +13,8 @@ class ConcallAnalyzer:
     1. Structural sectioning (Management Discussion vs. Analyst Q&A)
     2. FinBERT Tone & Sentiment Profiling
     3. Deterministic Guidance, Capex, and Margin Extraction
-    4. Graph-Centrality Extractive Summarization (TextRank / TF-IDF)
-    5. Salient Discussion Theme & Keyword Mining
+    4. Graph-Centrality Extractive Summarization (TextRank / TF-IDF) with Concrete Statement Scoring
+    5. Salient Discussion Theme & Domain Topic Mining
     """
 
     # Phrases marking the transition from management remarks to Q&A session
@@ -28,22 +28,39 @@ class ConcallAnalyzer:
         r"questions\s*from\s*analysts",
     ]
 
-    # Common corporate pleasantries / boilerplate to filter out of extractive highlights
+    # Administrative and pleasantry boilerplate to discard
     BOILERPLATE_PATTERNS = [
         r"welcome\s*(?:you\s*)?all\s*to",
-        r"thank\s*you\s*(?:very\s*much)?\s*for\s*(?:joining|attending)",
-        r"good\s*(?:morning|afternoon|evening)",
+        r"thank\s*you\s*(?:very\s*much)?\s*for\s*(?:joining|attending|the\s*question)?",
+        r"good\s*(?:morning|afternoon|evening|day)",
         r"safe\s*harbor\s*statement",
         r"forward[-\s]*looking\s*statements?",
         r"hand\s*(?:over\s*)?the\s*call\s*to",
         r"turn\s*(?:over\s*)?the\s*call\s*to",
         r"ladies\s*and\s*gentlemen",
         r"operator\s*:",
+        r"moderator\s*:",
         r"conference\s*call\s*recording",
         r"dial[-\s]*in\s*numbers?",
     ]
 
-    # Corporate stop words for theme extraction
+    # Conversational padding and non-substantive transition fragments
+    FILLER_PATTERNS = [
+        r"^(?:so\s+)?let\s+me\s+take\s+(?:the\s+)?(?:first|next|this)\s+(?:one|question)",
+        r"^(?:coming\s+to\s+your\s+(?:first|second|next|last)?\s*question|to\s+answer\s+your\s+question)",
+        r"^(?:as\s+(?:i|we)\s+(?:said|mentioned|explained|highlighted)|like\s+(?:i|we)\s+said)\b",
+        r"^(?:i\s+think\s+so|i\s+would\s+say\s*so|we\s+believe\s+so)\.?$",
+        r"^(?:yes|yeah|sure|okay|right|correct|absolutely|no),?\s*(?:sir|madam)?\.?$",
+        r"^i\s+will\s+request\s+.*?\s+to\s+(?:take|answer)\s+this",
+        r"^(?:we|i)\s+will\s+be\s+the\s+first\s+one\.?$",
+    ]
+
+    # Speaker prefix pattern (e.g. "Avik Roy:", "Management:", "Q - Prabhu Roy:")
+    SPEAKER_PREFIX_PATTERN = re.compile(
+        r"^(?:(?:[A-Z][a-zA-Z\s\.\-']{1,35}|Operator|Moderator|Analyst|Management)\s*:\s*|(?:[QA]\s*-\s*[A-Z][a-zA-Z\s\.\-']{1,35}\s*:\s*))"
+    )
+
+    # Corporate stop words and artifacts for topic/theme extraction
     STOP_WORDS: Set[str] = {
         "a", "about", "above", "after", "again", "against", "all", "am", "an", "and",
         "any", "are", "aren't", "as", "at", "be", "because", "been", "before", "being",
@@ -63,7 +80,95 @@ class ConcallAnalyzer:
         "like", "know", "think", "said", "say", "saying", "see", "call", "quarter",
         "company", "management", "analyst", "question", "answer", "operator", "line",
         "participants", "ladies", "gentlemen", "participant", "hand", "turn", "next",
+        # Auxiliary & modal verbs
+        "will", "shall", "would", "could", "can", "may", "might", "must",
+        # Numerals and ordinals
+        "first", "second", "third", "one", "two", "three", "take", "look", "lot", "bit",
+        "thing", "things", "way", "point", "put", "together", "come", "coming",
+        # Corporate legal entity suffixes & terms
+        "industries", "limited", "ltd", "corp", "corporation", "inc", "holdings",
+        "enterprises", "technologies", "private", "pvt",
+        # Document and presentation artifacts
+        "page", "pages", "slide", "presentation", "transcript", "session", "dialogue",
+        "january", "february", "march", "april", "may", "june", "july", "august",
+        "september", "october", "november", "december",
+        "good", "day", "conference", "full", "year", "years", "let", "also",
+        # Common general verbs / non-thematic words
+        "contribute", "contributes", "contributed", "almost", "grown", "growing",
+        "slowly", "running", "across", "around", "business", "give", "giving",
+        "well", "much", "many", "couple", "ramp", "minimum", "maximum", "target",
     }
+
+    def _clean_transcript(self, text: str) -> str:
+        """Strips document pagination, PDF headers/footers, and date stamps."""
+        t = re.sub(r"\r\n|\r", "\n", text)
+        t = re.sub(r"(?i)\bpage\s*\d+\s*(?:of\s*\d+)?\b", "", t)
+        t = re.sub(r"(?i)\b\d+\s*of\s*\d+\b", "", t)
+        t = re.sub(
+            r"(?i)\b(?:january|february|march|april|may|june|july|august|september|october|november|december)\s+\d{1,2},?\s+\d{4}\b",
+            "",
+            t,
+        )
+        t = re.sub(
+            r"(?i)\b(?:january|february|march|april|may|june|july|august|september|october|november|december)\s+\d{4}\b",
+            "",
+            t,
+        )
+        return t
+
+    def _extract_speaker_names(self, text: str) -> Set[str]:
+        """Extracts individual executive and analyst name tokens to avoid them polluting topics."""
+        names: Set[str] = set()
+        matches = re.findall(r"(?:^|\n)\s*(?:[QA]\s*-\s*)?([A-Z][a-zA-Z\s\.\-']{2,30})\s*:", text)
+        for m in matches:
+            m_clean = m.strip()
+            if m_clean.lower() not in {"operator", "moderator", "analyst", "management", "question", "answer"}:
+                for part in re.findall(r"[a-zA-Z]{3,}", m_clean):
+                    names.add(part.lower())
+        return names
+
+    def _clean_sentence(self, sentence: str) -> str:
+        """Strips speaker prefixes and conversational padding from a candidate sentence."""
+        s = self.SPEAKER_PREFIX_PATTERN.sub("", sentence).strip()
+        s = re.sub(
+            r"^(?:so\s+(?:i\s+would\s+say|let\s+me\s+(?:say|tell|take)|to\s+answer\s+that),?\s*|i\s+would\s+say,?\s*|now\s+the\s+business\s+is\s+like\s+this,?\s*|you\s+know,?\s*|as\s+you\s+know,?\s*|look,?\s*|see,?\s*)",
+            "",
+            s,
+            flags=re.IGNORECASE,
+        ).strip()
+        if s and s[0].islower():
+            s = s[0].upper() + s[1:]
+        return s
+
+    def _is_analyst_question(self, sentence: str) -> bool:
+        """Identifies analyst inquiries to exclude them from management takeaways."""
+        s = sentence.strip()
+        if s.endswith("?"):
+            return True
+        if re.search(
+            r"^(?:what|why|how|could you|can you|would you|is there|are there|will you|do you|did you|have you|may i|any color on|any update on|could we|can we)\b",
+            s,
+            re.IGNORECASE,
+        ):
+            return True
+        if re.search(
+            r"\b(?:my (?:first|second|next|last) question is|just wanted to (?:ask|understand|check|clarify))\b",
+            s,
+            re.IGNORECASE,
+        ):
+            return True
+        return False
+
+    def _is_boilerplate_or_filler(self, sentence: str) -> bool:
+        """Returns True if the sentence is administrative boilerplate or conversational padding."""
+        s_lower = sentence.lower().strip()
+        for pat in self.BOILERPLATE_PATTERNS:
+            if re.search(pat, s_lower):
+                return True
+        for pat in self.FILLER_PATTERNS:
+            if re.search(pat, s_lower):
+                return True
+        return False
 
     def segment_transcript(self, text: str) -> Tuple[List[str], List[str]]:
         """
@@ -80,7 +185,6 @@ class ConcallAnalyzer:
         for pat in self.QA_DELIMITERS:
             m = re.search(pat, combined_text, re.IGNORECASE)
             if m:
-                # Find which sentence index contains or follows this match
                 char_pos = m.start()
                 curr_char_idx = 0
                 for idx, sent in enumerate(raw_sentences):
@@ -101,7 +205,7 @@ class ConcallAnalyzer:
 
     def _split_sentences(self, text: str) -> List[str]:
         """Cleans and tokenizes text into distinct sentences."""
-        cleaned = re.sub(r"\r\n|\r", "\n", text)
+        cleaned = self._clean_transcript(text)
         cleaned = re.sub(r"\n+", " ", cleaned)
         cleaned = re.sub(r"\s+", " ", cleaned).strip()
 
@@ -110,17 +214,9 @@ class ConcallAnalyzer:
         sentences: List[str] = []
         for p in parts:
             p_strip = p.strip()
-            if len(p_strip) >= 25:  # Skip tiny fragments
+            if len(p_strip) >= 20:  # Skip tiny fragments
                 sentences.append(p_strip)
         return sentences
-
-    def _is_boilerplate(self, sentence: str) -> bool:
-        """Returns True if the sentence is administrative or conversational boilerplate."""
-        sent_lower = sentence.lower()
-        for pat in self.BOILERPLATE_PATTERNS:
-            if re.search(pat, sent_lower):
-                return True
-        return False
 
     def analyze_tone(self, sentences: List[str]) -> Dict[str, Any]:
         """
@@ -137,12 +233,16 @@ class ConcallAnalyzer:
             }
 
         counts = {"POSITIVE": 0, "NEUTRAL": 0, "NEGATIVE": 0}
-        scored_sentences = [s for s in sentences if not self._is_boilerplate(s)]
+        scored_sentences = [
+            s for s in sentences
+            if not self._is_boilerplate_or_filler(s) and not self._is_analyst_question(s)
+        ]
         if not scored_sentences:
             scored_sentences = sentences
 
         for s in scored_sentences:
-            res = sentiment_engine.analyze(s)
+            cleaned = self._clean_sentence(s)
+            res = sentiment_engine.analyze(cleaned)
             lbl = getattr(res, "label", "NEUTRAL")
             counts[lbl] = counts.get(lbl, 0) + 1
 
@@ -177,10 +277,10 @@ class ConcallAnalyzer:
         seen_snippets: Set[str] = set()
 
         for sent in sentences:
-            if self._is_boilerplate(sent):
+            if self._is_boilerplate_or_filler(sent) or self._is_analyst_question(sent):
                 continue
 
-            sent_clean = sent.strip()
+            sent_clean = self._clean_sentence(sent)
 
             # 1. Capex & Plant Expansion
             has_capex_kw = any(w in sent_clean.lower() for w in ["capex", "capital expenditure", "gigafactory", "plant expansion"])
@@ -218,17 +318,30 @@ class ConcallAnalyzer:
 
     def extract_top_sentences(self, text: str, n: int = 5) -> List[str]:
         """
-        Extractive Summarization using TF-IDF Graph Centrality (TextRank style).
-        Selects top N most informative verbatim sentences with zero generative hallucination.
+        Extractive Summarization using TF-IDF Graph Centrality with Concrete Statement Scoring.
+        Excludes analyst questions and conversational filler. Heavily weights statements containing
+        concrete numerical metrics (percentages, capex amounts, margins, capacities).
         """
-        sentences = [s for s in self._split_sentences(text) if not self._is_boilerplate(s)]
-        if len(sentences) <= n:
-            return sentences
+        raw_sents = self._split_sentences(text)
+        candidates: List[str] = []
 
-        # Tokenize sentences into word bags
+        for s in raw_sents:
+            cleaned = self._clean_sentence(s)
+            # Require minimum substance length
+            if len(cleaned) < 40 or len(cleaned.split()) < 8:
+                continue
+            # Strictly filter analyst questions and conversational boilerplate
+            if self._is_analyst_question(cleaned) or self._is_boilerplate_or_filler(cleaned):
+                continue
+            candidates.append(cleaned)
+
+        if len(candidates) <= n:
+            return candidates
+
+        # Tokenize candidates into word bags
         word_bags: List[List[str]] = []
         doc_freq: collections.Counter = collections.Counter()
-        for sent in sentences:
+        for sent in candidates:
             words = [
                 w.lower()
                 for w in re.findall(r"\b[a-zA-Z]{3,}\b", sent)
@@ -237,7 +350,7 @@ class ConcallAnalyzer:
             word_bags.append(words)
             doc_freq.update(set(words))
 
-        num_docs = len(sentences)
+        num_docs = len(candidates)
 
         # Compute TF-IDF vectors
         vectors: List[Dict[str, float]] = []
@@ -255,45 +368,87 @@ class ConcallAnalyzer:
         centrality_scores = [0.0] * num_docs
         for i in range(num_docs):
             for j in range(i + 1, num_docs):
-                # Dot product of normalized vectors
                 sim = sum(vectors[i].get(w, 0.0) * vectors[j].get(w, 0.0) for w in vectors[i])
                 centrality_scores[i] += sim
                 centrality_scores[j] += sim
 
-        # Bonus for presence of financial figures (numbers, percentages, capex)
-        for i, sent in enumerate(sentences):
-            if re.search(r"\b(?:\d+%(?:\.\d+)?|₹|Rs\.?|\bcr\b|\bcrore\b|\bebitda\b|\bguidance\b)", sent, re.I):
-                centrality_scores[i] *= 1.3
+        # Concrete Statement Scoring Boost
+        # Statements with verified financial metrics and operational facts receive heavy priority
+        for i, sent in enumerate(candidates):
+            has_metric = bool(
+                re.search(
+                    r"\b(?:\d+(?:\.\d+)?\s*%|\d+\s*bps|₹|Rs\.?|INR|\$|\bcr\b|\bcrore\b|\blakh\b|\bbn\b|\bmn\b|\bgigawatt\b|\bgwh\b|\bmw\b|\butilization\b)\b",
+                    sent,
+                    re.IGNORECASE,
+                )
+            )
+            has_biz_term = bool(
+                re.search(
+                    r"\b(?:revenue|ebitda|margin|margins|growth|pat|profit|capex|investment|pack|segments|breakeven|order book|utilization)\b",
+                    sent,
+                    re.IGNORECASE,
+                )
+            )
+
+            if has_metric and has_biz_term:
+                # Top priority: Contains both concrete figures and business metrics
+                centrality_scores[i] = (centrality_scores[i] + 0.5) * 3.0
+            elif has_metric or has_biz_term:
+                # Moderate priority: Contains figures or business signals
+                centrality_scores[i] = (centrality_scores[i] + 0.2) * 1.8
+            else:
+                # Penalize generic narrative sentences with no financial signal
+                centrality_scores[i] *= 0.4
 
         # Rank and pick top N sentences preserving original narrative flow
         ranked_indices = sorted(range(num_docs), key=lambda idx: centrality_scores[idx], reverse=True)[:n]
         ranked_indices.sort()  # Restore original transcript order
 
-        return [sentences[idx] for idx in ranked_indices]
+        return [candidates[idx] for idx in ranked_indices]
 
     def extract_topics(self, text: str, n: int = 6) -> List[str]:
         """
         Extracts top N salient discussion topics (n-grams) from the concall text.
+        Excludes speaker names, company name suffixes, and date/page artifacts.
         """
-        words = [
-            w.lower()
-            for w in re.findall(r"\b[a-zA-Z]{3,}\b", text)
-            if w.lower() not in self.STOP_WORDS
-        ]
-        if not words:
+        speaker_stops = self._extract_speaker_names(text)
+        all_stops = self.STOP_WORDS.union(speaker_stops)
+
+        raw_sents = self._split_sentences(text)
+        all_bigrams: List[str] = []
+
+        for sent in raw_sents:
+            cleaned = self._clean_sentence(sent)
+            if self._is_boilerplate_or_filler(cleaned) or self._is_analyst_question(cleaned):
+                continue
+
+            words = [
+                w.lower()
+                for w in re.findall(r"\b[a-zA-Z]{3,}\b", cleaned)
+                if w.lower() not in all_stops
+            ]
+            for i in range(len(words) - 1):
+                w1, w2 = words[i], words[i + 1]
+                if w1 != w2:
+                    all_bigrams.append(f"{w1} {w2}")
+
+        if not all_bigrams:
             return []
 
-        # Count bi-grams and tri-grams
-        bigrams = [f"{words[i]} {words[i+1]}" for i in range(len(words) - 1)]
-        counter = collections.Counter(bigrams)
+        counter = collections.Counter(all_bigrams)
+        seen_word_sets: List[Set[str]] = []
+        unique_topics: List[str] = []
 
-        # Title-case formatted top topics
-        top = [
-            bg.title()
-            for bg, count in counter.most_common(n * 2)
-            if not any(sw in bg for sw in ["first question", "good afternoon", "thank you", "next question"])
-        ]
-        return top[:n]
+        for bg, _ in counter.most_common():
+            w_set = set(bg.split())
+            if any(w_set == existing for existing in seen_word_sets):
+                continue
+            seen_word_sets.append(w_set)
+            unique_topics.append(bg.title())
+            if len(unique_topics) >= n:
+                break
+
+        return unique_topics
 
     def analyze(self, text: str) -> Dict[str, Any]:
         """

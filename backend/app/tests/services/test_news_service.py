@@ -1,4 +1,6 @@
 
+from unittest.mock import patch
+
 from app.services.news_service import (
     MarketNewsService,
     calculate_sentiment,
@@ -209,5 +211,42 @@ def test_crud_retroactive_tagging(db):
     # Cleanup
     db.delete(refreshed)
     db.commit()
+
+
+def test_exchange_filings_exempt_from_noise_and_detect_concall(db):
+    from app.models.market_news import MarketNewsArticle
+    service = MarketNewsService()
+    transcript_url = "https://www.bseindia.com/xml-data/corpfiling/AttachHis/b0188f3e-9bad-41cf-a0fc-5ffce711e708.pdf"
+
+    mock_items = [
+        {
+            "title": "Exide Industries Limited - Transcript of Earnings Conference Call for Q2FY27",
+            "url": transcript_url,
+            "summary": "Transcript of the earnings call held on May 24, 2024",
+            "published_at": None,
+            "source": "BSE Announcements",
+            "category": "NEWS",
+            "enclosure_url": None,
+        }
+    ]
+
+    with patch.object(service, "fetch_feed_items", return_value=mock_items):
+        with patch.object(service, "get_active_portfolio_symbols", return_value={"EXIDEIND"}):
+            with patch.object(service, "get_symbol_keyword_mappings", return_value={"Exide": "EXIDEIND"}):
+                fetched, inserted = service.sync_all_feeds(db, max_targeted_symbols=0)
+                assert inserted >= 1
+
+                filing = db.query(MarketNewsArticle).filter(MarketNewsArticle.url == transcript_url).first()
+                assert filing is not None
+                # Should be auto-detected as CONCALL
+                assert filing.category == "CONCALL"
+                assert filing.metadata_json is not None
+                assert filing.metadata_json.get("transcript_url") == transcript_url
+                assert filing.metadata_json.get("quarter") == "Q2FY27"
+
+                # Cleanup
+                db.delete(filing)
+                db.commit()
+
 
 

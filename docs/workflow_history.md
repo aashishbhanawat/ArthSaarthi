@@ -1,3 +1,29 @@
+## 2026-11-24: Refine Concall Intelligence Takeaways & Exempt Exchange Disclosures from Noise Filtering (Issue #618 / PR #619)
+
+**Task:** Refine Concall Intelligence extraction to eliminate speaker prefix artifacts, filter analyst queries, remove conversational filler, and boost concrete financial statements (metrics, percentages, capex, margins). Treat BSE/NSE statutory corporate filings as official disclosures by exempting them from general non-business noise filters and auto-classifying concall transcript/audio attachments.  
+**AI Assistant:** Antigravity  
+**Role:** Lead Architect & Full-Stack Developer
+
+### Summary
+
+1. **Exchange Filing Treatment (`backend/app/services/news_service.py`, `relevance_filter.py`):**
+   - **Regulatory vs Editorial News:** Classified statutory BSE/NSE RSS feeds (`NSE Announcements`, `NSE Corporate Actions`, `BSE Announcements`, `BSE Corporate Actions`) as official corporate disclosures rather than editorial news.
+   - **Exemption from Noise Filter:** Bypassed `relevance_filter.is_financial_relevant()` and cross-source duplicate checks for exchange filings because exchange dissemination feeds are 100% financial and regulatory by definition.
+   - **Automatic Concall Classification:** Auto-detects earnings transcripts and audio recordings from exchange announcements, tagging them as `category = "CONCALL"` and mapping PDF attachment URLs to `metadata_json["transcript_url"]`.
+2. **Concall Statement & Takeaway Refinements (`backend/app/ml/concall_analyzer.py`):**
+   - **Speaker Prefix Stripping:** Automatically extracts executive/analyst names from speaker turns (`r"^([A-Z][a-zA-Z\s\.\-']{1,35}|Operator|Moderator|Analyst|Management)\s*:\s*"`) and cleanly strips labels from candidate takeaways.
+   - **Strict Analyst Question Filtering:** Excludes all sentences ending with `?` or starting with interrogative phrases (`What`, `Why`, `How`, `Could you`, `Can you`, `Will you`, etc.) from Key Takeaways so only management statements and business facts are highlighted.
+   - **Conversational Filler Pruning:** Eliminates conversational padding (`"So let me take the first one"`, `"We will be the first one"`, `"Coming to your question"`, etc.) and strips leading filler phrases (`"So I would say, "` -> `"If you look at..."`).
+   - **Concrete Metric Scoring:** Heavily weights sentences containing both hard numerical figures (percentages, currency amounts, capacity numbers, bps) and business domain terms (`revenue`, `ebitda`, `margin`, `growth`, `utilization`, `investment`, `capex`, `breakeven`) by 3.0x in TextRank graph centrality.
+   - **Clean Salient Themes:** Filters speaker names, corporate suffixes (`Limited`, `Industries`, `Corp`), calendar months, and pagination artifacts (`Page 1 of 18`) to ensure topics focus on core domain topics (e.g. `Gigawatt Hour`, `Lithium Cell`, `Capacity Utilization`).
+3. **Testing & Quality Assurance:**
+   - Added unit tests in `test_concall_analyzer.py` verifying noisy transcript extraction against Exide Industries BSE filing patterns.
+   - Added integration test in `test_news_service.py` verifying official exchange announcements bypass noise filters and detect concall transcripts.
+   - All 23 backend tests passed; all 58 frontend test suites (222 tests) passed.
+   - Linters clean: Ruff (0 errors) and ESLint (0 errors).
+
+---
+
 ## 2026-11-24: Concall Transcript & Whisper Audio Analysis with Edge ML (Issue #618 / FR8.2.2)
 
 **Task:** Implement non-LLM earnings conference call intelligence and extractive analysis for fundamental equity research. Provide automated FinBERT tone profiling, guidance & capex pattern mining, extractive TextRank summarization, and edge Whisper speech-to-text fallback when transcripts are unavailable.  

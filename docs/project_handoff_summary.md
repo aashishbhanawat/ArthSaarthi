@@ -21,10 +21,12 @@
 
 *   **Concall Transcript & Whisper Audio Analysis (Issue #618 / FR8.2.2) (Updated 2026-11-24):**
     - **Non-LLM Extractive Intelligence (`app/ml/concall_analyzer.py`):** Automatically segments call transcripts into Management Remarks and Analyst Q&A. Evaluates sentence-by-sentence polarity via local FinBERT INT8 ONNX (with lexicon fallback), mines forward capex/margin/growth/debt targets, and ranks verbatim sentences using TF-IDF sentence centrality (zero hallucination).
+    - **Concrete Statement Scoring & Noise Elimination:** Automatically strips executive/analyst speaker turn prefixes (`Avik Roy:`), eliminates conversational filler (`"So let me take the first one"`), strictly excludes analyst questions from takeaways, and heavily boosts statements containing concrete financial/operational metrics (percentages, capex amounts, margins, capacities). Cleans PDF header/footer artifacts to extract domain themes (`Gigawatt Hour`, `Lithium Cell`, `Capacity Utilization`).
+    - **Exchange Disclosures Exemption (`app/services/news_service.py`):** Treats BSE/NSE statutory corporate filings as official disclosures by exempting them from general non-business noise filters and cross-source duplicate checks. Auto-detects earnings concall transcripts and audio recording attachments (`category = 'CONCALL'`).
     - **Whisper Edge Model Integration (`app/ml/whisper_engine.py`, `model_manager.py`):** Registered `whisper_tiny_en` (39 MB) in the Edge ML catalog for speech-to-text transcription of concall audio podcasts (`.m4a` / `.mp3`) when text transcripts are absent.
     - **API Endpoint:** Added `POST /api/v1/news/{article_id}/analyze-concall` with database caching in `metadata_json["concall_analysis"]`.
     - **Interactive Frontend UI:** Added `ConcallAnalysisModal.tsx` and an "Analyze Concall" action on concall cards in `ResearchIntelligenceFeed.tsx`.
-    - **Verification:** 11/11 backend tests passing across PostgreSQL, Desktop SQLite, and standard SQLite. Jest tests passing. Ruff and ESLint clean with 0 errors.
+    - **Verification:** 23/23 backend tests passing across PostgreSQL, Desktop SQLite, and standard SQLite. 58/58 frontend test suites passing (222 tests). Ruff and ESLint clean with 0 errors.
 
 *   **Concall & Result Deduplication Fix and Feed Optimization (Issue #616 / FR8.2.1) (Updated 2026-11-23):**
     - **Boilerplate Deduplication Guard:** Restricted `HeadlineDeduplicator.is_duplicate()` strictly to `category == 'NEWS'`, preventing structured corporate items (`CONCALL`, `RESULT`, `BROKER_REPORT`) sharing templated titles like `"{Company} Results Earnings Call for Q2FY27"` from being discarded.
