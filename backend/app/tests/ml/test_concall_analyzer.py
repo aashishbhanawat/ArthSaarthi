@@ -141,6 +141,35 @@ def test_concall_aspect_scoring_and_tone_gap():
     assert len(res["red_flags"]) > 0
 
 
+def test_concall_deduplicate_overlapping_takeaways():
+    transcript = """
+    Management: We are pleased to report strong performance for Q2.
+    Aditya Jhawar: And on the lithium-ion side, could you tell us what sort of pack capacity we have.
+    Management: That is the time when we will start getting a view on returns because once we reach 80% of utilization, we need to put up more capacity.
+    Kapil Singh: Any color on capacity?
+    Management: I think once we reach 80% of the utilization, which is around 4 gigawatt, 5 gigawatt, we should see how our manufacturing cost performs.
+    Management: Our new punched grid technology in the 2-wheeler segment has achieved 15% export growth across European markets.
+    """
+    takeaways = concall_analyzer.extract_top_sentences(transcript, n=5)
+
+    # 1. Interrogative without ? ("could you tell us...") must be excluded
+    assert not any("could you tell us" in t.lower() for t in takeaways)
+
+    # 2. Overlapping 80% utilization sentences must be deduplicated to only 1 entry
+    utilization_80_count = sum(1 for t in takeaways if "80%" in t and "utilization" in t.lower())
+    assert utilization_80_count == 1
+
+    # 3. Punched grid statement should be included as distinct takeaway
+    assert any("punched grid" in t.lower() for t in takeaways)
+
+
+def test_concall_hedging_lexicon_expansion():
+    text = "The business environment was volatile, with sudden headwinds, risky pricing, and weaker auto OEM demand."
+    rate = concall_analyzer.compute_hedging_rate(text)
+    # volatile, headwinds, risky, weaker = 4 uncertainty words out of 15 words (~26%)
+    assert rate > 10.0
+
+
 def test_whisper_engine_status():
     status = whisper_engine.get_status()
     assert status["model_id"] == "whisper_tiny_en"

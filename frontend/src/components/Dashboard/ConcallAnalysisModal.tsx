@@ -128,8 +128,23 @@ export const ConcallAnalysisModal: React.FC<ConcallAnalysisModalProps> = ({
                 </span>
               )}
               {analysis?.hedge_rate_per_100w !== undefined && analysis.hedge_rate_per_100w !== null && (
-                <span className="text-[10px] font-medium px-2 py-0.5 rounded bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
-                  Hedging: {analysis.hedge_rate_per_100w}w / 100w
+                <span
+                  className={`text-[10px] font-semibold px-2 py-0.5 rounded border flex items-center gap-1 ${
+                    analysis.hedge_rate_per_100w >= 0.8
+                      ? 'bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300 border-rose-200 dark:border-rose-800'
+                      : analysis.hedge_rate_per_100w >= 0.3
+                      ? 'bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 border-amber-200 dark:border-amber-800'
+                      : 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800'
+                  }`}
+                  title="Hedging & Uncertainty Density: Frequency of cautious or protective words (e.g. 'headwinds', 'volatile', 'uncertainty') per 100 spoken words from Loughran-McDonald financial dictionary. <0.30 reflects high management conviction."
+                >
+                  Uncertainty / Hedging: {analysis.hedge_rate_per_100w.toFixed(2)} / 100 words (
+                  {analysis.hedge_rate_per_100w >= 0.8
+                    ? 'High Caution'
+                    : analysis.hedge_rate_per_100w >= 0.3
+                    ? 'Moderate'
+                    : 'Low Uncertainty'}
+                  )
                 </span>
               )}
             </div>

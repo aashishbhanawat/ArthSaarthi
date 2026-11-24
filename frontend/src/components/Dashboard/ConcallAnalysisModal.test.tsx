@@ -101,7 +101,7 @@ describe('ConcallAnalysisModal', () => {
       expect(screen.getByText(/Commercial production from the new facility/i)).toBeInTheDocument();
       expect(screen.getByText('#Lithium Cells')).toBeInTheDocument();
       expect(screen.getAllByText(/Tone Gap Alert/i).length).toBeGreaterThanOrEqual(1);
-      expect(screen.getByText(/Hedging: 1.25w \/ 100w/i)).toBeInTheDocument();
+      expect(screen.getByText(/Uncertainty \/ Hedging: 1.25 \/ 100 words/i)).toBeInTheDocument();
       expect(screen.getByText('Aspect Financial Sentiment Scorecard')).toBeInTheDocument();
       expect(screen.getByText('Demand & Revenue')).toBeInTheDocument();
       expect(screen.getByText('Cautionary Remarks & Risk Flags')).toBeInTheDocument();

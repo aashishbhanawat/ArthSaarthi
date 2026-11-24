@@ -50,11 +50,31 @@ class FinancialLexicon:
 
     # Loughran-McDonald financial uncertainty and hedging vocabulary
     UNCERTAINTY_WORDS: Set[str] = {
-        "headwind", "headwinds", "uncertain", "uncertainty", "uncertainties",
-        "volatile", "volatility", "cautious", "caution", "defer", "deferred",
-        "deferring", "slowdown", "pressure", "pressures", "visibility", "fluctuate",
-        "fluctuating", "fluctuations", "challenging", "subdued", "softness",
-        "recalibrating", "contingent", "scrutiny", "adverse", "hesitancy",
+        "uncertain", "uncertainty", "uncertainties", "uncertainly",
+        "volatile", "volatility", "volatilities",
+        "cautious", "cautiously", "caution", "cautions",
+        "headwind", "headwinds",
+        "slowdown", "slowdowns", "slowing",
+        "pressure", "pressures", "pressured", "pressuring",
+        "fluctuate", "fluctuates", "fluctuated", "fluctuating", "fluctuation", "fluctuations",
+        "defer", "defers", "deferred", "deferring",
+        "softness", "soft", "softer", "subdued",
+        "risk", "risks", "risky", "riskier", "riskiest",
+        "weak", "weaker", "weakness", "weaknesses",
+        "challenging", "challenge", "challenges", "challenged",
+        "hesitant", "hesitancy", "hesitancies",
+        "approximate", "approximately", "approximation",
+        "assumption", "assumptions", "assume", "assumes", "assumed",
+        "contingent", "contingency", "contingencies",
+        "visibility",
+        "tentative", "tentatively",
+        "unclear", "unpredictable", "unforeseen", "unforecasted", "unsettled", "unstable", "instability",
+        "adverse", "adversely",
+        "turbulence", "turbulent",
+        "vague", "vaguely", "vagueness",
+        "speculate", "speculative", "speculation",
+        "preliminary", "probabilistic", "probabilities",
+        "exposure", "exposures", "recalibrating", "scrutiny",
     }
 
     NEGATION_WORDS: Set[str] = {

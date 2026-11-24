@@ -1,3 +1,29 @@
+## 2026-11-24: Watchlist Crash Guard, Takeaway Deduplication & Concall Hedging Calibrations (Issue #618 / PR #619)
+
+**Task:** Fix frontend/backend crash when accessing watchlists. Refine Concall Intelligence takeaways to filter out analyst interrogatives ending in periods, deduplicate overlapping key metrics across turns (e.g., duplicate 80% utilization takeaways), expand the Loughran-McDonald uncertainty vocabulary, and improve the UI presentation of hedging density.  
+**AI Assistant:** Antigravity  
+**Role:** Lead Architect & Full-Stack Developer
+
+### Summary
+
+1. **Watchlist Stability & Null Safety (`backend/app/api/v1/endpoints/watchlists.py`, `frontend/src/components/Watchlists/WatchlistTable.tsx`):**
+   - **Backend:** Eager-loaded `items.asset` in `read_watchlists` to avoid lazy loading issues. Added null guards for `item.asset` before requesting live prices in `read_watchlist`, and wrapped `financial_data_service.get_current_prices()` in a safe try-except fallback to prevent 500 crashes during market provider downtime.
+   - **Frontend:** Protected `WatchlistTable.tsx` against undefined or empty `watchlist.items` arrays (`(watchlist?.items ?? []).filter(item => item && item.asset)`), preventing `TypeError: Cannot read properties of undefined (reading 'length'/'map')` crashes.
+2. **Strict Analyst Interrogative Filtering (`backend/app/ml/concall_analyzer.py`):**
+   - Enhanced `_is_analyst_question` to filter interrogative sentences even when transcripts omit question marks (`?`) or end in periods, matching questions with cues like `could you tell us`, `help us understand`, `wanted to ask`, `any color on`, and explicit analyst speaker tags.
+3. **Key Takeaway Semantic Deduplication (`backend/app/ml/concall_analyzer.py`):**
+   - Added candidate redundancy checks using TF-IDF cosine similarity ($\ge 0.55$) and financial metric overlap (e.g., overlapping percentage/capacity metrics + domain nouns like "80% utilization"), ensuring every extracted bullet point provides a unique management insight.
+4. **Hedging & Uncertainty Rate Calibration (`backend/app/ml/sentiment_engine.py`, `concall_analyzer.py`, `ConcallAnalysisModal.tsx`):**
+   - Expanded `UNCERTAINTY_WORDS` to 50+ canonical Loughran-McDonald terms and inflections (`volatile`, `headwinds`, `risky`, `weaker`, `slowdown`, `contingent`, `challenging`, etc.).
+   - Targeted hedging rate computation strictly over substantive spoken remarks rather than entire PDF filing boilerplate to ensure accurate density measurement.
+   - Redesigned the modal badge from cryptic `0.06w / 100w` to `Uncertainty / Hedging: X.XX / 100 words (Low Uncertainty / Moderate / High Caution)` with explanatory tooltips.
+5. **Testing & QA:**
+   - Added 2 new tests in `test_concall_analyzer.py` verifying interrogative exclusion and takeaway deduplication (23/23 passed).
+   - Watchlist table and modal Jest tests verified passing (100%).
+   - Linters clean (ESLint and Ruff).
+
+---
+
 ## 2026-11-24: FinBERT-Tone Migration & Multi-Aspect Concall Intelligence (Issue #618 / PR #619)
 
 **Task:** Upgrade the edge ML transformer layer from generic news `ProsusAI/finbert` to earnings-calibrated `yiyanghkust/finbert-tone` INT8 ONNX. Implement a hybrid quantitative analysis layer for concalls: Prepared vs Q&A Tone Divergence Alert, Loughran-McDonald Hedging & Uncertainty Index, 4-Aspect Financial Sentiment Scorecard (Demand & Revenue, Margins & Costs, Guidance & Outlook, CapEx & Debt), and Extractive Cautionary Red Flags.  

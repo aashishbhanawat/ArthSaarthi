@@ -19,6 +19,13 @@
 
 ## Recent Stabilization & Refinement Efforts
 
+*   **Watchlist Crash Guard, Takeaway Deduplication & Concall Hedging Calibrations (Issue #618 / PR #619) (Updated 2026-11-24):**
+    - **Watchlist Null Safety:** Hardened `backend/app/api/v1/endpoints/watchlists.py` with eager loading and graceful exception handling for live price fetching; safeguarded `frontend/src/components/Watchlists/WatchlistTable.tsx` against undefined or empty item arrays.
+    - **Strict Interrogative Exclusion:** Filtered analyst inquiries lacking question marks (`could you tell us...`, `help us understand...`) to keep Key Takeaways focused exclusively on management facts.
+    - **Takeaway Deduplication:** Implemented TF-IDF cosine similarity ($\ge 0.55$) and metric overlap filtering in `concall_analyzer.py` to prevent duplicate insights (e.g. repeated 80% utilization targets).
+    - **Hedging Rate Calibration:** Expanded Loughran-McDonald uncertainty vocabulary in `sentiment_engine.py` and computed density over substantive spoken sentences; updated UI badge to `Uncertainty / Hedging: X.XX / 100 words`.
+    - **Verification:** 23/23 backend tests passed; 8/8 frontend component tests passed; linters clean.
+
 *   **FinBERT-Tone Upgrade & Quantitative Concall Analytics (Issue #618 / PR #619) (Updated 2026-11-24):**
     - **FinBERT-Tone Migration (`app/ml/model_manager.py`):** Switched edge transformer weights to Hugging Face Optimum release of `yiyanghkust/finbert-tone` INT8 ONNX, trained on 10,000+ concall and regulatory filing sentences.
     - **Multi-Tier Sentiment Engine (`app/ml/sentiment_engine.py`):** Added continuous tone scoring ($P(\text{Pos}) - P(\text{Neg}) \in [-1, 1]$), Loughran-McDonald uncertainty index, and one-time auto-detecting label mapping (`_detect_label_mapping`) to transparently support both FinBERT-Tone and legacy ProsusAI models without sentiment inversion.

@@ -39,6 +39,8 @@ const WatchlistTable: React.FC<WatchlistTableProps> = ({ watchlist, isLoading, e
     }
   }, [watchlist, removeWatchlistItem]);
 
+  const items = (watchlist?.items ?? []).filter((item) => item && item.asset);
+
   if (isLoading) {
     return <div className="text-center p-8 text-gray-500">Loading assets...</div>;
   }
@@ -47,7 +49,7 @@ const WatchlistTable: React.FC<WatchlistTableProps> = ({ watchlist, isLoading, e
     return <div className="text-center p-8 text-red-500">Error: {error.message}</div>;
   }
 
-  if (!watchlist || watchlist.items.length === 0) {
+  if (!watchlist || items.length === 0) {
     return (
       <div className="text-center p-8">
         <ListBulletIcon className="mx-auto h-12 w-12 text-gray-400" aria-hidden="true" />
@@ -71,7 +73,7 @@ const WatchlistTable: React.FC<WatchlistTableProps> = ({ watchlist, isLoading, e
             </tr>
           </thead>
           <tbody>
-            {watchlist.items.map((item) => (
+            {items.map((item) => (
               <tr key={item.id} className="border-b dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-900/50 transition-colors">
                 <td className="p-2">
                   <div className="font-bold text-gray-900 dark:text-gray-100">{item.asset.ticker_symbol}</div>
@@ -98,7 +100,7 @@ const WatchlistTable: React.FC<WatchlistTableProps> = ({ watchlist, isLoading, e
 
       {/* Mobile Card View */}
       <div className="lg:hidden">
-        {watchlist.items.map((item) => (
+        {items.map((item) => (
           <WatchlistItemCard key={item.id} item={item} onRemove={handleRemove} />
         ))}
       </div>

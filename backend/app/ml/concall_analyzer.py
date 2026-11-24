@@ -155,16 +155,24 @@ class ConcallAnalyzer:
     def _is_analyst_question(self, sentence: str) -> bool:
         """Identifies analyst inquiries to exclude them from management takeaways."""
         s = sentence.strip()
-        if s.endswith("?"):
+        if "?" in s:
             return True
+        # Explicit analyst or question labels
         if re.search(
-            r"^(?:what|why|how|could you|can you|would you|is there|are there|will you|do you|did you|have you|may i|any color on|any update on|could we|can we)\b",
+            r"(?i)^(?:[QA]\s*[:\-]|Question\s*:|Analyst\s*:|Participant\s*:|[A-Z][a-zA-Z\s\.\-']+\s*\([^\)]*(?:Analyst|Research|Securities|Capital)[^\)]*\)\s*:)",
+            s,
+        ):
+            return True
+        # Interrogative starts
+        if re.search(
+            r"^(?:what|why|how|could you|can you|would you|is there|are there|will you|do you|did you|have you|may i|any color on|any update on|could we|can we|am i|should we)\b",
             s,
             re.IGNORECASE,
         ):
             return True
+        # Interrogative or question phrases anywhere in the sentence
         if re.search(
-            r"\b(?:my (?:first|second|next|last) question is|just wanted to (?:ask|understand|check|clarify))\b",
+            r"\b(?:could you|can you|would you|will you|may i|can we|could we|tell us|help (?:us|me) understand|wanted to (?:understand|ask|know|check|clarify)|my (?:first|second|next|last)?\s*question|any color on|any update on|what sort of|what kind of|how should we|what are the)\b",
             s,
             re.IGNORECASE,
         ):
@@ -442,7 +450,7 @@ class ConcallAnalyzer:
                 continue
             candidates.append(cleaned)
 
-        if len(candidates) <= n:
+        if len(candidates) <= 1:
             return candidates
 
         word_bags: List[List[str]] = []
@@ -498,10 +506,49 @@ class ConcallAnalyzer:
             else:
                 centrality_scores[i] *= 0.4
 
-        ranked_indices = sorted(range(num_docs), key=lambda idx: centrality_scores[idx], reverse=True)[:n]
-        ranked_indices.sort()
+        ranked_indices = sorted(range(num_docs), key=lambda idx: centrality_scores[idx], reverse=True)
 
-        return [candidates[idx] for idx in ranked_indices]
+        selected_indices: List[int] = []
+        for idx in ranked_indices:
+            # Check for redundancy against already selected candidates
+            is_redundant = False
+            for sel_idx in selected_indices:
+                # 1. Cosine similarity between TF-IDF unit vectors
+                cos_sim = sum(
+                    vectors[idx].get(w, 0.0) * vectors[sel_idx].get(w, 0.0)
+                    for w in vectors[idx]
+                )
+                if cos_sim >= 0.55:
+                    is_redundant = True
+                    break
+
+                # 2. Key financial metric & domain topic overlap (e.g. both highlighting "80% utilization")
+                idx_metrics = set(
+                    re.findall(
+                        r"\b\d+(?:\.\d+)?\s*%|\b\d+(?:\.\d+)?\s*(?:gigawatt|gwh|crore|cr|bps|mw)\b",
+                        candidates[idx].lower(),
+                    )
+                )
+                sel_metrics = set(
+                    re.findall(
+                        r"\b\d+(?:\.\d+)?\s*%|\b\d+(?:\.\d+)?\s*(?:gigawatt|gwh|crore|cr|bps|mw)\b",
+                        candidates[sel_idx].lower(),
+                    )
+                )
+                if idx_metrics and sel_metrics and idx_metrics.intersection(sel_metrics):
+                    idx_nouns = set(word_bags[idx])
+                    sel_nouns = set(word_bags[sel_idx])
+                    if len(idx_nouns.intersection(sel_nouns)) >= 2:
+                        is_redundant = True
+                        break
+
+            if not is_redundant:
+                selected_indices.append(idx)
+                if len(selected_indices) >= n:
+                    break
+
+        selected_indices.sort()
+        return [candidates[idx] for idx in selected_indices]
 
     def extract_topics(self, text: str, n: int = 6) -> List[str]:
         """
@@ -561,8 +608,9 @@ class ConcallAnalyzer:
             qa_tone.get("average_tone_score", 0.0),
         )
 
-        hedge_rate = self.compute_hedging_rate(text)
         all_substantive_sents = mgmt_sents + qa_sents
+        spoken_text = " ".join(all_substantive_sents) if all_substantive_sents else text
+        hedge_rate = self.compute_hedging_rate(spoken_text)
         topic_scores = self.score_aspects(all_substantive_sents)
         red_flags = self.extract_red_flags(all_substantive_sents, n=3)
 

@@ -1,8 +1,11 @@
+import logging
 import uuid
 from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session, joinedload
+
+logger = logging.getLogger(__name__)
 
 from app import crud
 from app.core.dependencies import get_current_active_user
@@ -30,7 +33,12 @@ def read_watchlists(
     """
     Retrieve all watchlists for the current user.
     """
-    watchlists = crud.watchlist.get_multi_by_user(db, user_id=current_user.id)
+    watchlists = (
+        db.query(WatchlistModel)
+        .options(joinedload(WatchlistModel.items).joinedload(WatchlistItemModel.asset))
+        .filter(WatchlistModel.user_id == current_user.id)
+        .all()
+    )
     return watchlists
 
 
@@ -73,22 +81,37 @@ def read_watchlist(
     if watchlist.user_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not enough permissions")
 
-    # Enrich with live data
+    # Enrich with live data safely
     if watchlist.items:
-        assets_to_fetch = [
-            {"ticker_symbol": item.asset.ticker_symbol, "exchange": item.asset.exchange}
-            for item in watchlist.items
+        valid_items = [
+            item for item in watchlist.items if item.asset and item.asset.ticker_symbol
         ]
-        price_data = financial_data_service.get_current_prices(assets_to_fetch)
-        for item in watchlist.items:
-            data = price_data.get(item.asset.ticker_symbol)
-            if data:
-                item.asset.current_price = data.get("current_price")
-                item.asset.day_change = (
-                    data["current_price"] - data["previous_close"]
-                    if "current_price" in data and "previous_close" in data
-                    else None
+        if valid_items:
+            assets_to_fetch = [
+                {
+                    "ticker_symbol": item.asset.ticker_symbol,
+                    "exchange": item.asset.exchange,
+                    "asset_type": getattr(item.asset, "asset_type", "STOCK"),
+                }
+                for item in valid_items
+            ]
+            try:
+                price_data = financial_data_service.get_current_prices(assets_to_fetch)
+            except Exception as e:
+                logger.warning(
+                    f"Failed to fetch live prices for watchlist {watchlist_id}: {e}"
                 )
+                price_data = {}
+
+            for item in valid_items:
+                data = price_data.get(item.asset.ticker_symbol)
+                if data:
+                    item.asset.current_price = data.get("current_price")
+                    item.asset.day_change = (
+                        data["current_price"] - data["previous_close"]
+                        if "current_price" in data and "previous_close" in data
+                        else None
+                    )
 
     return watchlist
 
