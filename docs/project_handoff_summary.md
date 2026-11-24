@@ -19,6 +19,11 @@
 
 ## Recent Stabilization & Refinement Efforts
 
+*   **BSE Filing Page 1 Subject Peeking for Generic Descriptions (Issue #618 / PR #619) (Updated 2026-11-24):**
+    - **Opaque Description Detection:** Resolved issue where companies upload concall transcripts to BSE with placeholder descriptions (`<description>Please find enclosed.</description>` like `IGL Spirits Ltd`).
+    - **Page 1 PDF Peeking (`news_service.py`):** Added `peek_pdf_subject` using `pdfplumber` to inspect Page 1 of PDF filings for user-tracked stocks, extracting the SEBI `Sub:` line (e.g. `Transcript of Q2 & H1 FY27 Earnings`), enriching the title/summary, and auto-upgrading `category = "CONCALL"`.
+    - **Verification:** Tested on live IGL Spirits BSE PDF; 14/14 tests in `test_news_service.py` passing.
+
 *   **Concall Tone Flow Calibration, Density Guard & BSE PDF Integration (Issue #618 / PR #619) (Updated 2026-11-24):**
     - **Tone Flow Calibration:** Separated Management remarks into opening remarks (`mgmt_prepared_sentences`) and Q&A answers (`mgmt_qa_sentences`). Calibrated tone divergence threshold to `0.10` so shifts (e.g. Opening: +0.20 vs Q&A: +0.06 $\implies$ +0.14 gap) trigger the Tone Gap Alert amber banner in both backend and frontend modal.
     - **Information Density Guard (`concall_analyzer.py`):** Added `is_high_signal_sentence` requiring $\ge 11$ words and concrete operational/financial metric anchors, pruning filler sentences from Cautionary Remarks and Top Takeaways.

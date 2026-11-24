@@ -1,3 +1,24 @@
+## 2026-11-24: BSE Filing Page 1 Subject Peeking for Generic Descriptions (Issue #618 / PR #619)
+
+**Task:** Resolve issue where BSE announcements contain generic/opaque descriptions (e.g., `<description>Please find enclosed.</description>` as seen in `IGL Spirits Ltd (545013)` concall filing). Implement automated Page 1 inspection (`peek_pdf_subject`) to extract SEBI `Sub:` line and auto-classify concall transcripts.  
+**AI Assistant:** Antigravity  
+**Role:** Lead Architect & Full-Stack Developer
+
+### Summary
+
+1. **Root Cause Analysis:**
+   - In BSE India's RSS feed (`announcements.aspx`), companies frequently upload PDFs with generic titles and descriptions (`Please find enclosed.`, `Enclosed herewith.`, `Regulation 30 disclosure`) without mentioning that the attachment is an earnings concall transcript.
+   - However, Indian corporate statutory filings under SEBI Regulation 30 follow a strict format where Page 1 always contains the formal `Sub:` or `Subject:` line (e.g. `Sub: Disclosure under Regulation 30... - Transcript of Q2 & H1 FY27 Earnings Conference Call`).
+2. **Page 1 PDF Peeking (`backend/app/services/news_service.py`):**
+   - Implemented `_is_generic_exchange_description()` to detect boilerplate placeholders.
+   - Added `peek_pdf_subject()`: When an exchange filing points to a `.pdf` and matches a user-tracked portfolio/watchlist stock, it peeks at Page 1 via `pdfplumber`, extracts and normalizes the SEBI `Sub:` line.
+   - If concall keywords are found, the item is automatically upgraded to `category: "CONCALL"`, and the title/summary are enriched with the exact transcript disclosure.
+3. **Testing & QA:**
+   - Tested directly on the real IGL Spirits BSE filing (`https://www.bseindia.com/xml-data/corpfiling/AttachLive/d0b3e5b8-6f33-4db6-a680-2e44e81bde91.pdf`): Successfully extracted `'Transcript of Q2 & H1 FY27 Earnings'` and auto-categorized as `CONCALL`.
+   - Added unit test `test_bse_generic_description_peek_subject` (14/14 tests in `test_news_service.py` passing).
+
+---
+
 ## 2026-11-24: Concall Tone Flow Calibration, Density Guard & Theme Noise Filtering (Issue #618 / PR #619)
 
 **Task:** Refine concall intelligence output: 

@@ -219,6 +219,55 @@ def extract_concall_metadata(
     return meta
 
 
+def _is_generic_exchange_description(desc: str) -> bool:
+    """Returns True if the exchange description is opaque placeholder text."""
+    d = desc.lower().strip()
+    if len(d) < 35:
+        return True
+    generic_patterns = [
+        r"^please find enclosed",
+        r"^enclosed herewith",
+        r"^attached herewith",
+        r"^we are enclosing",
+        r"^submission of",
+        r"^regulation 30",
+        r"^disclosure under regulation",
+        r"^intimation under regulation",
+    ]
+    return any(re.search(pat, d) for pat in generic_patterns)
+
+
+def peek_pdf_subject(pdf_url: str, client: Optional[httpx.Client] = None) -> Optional[str]:
+    """
+    Downloads and inspects Page 1 of a statutory PDF filing to extract the formal SEBI 'Sub:' line
+    when exchange descriptions are generic boilerplate (e.g. 'Please find enclosed.').
+    """
+    try:
+        import io
+        import pdfplumber
+
+        c = client or httpx.Client(timeout=6.0, follow_redirects=True, headers=BROWSER_HEADERS)
+        resp = c.get(pdf_url)
+        if resp.status_code == 200:
+            with pdfplumber.open(io.BytesIO(resp.content)) as pdf:
+                if pdf.pages:
+                    p0 = pdf.pages[0].extract_text() or ""
+                    m = re.search(r"(?:Sub|Subject)\s*:\s*([^\n\r]+(?:\n[^\n\r]+)?)", p0, re.IGNORECASE)
+                    if m:
+                        clean_sub = " ".join(m.group(1).split())
+                        # Strip standard regulatory prefix
+                        clean_sub = re.sub(
+                            r"^(?:Disclosure\s+under\s+)?Regulation\s+30\s+(?:of\s+the\s+SEBI\s*\([^)]*\)\s*Regulations,?\s*\d{4}\s*)?[-–—:]\s*",
+                            "",
+                            clean_sub,
+                            flags=re.IGNORECASE,
+                        ).strip()
+                        return clean_sub[:300]
+    except Exception as e:
+        logger.debug("Failed to peek PDF subject for %s: %s", pdf_url, e)
+    return None
+
+
 def _find_elem(node: ET.Element, *tags: str) -> Optional[ET.Element]:
     """Helper to find first matching child element (Element with no children evaluates to False in bool context)."""
     for tag in tags:
@@ -482,25 +531,38 @@ class MarketNewsService:
                 "BSE Corporate Actions",
             ]
 
+            # Match symbols
+            full_text = f"{title} {summary}"
+            matched_syms = self.match_symbols(full_text, symbol_mappings)
+
             # Auto-detect concall transcripts and audio recording disclosures from exchange announcements
             if is_exchange_filing and re.search(
                 r"\b(?:transcript|audio\s*recording|earnings\s*(?:call|conference)|concall)\b",
-                title,
+                full_text,
                 re.IGNORECASE,
             ):
                 category = "CONCALL"
 
+            # If exchange description is opaque boilerplate (e.g. "Please find enclosed."),
+            # peek at Page 1 of the PDF filing for user-tracked stocks to discover the actual SEBI Subject
+            if (
+                is_exchange_filing
+                and (matched_syms or category == "CONCALL")
+                and (url.lower().endswith(".pdf") or "corpfiling" in url.lower())
+                and _is_generic_exchange_description(summary)
+            ):
+                peeked = peek_pdf_subject(url, client=self._get_client())
+                if peeked:
+                    summary = peeked
+                    if re.search(r"\b(?:transcript|earnings\s*(?:call|conference)|concall)\b", peeked, re.IGNORECASE):
+                        category = "CONCALL"
+                        if not re.search(r"\btranscript\b", title, re.IGNORECASE):
+                            title = f"{title} - {peeked}"
+                    elif re.search(r"\b(?:financial\s*results?|investor\s*presentation)\b", peeked, re.IGNORECASE):
+                        category = "RESULT"
+                        title = f"{title} - {peeked}"
+
             # Filter syndicated duplicate headlines across sources (strictly for general editorial NEWS)
-            if not is_exchange_filing and category == "NEWS" and headline_deduplicator.is_duplicate(title):
-                continue
-
-            # Filter non-financial noise & exam/recruitment/crime spam (exempt official exchange filings)
-            if not is_exchange_filing and not relevance_filter.is_financial_relevant(title, summary, category=category):
-                continue
-
-            # Match symbols
-            full_text = f"{title} {summary}"
-            matched_syms = self.match_symbols(full_text, symbol_mappings)
 
             # Extra metadata extraction
             meta: Dict[str, Any] = {}

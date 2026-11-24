@@ -249,4 +249,46 @@ def test_exchange_filings_exempt_from_noise_and_detect_concall(db):
                 db.commit()
 
 
+def test_bse_generic_description_peek_subject(db):
+    from app.models.market_news import MarketNewsArticle
+    from app.services.news_service import _is_generic_exchange_description
+
+    # Test generic description detector
+    assert _is_generic_exchange_description("Please find enclosed.")
+    assert _is_generic_exchange_description("Enclosed herewith.")
+    assert _is_generic_exchange_description("Regulation 30 disclosure")
+    assert not _is_generic_exchange_description("Transcript of the Q2FY27 Earnings Conference Call held on November 24, 2026")
+
+    service = MarketNewsService()
+    igl_url = "https://www.bseindia.com/xml-data/corpfiling/AttachLive/d0b3e5b8-6f33-4db6-a680-2e44e81bde91.pdf"
+    generic_items = [
+        {
+            "title": "IGL Spirits Ltd (545013)",
+            "url": igl_url,
+            "summary": "Please find enclosed.",
+            "published_at": None,
+            "source": "BSE Announcements",
+            "category": "NEWS",
+            "enclosure_url": None,
+        }
+    ]
+
+    with patch.object(service, "fetch_feed_items", return_value=generic_items):
+        with patch.object(service, "get_active_portfolio_symbols", return_value={"IGLSPIRITS"}):
+            with patch.object(service, "get_symbol_keyword_mappings", return_value={"IGL Spirits": "IGLSPIRITS"}):
+                with patch("app.services.news_service.peek_pdf_subject", return_value="Transcript of Q2 & H1 FY27 Earnings Conference Call"):
+                    fetched, inserted = service.sync_all_feeds(db, max_targeted_symbols=0)
+                    assert inserted >= 1
+
+                    article = db.query(MarketNewsArticle).filter(MarketNewsArticle.url == igl_url).first()
+                    assert article is not None
+                    # Auto-detected as CONCALL from peeked subject
+                    assert article.category == "CONCALL"
+                    assert "Transcript of Q2 & H1 FY27" in article.title
+                    assert "Transcript of Q2 & H1 FY27" in article.summary
+
+                    db.delete(article)
+                    db.commit()
+
+
 
