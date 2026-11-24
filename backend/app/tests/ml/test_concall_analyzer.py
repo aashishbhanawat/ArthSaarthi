@@ -85,10 +85,24 @@ def test_whisper_engine_status():
     assert "is_available" in status
 
 
-def test_whisper_transcription_when_available():
+def test_whisper_transcription_when_available(tmp_path):
+    dummy_audio = tmp_path / "dummy.m4a"
+    dummy_audio.write_bytes(b"fake audio bytes")
     with patch("app.ml.model_manager.model_manager.is_model_available", return_value=True):
         with patch.object(whisper_engine, "_transcribe_with_model", return_value="Transcribed text"):
             with patch("app.ml.model_manager.model_manager.get_model_path") as mock_path:
                 mock_path.return_value.exists.return_value = True
-                res = whisper_engine.transcribe_audio_file("dummy.m4a")
+                res = whisper_engine.transcribe_audio_file(dummy_audio)
                 assert res == "Transcribed text"
+
+
+def test_whisper_transcription_remote_url():
+    with patch("app.ml.model_manager.model_manager.is_model_available", return_value=True):
+        with patch.object(whisper_engine, "_transcribe_with_model", return_value="Transcribed text"):
+            with patch("app.ml.model_manager.model_manager.get_model_path") as mock_path:
+                mock_path.return_value.exists.return_value = True
+                with patch("requests.get") as mock_get:
+                    mock_get.return_value.__enter__.return_value.iter_content.return_value = [b"fake audio stream"]
+                    mock_get.return_value.__enter__.return_value.raise_for_status = lambda: None
+                    res = whisper_engine.transcribe_audio_file("https://example.com/concall.m4a")
+                    assert res == "Transcribed text"

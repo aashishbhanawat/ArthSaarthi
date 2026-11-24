@@ -1,3 +1,4 @@
+import logging
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -22,6 +23,8 @@ from app.schemas.market_news import (
     ResearchFeedSummary,
 )
 from app.services.news_service import news_service
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -194,18 +197,13 @@ def analyze_concall(
                 source = "WHISPER_AUDIO"
                 meta["transcript_text"] = transcript
             except Exception as e:
-                raise HTTPException(
-                    status_code=500,
-                    detail=f"Whisper audio transcription failed: {str(e)}",
-                )
+                logger.warning("Whisper audio transcription failed: %s. Falling back to summary.", e)
+                transcript = f"{article.title}. {article.summary or ''}"
+                source = "SUMMARY"
         else:
-            raise HTTPException(
-                status_code=400,
-                detail=(
-                    "No transcript text available and Whisper speech-to-text model is not downloaded. "
-                    "Please download the Whisper model from Admin > System Maintenance or paste the transcript text."
-                ),
-            )
+            logger.info("Whisper model not downloaded. Falling back to title and summary.")
+            transcript = f"{article.title}. {article.summary or ''}"
+            source = "SUMMARY"
 
     # 5. Last fallback: analyze title and summary
     if not transcript:

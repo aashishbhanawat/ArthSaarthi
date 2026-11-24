@@ -1,6 +1,9 @@
 import logging
 import os
+import tempfile
 from pathlib import Path
+
+import requests
 
 from app.ml.model_manager import model_manager
 
@@ -36,7 +39,7 @@ class WhisperEngine:
 
     def transcribe_audio_file(self, audio_path: str | Path) -> str:
         """
-        Transcribes local audio file to text using the edge Whisper model.
+        Transcribes audio file or remote audio URL to text using the edge Whisper model.
         """
         if not self.is_available:
             raise RuntimeError(
@@ -49,15 +52,53 @@ class WhisperEngine:
         if not model_path or not model_path.exists():
             raise FileNotFoundError(f"Whisper model weights not found at {model_path}")
 
-        logger.info("Starting audio transcription with %s on %s", self.MODEL_ID, audio_path)
+        audio_str = str(audio_path)
+        if audio_str.startswith(("http://", "https://")):
+            return self._download_and_transcribe(audio_str, model_path)
 
-        # Transcribe using ONNX / PyAV audio decoder or fallback reader
+        local_path = Path(audio_path)
+        if not local_path.exists():
+            raise FileNotFoundError(f"Audio file not found: {local_path}")
+
         try:
-            # Check for faster-whisper or onnxruntime
-            return self._transcribe_with_model(audio_path, model_path)
+            return self._transcribe_with_model(local_path, model_path)
         except Exception as e:
             logger.error("Audio transcription failed: %s", e)
             raise RuntimeError(f"Transcription error: {str(e)}")
+
+    def _download_and_transcribe(self, url: str, model_path: Path) -> str:
+        """
+        Streams and downloads remote audio into a temporary local file,
+        then invokes transcription.
+        """
+        logger.info("Downloading remote concall audio stream from %s", url)
+        with tempfile.NamedTemporaryFile(suffix=".m4a", delete=False) as tmp_file:
+            tmp_path = Path(tmp_file.name)
+
+        try:
+            # Stream up to 15MB which contains the opening remarks and initial Q&A
+            max_bytes = 15 * 1024 * 1024
+            total_downloaded = 0
+            with requests.get(url, stream=True, timeout=60) as resp:
+                resp.raise_for_status()
+                with open(tmp_path, "wb") as f:
+                    for chunk in resp.iter_content(chunk_size=1048576):
+                        if chunk:
+                            f.write(chunk)
+                            total_downloaded += len(chunk)
+                            if total_downloaded >= max_bytes:
+                                break
+
+            return self._transcribe_with_model(tmp_path, model_path)
+        except Exception as e:
+            logger.error("Failed to stream and transcribe remote audio %s: %s", url, e)
+            raise RuntimeError(f"Transcription error: {str(e)}")
+        finally:
+            if tmp_path.exists():
+                try:
+                    tmp_path.unlink()
+                except Exception:
+                    pass
 
     def _transcribe_with_model(self, audio_path: str | Path, model_path: Path) -> str:
         """
