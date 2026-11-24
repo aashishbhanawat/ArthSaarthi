@@ -19,6 +19,13 @@
 
 ## Recent Stabilization & Refinement Efforts
 
+*   **News Tracker Noise Purge, Ticker Disambiguation (HGS, GICRE, VEDL) & Cross-Exchange Deduplication (Issue #618 / PR #619) (Updated 2026-11-24):**
+    - **SEO / Tracker Page Noise Filter (`relevance_filter.py`):** Added `TRACKER_AND_SEO_PATTERNS` to drop automated quote pages from HDFC Sky, Upstox, Yahoo Finance, and Simply Wall St (`Share Price Today`, `stock price, news, quote and history`, `stock major holders`, `Stock Price & Chart`, etc.).
+    - **Ticker Disambiguation & Industry Name Blacklist (`news_service.py`, `relevance_filter.py`):** Added `GENERIC_NAME_BLACKLIST` to prevent generic phrases ("General Insurance", "Life Insurance", "Oil and Gas") from corrupting company mappings. Disambiguated `GICRE` (preventing false ICICI Lombard matches), `HGS` (preventing SME `HGS (India)` matches), and `VEDL` (preventing `Vedanta Oil and Gas` matches).
+    - **Cross-Exchange Deduplication (`crud_news.py`, `news_service.py`):** Harmonized BSE and NSE subject normalization, dropping duplicate statutory disclosures across exchanges (e.g. Bank of Baroda EGM notice).
+    - **Targeted Search Query Refinement (`news_service.py`):** Upgraded targeted symbol queries from generic `"share price india"` to exact company name and business milestone searches.
+    - **Verification:** 28/28 backend pytest tests passing; 6/6 frontend Jest tests passing.
+
 *   **Exchange Deduplication, PDF Filing Link, Dividend Guard & Price Action Sentiment (Issue #618 / PR #619) (Updated 2026-11-24):**
     - **Exchange Announcement Deduplication (`news_service.py`, `crud_news.py`):** Added `is_xbrl_stub`, `extract_core_exchange_subject`, and `are_exchange_subjects_similar`. Redundant NSE/BSE `Para A-XBRL` machine stubs are dropped when a substantive transcript or formal announcement exists, and incoming substantive filings automatically supersede existing XBRL stubs.
     - **Read Filing PDF Link (`ResearchIntelligenceFeed.tsx`, `ConcallAnalysisModal.tsx`):** Added a direct "Read Filing PDF" link on feed cards and in the concall modal header whenever `metadata_json.transcript_url` or a direct PDF link is available.

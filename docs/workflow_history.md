@@ -1,3 +1,36 @@
+## 2026-11-24: News Tracker Noise Purge, Ticker Disambiguation (HGS, GICRE, VEDL) & Cross-Exchange Deduplication (Issue #618 / PR #619)
+
+**Task:**
+1. Drop automated stock price tracker and SEO quote landing pages (`Share Price Today`, `Stock Price Live NSE/BSE`, `stock price, news, quote and history`, `stock major holders`, `Stock Price & Chart`, `Share Price Highlights`, `RVNL Share Price - Upstox`).
+2. Resolve false ticker matching:
+   - `HGS`: Disambiguate Hinduja Global Solutions Ltd against unrelated SME issue `HGS (India) Limited` (`HGSINDIALT` on NSE Emerge).
+   - `GICRE`: Prevent `ICICI Lombard General Insurance` and other general insurers from being falsely tagged as `GICRE`.
+   - `VEDL`: Disambiguate Vedanta Ltd against `Vedanta Oil and Gas`.
+3. Deduplicate cross-exchange announcements (BSE vs NSE) for the same company and event (e.g. Bank of Baroda EGM newspaper publication).
+4. Explain how Google News search queries, Broker Targets, and Quarterly Results are acquired and processed.  
+**AI Assistant:** Antigravity  
+**Role:** Lead Architect & Full-Stack Developer
+
+### Summary
+
+1. **Tracker & SEO Landing Page Noise Filter (`backend/app/ml/relevance_filter.py`):**
+   - Added `TRACKER_AND_SEO_PATTERNS` to `is_noise()` to detect automated broker ticker overview pages (`HDFC Sky`, `Upstox`, `Yahoo Finance`, `scanx.trade`, `Alice Blue`, `Simply Wall St`).
+   - Articles matching `Share Price Today`, `stock price, news, quote and history`, `stock price & chart`, `stock major holders`, etc. are flagged as noise and purged.
+2. **Ticker Disambiguation & Generic Name Blacklist (`relevance_filter.py`, `news_service.py`):**
+   - **GICRE vs ICICI Lombard Root Cause:** Stripping `Corporation.*` from "General Insurance Corporation of India" yielded `"General Insurance"`, which matched `ICICI Lombard General Insurance`!
+   - Added `GENERIC_NAME_BLACKLIST` (`"general insurance"`, `"life insurance"`, `"bank of india"`, `"corporation of india"`, `"oil and gas"`), preventing generic industry phrases from being mapped to single tickers.
+   - Added explicit collision rules in `TICKER_COLLISIONS` for `HGS`, `GICRE`, and `VEDL`.
+3. **Cross-Exchange Deduplication (`crud_news.py`, `news_service.py`):**
+   - Normalized core exchange subjects across BSE and NSE without scrip numbers or category prefixes.
+   - When the same announcement arrives from both BSE and NSE (like Bank of Baroda's Newspaper Publication - EGM), the duplicate is dropped while preserving the best attachment/link.
+4. **Targeted Google News Search Query Refinement (`news_service.py`):**
+   - Switched from generic `f"{symbol} stock OR share price india"` (which attracted broker quote pages and SME issues) to high-precision company queries: `f'"{clean_company}" (results OR earnings OR business OR shares OR stock)'`.
+5. **Testing & QA:**
+   - Added unit tests for tracker noise detection, `HGS`/`GICRE`/`VEDL` ticker validation, `GENERIC_NAME_BLACKLIST`, and BSE/NSE cross-exchange deduplication.
+   - All 28 backend tests passing; 6/6 frontend Jest tests passing.
+
+---
+
 ## 2026-11-24: Exchange Deduplication, PDF Filing Link, Dividend Guard & Price Action Sentiment (Issue #618 / PR #619)
 
 **Task:**

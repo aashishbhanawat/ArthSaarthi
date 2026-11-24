@@ -238,12 +238,17 @@ class CRUDMarketNews:
             if a.symbols:
                 valid_syms = [
                     sym for sym in a.symbols
-                    if filter_instance.validate_ticker(sym, full_text)
+                    if filter_instance.validate_ticker(sym, a.title, a.summary)
                 ]
                 if set(valid_syms) != set(a.symbols):
                     a.symbols = valid_syms
                     db.add(a)
                     updated_count += 1
+                # If article lost all symbols and was a targeted news feed item, purge it
+                if not a.symbols and a.category == "NEWS" and a.source == "Google News":
+                    db.delete(a)
+                    deleted_count += 1
+                    continue
 
             # Clean up spurious dividend tags on editorial screening/yield articles
             if a.metadata_json and a.metadata_json.get("action_type") == "DIVIDEND":
@@ -334,6 +339,18 @@ class CRUDMarketNews:
                             elif not is_xbrl and prev_is_xbrl:
                                 db.delete(prev)
                                 deleted_count += 1
+                            else:
+                                # Cross-exchange duplicate (e.g. BSE and NSE duplicate disclosures)
+                                ea_has_att = bool((ea.metadata_json or {}).get("transcript_url") or ea.url.lower().endswith(".pdf"))
+                                prev_has_att = bool((prev.metadata_json or {}).get("transcript_url") or prev.url.lower().endswith(".pdf"))
+                                if ea_has_att and not prev_has_att:
+                                    db.delete(prev)
+                                    deleted_count += 1
+                                else:
+                                    db.delete(ea)
+                                    deleted_count += 1
+                                    dropped = True
+                                    break
                 if dropped:
                     break
                 seen_sym_filings.setdefault(s, []).append(ea)

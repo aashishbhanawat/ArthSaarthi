@@ -144,6 +144,17 @@ def test_relevance_filter_noise_detection():
     assert relevance_filter.is_noise("India vs Australia 3rd test match live cricket score and highlights")
     assert not relevance_filter.is_financial_relevant("Horoscope today: Astrological predictions for all zodiac signs")
 
+    # Automated stock price tracker and SEO quote landing pages (User reported)
+    assert relevance_filter.is_noise("Share Price Today - HGS (India) Ltd. Stock Price Live NSE/BSE - HDFC Sky")
+    assert relevance_filter.is_noise("Lahoti Overseas Limited (LAHOTIOV.NS) stock price, news, quote and history - Yahoo Finance Australia")
+    assert relevance_filter.is_noise("Lahoti Overseas Limited (LAHOTIOV.NS) stock major holders - Yahoo Finance Singapore")
+    assert relevance_filter.is_noise("ABAN OFFSHORE LTD. Share Price - Live NSE: ABAN Stock Price & Chart - Upstox")
+    assert relevance_filter.is_noise("Coal India Share Price Highlights: Coal India Ltd Stock Price History")
+    assert relevance_filter.is_noise("RVNL Share Price - Upstox")
+    assert relevance_filter.is_noise("RVNL Share Price Today - Rail Vikas Nigam on NSE/BSE - scanx.trade")
+    assert relevance_filter.is_noise("HGS India Ltd Share Price Today NSE/BSE Charts - Alice Blue")
+    assert relevance_filter.is_noise("HGS (India) (NSEI:HGSINDIALT) - Stock Analysis - Simply Wall St")
+
 
 def test_relevance_filter_financial_positive():
     from app.ml.relevance_filter import relevance_filter
@@ -192,6 +203,29 @@ def test_ticker_disambiguation():
     # CARE: Reject healthcare idiom
     assert not relevance_filter.validate_ticker("CARE", "Essential tips on child care and infant nutrition")
     assert relevance_filter.validate_ticker("CARE", "CARE Ratings upgrades long-term debt rating of Tata Power")
+
+    # HGS: Reject unrelated SME cable IPO (HGS India / HGSINDIALT on NSE Emerge)
+    assert not relevance_filter.validate_ticker("HGS", "HGS India shares debut at 34% premium on NSE Emerge - Moneycontrol")
+    assert not relevance_filter.validate_ticker("HGS", "HGS (India) Shares List At ₹160 On NSE SME, Rise To ₹168")
+    assert relevance_filter.validate_ticker("HGS", "Hinduja Global Solutions (HGS) Q2 net profit jumps 22% on BPM contract wins")
+
+    # GICRE: Reject ICICI Lombard / other general insurers
+    assert not relevance_filter.validate_ticker(
+        "GICRE",
+        "ICICI Lombard General Insurance Company Limited has informed the Exchange about Analyst Meet",
+    )
+    assert not relevance_filter.validate_ticker(
+        "GICRE",
+        "Bajaj Allianz General Insurance reports monthly gross premium collections",
+    )
+    assert relevance_filter.validate_ticker(
+        "GICRE",
+        "General Insurance Corporation of India (GIC Re) approves interim dividend of Rs 4 per share",
+    )
+
+    # VEDL: Reject distinct unlisted Vedanta Oil and Gas
+    assert not relevance_filter.validate_ticker("VEDL", "Why Vedanta Oil and Gas Share Price is Rising - Equitymaster")
+    assert relevance_filter.validate_ticker("VEDL", "Vedanta Limited announces interim dividend of Rs 20 per share")
 
     # Long ticker symbols pass cleanly
     assert relevance_filter.validate_ticker("RELIANCE", "Reliance expands retail presence across tier 2 cities")

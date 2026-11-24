@@ -385,6 +385,22 @@ def test_exchange_announcement_deduplication():
     sub_real = extract_core_exchange_subject(real_title, "")
     assert are_exchange_subjects_similar(sub_xbrl, sub_real)
 
+    # User reported: Bank of Baroda EGM newspaper publication across NSE and BSE
+    nse_bob = "Bank Of Baroda has informed the Exchange about Newspaper Publication - EGM |SUBJECT: General Updates"
+    bse_bob = "Bank of Baroda (532134) - Newspaper Publication - EGM"
+    sub_nse = extract_core_exchange_subject(nse_bob, "")
+    sub_bse = extract_core_exchange_subject(bse_bob, "")
+    assert are_exchange_subjects_similar(sub_nse, sub_bse)
+
+
+def test_generic_name_blacklist():
+    from app.services.news_service import GENERIC_NAME_BLACKLIST
+
+    assert "general insurance" in GENERIC_NAME_BLACKLIST
+    assert "life insurance" in GENERIC_NAME_BLACKLIST
+    assert "oil and gas" in GENERIC_NAME_BLACKLIST
+    assert "bank of india" in GENERIC_NAME_BLACKLIST
+
 
 
 

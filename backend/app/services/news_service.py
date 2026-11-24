@@ -116,6 +116,17 @@ NEGATIVE_KEYWORDS = {
     "crash", "debt", "warning", "weak", "downside", "investigation",
 }
 
+GENERIC_NAME_BLACKLIST = {
+    "general insurance", "life insurance", "health insurance", "insurance company",
+    "corporation of india", "bank of india", "state bank", "central bank", "union bank",
+    "finance corporation", "development finance", "industries", "enterprises",
+    "holdings", "services", "solutions", "technologies", "international",
+    "global", "power", "energy", "infrastructure", "steel", "cement", "pharma",
+    "chemicals", "petrochemicals", "securities", "capital", "ventures",
+    "commercial", "industrial", "financial services", "financial",
+    "stock", "equity", "share", "shares", "oil and gas", "oil & gas",
+}
+
 
 def clean_html_text(text: Optional[str]) -> str:
     """Strips HTML tags and unescapes entities."""
@@ -385,12 +396,13 @@ def is_xbrl_stub(title: str, summary: str, url: str) -> bool:
 def extract_core_exchange_subject(title: str, summary: str) -> str:
     """Normalizes the core regulatory subject from an exchange disclosure."""
     full = f"{title} {summary}"
-    sub_match = re.search(r"(?:\|SUBJECT:|(?:^|\n)\s*Sub(?:ject)?\s*:)\s*([^\n\r|]+)", full, re.IGNORECASE)
-    subject = sub_match.group(1) if sub_match else title
+    # Remove scrip code in parentheses, e.g. (532134)
+    cleaned = re.sub(r"\(\d+\)", " ", full)
+    # Remove statutory boilerplate phrases and generic exchange category markers
     cleaned = re.sub(
-        r"(?i)\b(?:has informed the exchange about|disclosure under regulation\s*\d+|para\s*[a-z]-xbrl|xbrl|updates?|intimation|regarding)\b",
+        r"(?i)\b(?:has informed the exchange about|disclosure under regulation\s*\d+|para\s*[a-z]-xbrl|xbrl|general\s*updates?|updates?|intimation|regarding|subject:)\b",
         " ",
-        subject,
+        cleaned,
     )
     cleaned = re.sub(r"[^\w\s]", " ", cleaned).lower()
     return " ".join(cleaned.split())
@@ -563,7 +575,7 @@ class MarketNewsService:
 
             if name_raw:
                 clean_name = name_raw.strip()
-                if len(clean_name) >= 4:
+                if len(clean_name) >= 4 and clean_name.lower() not in GENERIC_NAME_BLACKLIST:
                     mappings[clean_name] = clean_ticker
                 stripped = re.sub(
                     r"\s+(Limited|Ltd\.?|Corporation|Corp\.?|India)\b.*",
@@ -571,8 +583,18 @@ class MarketNewsService:
                     clean_name,
                     flags=re.IGNORECASE,
                 ).strip()
-                if len(stripped) >= 4 and stripped.lower() not in ["stock", "equity", "share", "shares"]:
+                if len(stripped) >= 4 and stripped.lower() not in GENERIC_NAME_BLACKLIST:
                     mappings[stripped] = clean_ticker
+
+            # Special high-precision company aliases
+            if clean_ticker == "GICRE":
+                mappings["GIC Re"] = "GICRE"
+                mappings["GIC RE"] = "GICRE"
+                mappings["General Insurance Corporation of India"] = "GICRE"
+                mappings.pop("General Insurance", None)
+            elif clean_ticker == "HGS":
+                mappings["Hinduja Global Solutions"] = "HGS"
+                mappings.pop("HGS India", None)
 
         return mappings
 
@@ -589,7 +611,8 @@ class MarketNewsService:
         matcher = FastEntityMatcher(case_sensitive=False)
         if isinstance(symbols_or_mappings, dict):
             for kw, sym in symbols_or_mappings.items():
-                matcher.add_keyword(kw, clean_name=sym)
+                if kw.lower() not in GENERIC_NAME_BLACKLIST:
+                    matcher.add_keyword(kw, clean_name=sym)
         else:
             for sym in symbols_or_mappings:
                 matcher.add_keyword(sym, clean_name=sym)
@@ -608,9 +631,27 @@ class MarketNewsService:
             logger.warning("Error fetching feed %s: %s", feed_url, e)
         return []
 
-    def fetch_google_news_for_symbol(self, symbol: str) -> List[Dict[str, Any]]:
-        """Fetches targeted Google News RSS for a specific equity ticker."""
-        query = f"{symbol} stock OR share price india"
+    def fetch_google_news_for_symbol(
+        self, symbol: str, company_name: Optional[str] = None
+    ) -> List[Dict[str, Any]]:
+        """
+        Fetches targeted Google News RSS for a specific equity ticker.
+        Uses full company name where available to avoid false matches against unrelated SME IPOs
+        or short ticker acronym collisions, and searches for business developments rather than SEO quote pages.
+        """
+        if company_name and len(company_name) >= 5 and company_name.upper() != symbol:
+            clean_company = re.sub(
+                r"\s+(Limited|Ltd\.?|Corporation|Corp\.?|India)\b.*",
+                "",
+                company_name,
+                flags=re.IGNORECASE,
+            ).strip()
+            if clean_company.lower() in GENERIC_NAME_BLACKLIST or len(clean_company) < 4:
+                clean_company = company_name
+            query = f'"{clean_company}" (results OR earnings OR business OR shares OR stock)'
+        else:
+            query = f'"{symbol}" NSE (results OR earnings OR business OR shares OR order)'
+
         url = f"https://news.google.com/rss/search?q={query}&hl=en-IN&gl=IN&ceid=IN:en"
         return self.fetch_feed_items(url, source="Google News", category="NEWS")
 
@@ -624,6 +665,12 @@ class MarketNewsService:
         symbol_mappings = self.get_symbol_keyword_mappings(db)
         raw_items: List[Dict[str, Any]] = []
 
+        # Build symbol-to-company-name lookup for targeted Google News searches
+        symbol_to_name: Dict[str, str] = {}
+        for kw, sym in symbol_mappings.items():
+            if sym not in symbol_to_name and len(kw) > len(sym) and kw.lower() not in GENERIC_NAME_BLACKLIST:
+                symbol_to_name[sym] = kw
+
         # 1. Fetch from standard RSS feeds (Macro, Broker Reports, Concalls, Results)
         for cfg in FEED_CONFIGS:
             items = self.fetch_feed_items(cfg["url"], cfg["source"], cfg["category"])
@@ -635,7 +682,8 @@ class MarketNewsService:
         # 2. Fetch targeted news for up to N active portfolio symbols
         targeted_count = 0
         for sym in list(active_symbols)[:max_targeted_symbols]:
-            sym_items = self.fetch_google_news_for_symbol(sym)
+            c_name = symbol_to_name.get(sym)
+            sym_items = self.fetch_google_news_for_symbol(sym, company_name=c_name)
             raw_items.extend(sym_items)
             targeted_count += 1
 
