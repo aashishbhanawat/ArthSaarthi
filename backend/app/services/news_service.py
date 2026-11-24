@@ -93,6 +93,7 @@ FEED_CONFIGS = [
         "url": "https://www.bseindia.com/data/xml/announcements.aspx",
         "source": "BSE Announcements",
         "category": "NEWS",
+        "max_items": 100,
     },
     {
         "url": "https://www.bseindia.com/data/XML/CorpActionFeed.aspx",
@@ -427,6 +428,9 @@ class MarketNewsService:
         # 1. Fetch from standard RSS feeds (Macro, Broker Reports, Concalls, Results)
         for cfg in FEED_CONFIGS:
             items = self.fetch_feed_items(cfg["url"], cfg["source"], cfg["category"])
+            max_items = cfg.get("max_items")
+            if max_items and len(items) > max_items:
+                items = items[:max_items]
             raw_items.extend(items)
 
         # 2. Fetch targeted news for up to N active portfolio symbols
@@ -454,15 +458,14 @@ class MarketNewsService:
             # Generate SHA256 deterministic ID from URL
             article_id = hashlib.sha256(url.encode("utf-8")).hexdigest()
             title = item["title"][:500]
-
-            # Filter syndicated duplicate headlines across sources
-            if headline_deduplicator.is_duplicate(title):
-                continue
-
             summary = item["summary"]
             category = item["category"]
             source = item["source"]
             pub_date = item["published_at"]
+
+            # Filter syndicated duplicate headlines across sources (strictly for NEWS category)
+            if category == "NEWS" and headline_deduplicator.is_duplicate(title):
+                continue
 
             # Filter non-financial noise & exam/recruitment/crime spam
             if not relevance_filter.is_financial_relevant(title, summary, category=category):
@@ -521,6 +524,19 @@ class MarketNewsService:
                 logger.info("Purged %d noise articles and cleaned %d ticker tags", del_noise, upd_syms)
         except Exception as e:
             logger.warning("Error cleaning noise articles: %s", e)
+
+        # Retroactively tag untagged articles within 30 days against active symbols
+        if symbol_mappings:
+            try:
+                retagged = market_news.retroactively_tag_symbols(
+                    db,
+                    matcher_callback=lambda text: self.match_symbols(text, symbol_mappings),
+                    days=30,
+                )
+                if retagged > 0:
+                    logger.info("Retroactively tagged %d articles with active symbols", retagged)
+            except Exception as e:
+                logger.warning("Error retroactively tagging articles: %s", e)
 
         return len(raw_items), inserted_count
 

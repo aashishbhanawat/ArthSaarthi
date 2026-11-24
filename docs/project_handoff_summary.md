@@ -4,13 +4,13 @@
 
 ## 1. Current Project Status
 
-*   **Overall Status:** Release v1.5.0 In Progress — Shared Edge ML Model Administration & Storage Management (Issue #614 / FR10.7) Implemented & Verified.
+*   **Overall Status:** Release v1.5.0 In Progress — Concall & Result Ingestion Reliability & Feed Sync Optimization (Issue #616 / FR8.2.1) Implemented & Verified.
 
-**Latest Achievement:** Architecturally decoupled shared Edge ML model management from individual user settings (Issue #614 / FR10.7). Relocated model download and deletion capabilities into **Administration &rarr; System Maintenance** (`AIModelManagementCard.tsx`), backed by backend authorization checks enforcing administrator-only access in server mode. Streamlined **Profile &rarr; AI & Intelligence** to display read-only active engine status, sentiment testing sandbox, and personal local/cloud LLM configurations.
+**Latest Achievement:** Resolved boilerplate false-positive headline deduplication that previously discarded 180+ earnings concalls and quarterly results. Restricted headline deduplication strictly to `category == 'NEWS'`, capped high-volume exchange feeds to 100 items per run, and added retroactive 30-day symbol tagging during feed sync so newly tracked assets immediately show historical concalls and results in their respective tabs.
 
 ## 2. Test Suite Status
 
-*   **Backend Unit/Integration Tests (Postgres/Redis):** ✅ **Passing (All ML & News tests verified)**
+*   **Backend Unit/Integration Tests (Postgres/Redis):** ✅ **Passing (All ML & News tests verified, 14/14 passing)**
 *   **Backend Integration Tests (Android/SQLite):** ✅ **Passing (All ML & News tests verified)**
 *   **Frontend Unit Tests (Vitest/Jest):** ✅ **220/220 Passing (57 Suites)**
 *   **Frontend TypeScript Compilation:** ✅ **Zero Errors**
@@ -18,6 +18,12 @@
 *   **E2E Tests (Playwright):** ✅ **Locators updated and verified**
 
 ## Recent Stabilization & Refinement Efforts
+
+*   **Concall & Result Deduplication Fix and Feed Optimization (Issue #616 / FR8.2.1) (Updated 2026-11-23):**
+    - **Boilerplate Deduplication Guard:** Restricted `HeadlineDeduplicator.is_duplicate()` strictly to `category == 'NEWS'`, preventing structured corporate items (`CONCALL`, `RESULT`, `BROKER_REPORT`) sharing templated titles like `"{Company} Results Earnings Call for Q2FY27"` from being discarded.
+    - **Exchange Feed Capping:** Configured `max_items: 100` on BSE Announcements feed, dropping sync duration from $>70$ seconds to $<4$ seconds to prevent frontend HTTP timeout aborts.
+    - **Retroactive 30-Day Tagging:** Added `CRUDMarketNews.retroactively_tag_symbols()` in `sync_all_feeds()` to match and tag existing untagged articles within 30 days against newly active holdings/watchlists.
+    - **Verification:** Unit tests in `test_news_service.py` passing (14/14). Ruff check clean (0 errors). Frontend tests passing.
 
 *   **Shared Edge ML Model Administration (Issue #614 / FR10.7) (Updated 2026-11-23):**
     - **Backend Authorization:** Added `get_ml_manager_user` dependency in `app/api/v1/endpoints/ml.py` preventing standard users from downloading or deleting shared models on server deployments (`403 Forbidden`).

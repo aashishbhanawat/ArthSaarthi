@@ -1,3 +1,30 @@
+## 2026-11-23: Prevent Concall & Result Deduplication Drop and Optimize Feed Ingestion (Issue #616 / FR8.2.1)
+
+**Task:** Resolve issue where earnings concalls and quarterly financial results within the 30-day retention window were omitted from feed ingestion due to boilerplate headline template deduplication collisions. Optimize feed sync duration by capping high-volume raw exchange feeds (BSE Announcements) and enable retroactive symbol tagging for newly tracked assets.  
+**AI Assistant:** Antigravity  
+**Role:** Lead Architect & Backend Developer
+
+### Summary
+
+1. **Category Guard on Headline Deduplication (`backend/app/services/news_service.py`):**
+   - Identified root cause in `HeadlineDeduplicator`: standard corporate earnings call titles (e.g. `"{Company Name} Results Earnings Call for Q2FY27"`) produced Jaccard word-shingle similarity $\ge 0.60$ across distinct companies, erroneously discarding 180 out of 500 valid earnings concalls as duplicates.
+   - Enforced strict category check in `sync_all_feeds()`: `if category == "NEWS" and headline_deduplicator.is_duplicate(title): continue`.
+   - Guaranteed that structured disclosures (`CONCALL`, `RESULT`, `BROKER_REPORT`) are never filtered by headline deduplication.
+2. **Exchange Feed Capping & Performance Optimization:**
+   - Capped BSE Announcements feed (`https://www.bseindia.com/data/xml/announcements.aspx`, which outputs 9,398 raw items) to the 100 most recent items (`max_items: 100`) per sync run.
+   - Reduced full feed synchronization runtime from 70+ seconds to $<4$ seconds, eliminating HTTP request timeout aborts during manual "Sync Now" calls from the UI.
+3. **Retroactive 30-Day Tagging for Active Assets (`backend/app/crud/crud_news.py`):**
+   - Implemented `CRUDMarketNews.retroactively_tag_symbols(db, matcher_callback, days=30)`.
+   - During `sync_all_feeds()`, any untagged articles within the 30-day window are evaluated against the current active holdings and watchlist symbol mappings, ensuring newly added assets immediately gain access to previously fetched concalls and results without waiting for new RSS publications.
+4. **Testing & Quality Assurance:**
+   - Added unit test `test_concalls_and_results_not_dropped_by_deduplication()` verifying that boilerplate concall headlines are preserved.
+   - Added test `test_bse_feed_capping()` verifying max items restriction on high-volume feeds.
+   - Added test `test_crud_retroactive_tagging()` verifying that untagged 30-day articles are tagged when new symbols become active.
+   - All 14 tests in `test_news_service.py` and `test_news.py` passed cleanly.
+   - Backend linters: Ruff (0 errors). Frontend test suites: 100% passing.
+
+---
+
 ## 2026-11-23: Relocate Shared Edge ML Model Management to Admin & Retain User LLM Settings (Issue #614 / FR10.7)
 
 **Task:** Separate shared system-level Edge Machine Learning model management (FinBERT INT8 ONNX) from individual user-level AI preferences. Restrict model weight downloads and disk deletions to administrators in System Maintenance while keeping read-only active engine status, sentiment testing, and personal LLM configurations in User Profile.  

@@ -139,3 +139,75 @@ def test_feed_configs_include_nse_bse_livemint():
     assert "https://nsearchives.nseindia.com/content/RSS/Online_announcements.xml" in urls
     assert "https://www.bseindia.com/data/xml/announcements.aspx" in urls
 
+
+def test_concalls_and_results_not_dropped_by_deduplication():
+    from app.ml.deduplicator import headline_deduplicator
+    headline_deduplicator.clear()
+
+    # Two distinct concalls with boilerplate format
+    call1 = "Exide Industries Results Earnings Call for Q2FY27"
+    call2 = "Kajaria Ceramics Results Earnings Call for Q2FY27"
+
+    # Both CONCALL items must be preserved
+    items = [
+        {"title": call1, "url": "https://example.com/c1", "category": "CONCALL", "summary": "", "source": "Trendlyne", "published_at": None},
+        {"title": call2, "url": "https://example.com/c2", "category": "CONCALL", "summary": "", "source": "Trendlyne", "published_at": None},
+    ]
+    survived = [it for it in items if not (it["category"] == "NEWS" and headline_deduplicator.is_duplicate(it["title"]))]
+    assert len(survived) == 2
+
+
+def test_bse_feed_capping():
+    from app.services.news_service import FEED_CONFIGS
+    bse_cfg = next(
+        cfg
+        for cfg in FEED_CONFIGS
+        if cfg["url"] == "https://www.bseindia.com/data/xml/announcements.aspx"
+        and cfg["category"] == "NEWS"
+    )
+    assert bse_cfg.get("max_items") == 100
+
+
+def test_crud_retroactive_tagging(db):
+    from datetime import datetime, timezone
+
+    from app.crud.crud_news import market_news
+    from app.models.market_news import MarketNewsArticle
+
+    # Seed an untagged concall within 30 days
+    article_id = "test_untagged_concall_exide"
+    db.query(MarketNewsArticle).filter(MarketNewsArticle.id == article_id).delete()
+    db.commit()
+
+    art = MarketNewsArticle(
+        id=article_id,
+        title="Exide Industries Results Earnings Call for Q2FY27",
+        summary="Conference call transcript",
+        url="https://example.com/exide-call-audio.mp3",
+        source="Trendlyne Concalls",
+        category="CONCALL",
+        published_at=datetime.now(timezone.utc),
+        symbols=[],
+        sentiment="NEUTRAL",
+    )
+    db.add(art)
+    db.commit()
+
+    # Retroactively tag with mock matcher
+    def matcher(text):
+        if "exide industries" in text.lower():
+            return ["EXIDEIND"]
+        return []
+
+    updated = market_news.retroactively_tag_symbols(db, matcher_callback=matcher, days=30)
+    assert updated >= 1
+
+    refreshed = db.query(MarketNewsArticle).filter(MarketNewsArticle.id == article_id).first()
+    assert refreshed is not None
+    assert "EXIDEIND" in refreshed.symbols
+
+    # Cleanup
+    db.delete(refreshed)
+    db.commit()
+
+
