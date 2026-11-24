@@ -125,11 +125,12 @@ This document outlines the functional and non-functional requirements for the Ar
 
 ### FR10: AI-Powered Insights
 -   **FR10.1: Configurable AI Engine.** Users can connect to external AI APIs (e.g., Gemini, OpenAI) to generate insights. `📝 Planned`
--   **FR10.2: Tax-Saving Suggestions.** The AI will suggest tax-loss harvesting opportunities based on unrealized gains/losses and provide automatic year-wise export options. `📝 Planned
+-   **FR10.2: Tax-Saving Suggestions.** The AI will suggest tax-loss harvesting opportunities based on unrealized gains/losses and provide automatic year-wise export options. `📝 Planned`
 -   **FR10.3: Risk & Rebalancing.** The AI will provide insights on asset correlation for risk management and suggest rebalancing actions based on volatility or dynamic goals. `📝 Planned`
 -   **FR10.4: SIP Optimization.** The AI can suggest optimal SIP dates based on user-defined cash flow timing. `📝 Planned`
 -   **FR10.5: AI-Powered Portfolio Rebalancing.** The AI will analyze the user's portfolio against their risk profile and goals, and suggest concrete rebalancing actions (e.g., "Sell 5 shares of X, Buy 10 units of Y") to maintain alignment. `📝 Planned`
 -   **FR10.6: AI-Powered Digest.** The system will generate a daily/weekly/monthly digest summarizing the performance of the user's holdings and watchlist, highlighting key news and events. `📝 Planned`
+-   **FR10.7: Shared Edge ML Model Administration & User-Specific AI Settings.** System-level shared model weight downloads and deletions are restricted to administrators under System Maintenance, while personal user LLM configurations and read-only active engine status remain in the user profile. `📝 In Progress` (See [FR10.7_shared_vs_user_ml_management.md](docs/FR10.7_shared_vs_user_ml_management.md))
 
 ### FR11: User Experience
 -   **FR11.1: Theming.** The application must support Light and Dark mode themes. `✅ Done`

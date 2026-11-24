@@ -1,25 +1,24 @@
 import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import {
   SparklesIcon,
   CpuChipIcon,
   CloudIcon,
   CheckCircleIcon,
   InformationCircleIcon,
-  ArrowDownTrayIcon,
-  TrashIcon,
   ArrowPathIcon,
+  WrenchScrewdriverIcon,
 } from '@heroicons/react/24/outline';
 import {
-  deleteEdgeModel,
-  downloadEdgeModel,
   EdgeModelInfo,
   getEdgeModels,
-  getModelProgress,
   SentimentTestResult,
   testSentiment,
 } from '../../services/mlApi';
+import { useAuth } from '../../context/AuthContext';
 
 export const AIIntelligenceTab: React.FC = () => {
+  const { user } = useAuth();
   const [provider, setProvider] = useState<'ollama' | 'gemini' | 'openai'>('ollama');
   const [ollamaUrl, setOllamaUrl] = useState('http://localhost:11434');
   const [ollamaModel, setOllamaModel] = useState('llama3:latest');
@@ -50,43 +49,6 @@ export const AIIntelligenceTab: React.FC = () => {
   useEffect(() => {
     fetchModels();
   }, []);
-
-  // Poll while model download is in progress
-  useEffect(() => {
-    const hasDownloading = models.some((m) => m.status === 'DOWNLOADING');
-    if (!hasDownloading) return;
-
-    const interval = setInterval(async () => {
-      try {
-        const data = await getEdgeModels();
-        setModels(data);
-      } catch {
-        // Silently handle polling error
-      }
-    }, 1500);
-
-    return () => clearInterval(interval);
-  }, [models]);
-
-  const handleDownload = async (modelId: string) => {
-    try {
-      const updated = await downloadEdgeModel(modelId);
-      setModels((prev) => prev.map((m) => (m.id === modelId ? updated : m)));
-    } catch {
-      // Refresh status on failure
-      const data = await getModelProgress(modelId).catch(() => null);
-      if (data) setModels((prev) => prev.map((m) => (m.id === modelId ? data : m)));
-    }
-  };
-
-  const handleDelete = async (modelId: string) => {
-    try {
-      await deleteEdgeModel(modelId);
-      fetchModels();
-    } catch {
-      // Ignore
-    }
-  };
 
   const handleTestSentiment = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -128,23 +90,34 @@ export const AIIntelligenceTab: React.FC = () => {
         </p>
       </div>
 
-      {/* Edge ML Models Section */}
+      {/* Edge ML Models Section (Read-Only Status for Users) */}
       <div className="space-y-4">
-        <div>
-          <h3 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
-            <CpuChipIcon className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-            Edge Financial Models (On-Demand & 100% Private)
-          </h3>
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-            Download specialized financial transformers directly to your device for private, offline market sentiment analysis.
-          </p>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div>
+            <h3 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
+              <CpuChipIcon className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+              Active Sentiment Engine & Models
+            </h3>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+              Specialized financial transformers running locally on server hardware for private market sentiment analysis.
+            </p>
+          </div>
+          {user?.is_admin && (
+            <Link
+              to="/admin/maintenance"
+              className="btn btn-secondary text-xs flex items-center gap-1.5 py-1.5 px-3 self-start sm:self-auto text-blue-600 dark:text-blue-400 hover:text-blue-700"
+            >
+              <WrenchScrewdriverIcon className="h-4 w-4" />
+              Manage Models in Administration
+            </Link>
+          )}
         </div>
 
         <div className="space-y-3">
           {models.map((model) => (
             <div
               key={model.id}
-              className="p-5 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50 flex flex-col gap-4"
+              className="p-5 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50 flex flex-col gap-3"
             >
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div>
@@ -168,15 +141,12 @@ export const AIIntelligenceTab: React.FC = () => {
                   {model.status === 'DOWNLOADING' && (
                     <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-800 dark:bg-blue-950/40 dark:text-blue-300">
                       <ArrowPathIcon className="h-3.5 w-3.5 animate-spin" />
-                      Downloading ({model.progress_percentage}%)
+                      Downloading on Server ({model.progress_percentage}%)
                     </span>
                   )}
                   {model.status === 'FAILED' && (
-                    <span
-                      title={model.error_message || undefined}
-                      className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-800 dark:bg-red-950/40 dark:text-red-300"
-                    >
-                      Download Failed
+                    <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-800 dark:bg-red-950/40 dark:text-red-300">
+                      Offline (Lexicon Active)
                     </span>
                   )}
                   {model.status === 'NOT_DOWNLOADED' && (
@@ -187,59 +157,18 @@ export const AIIntelligenceTab: React.FC = () => {
                 </div>
               </div>
 
-              {/* Error message if failed */}
-              {model.status === 'FAILED' && model.error_message && (
-                <div className="p-2.5 rounded bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900 text-xs text-red-700 dark:text-red-300">
-                  {model.error_message}
-                </div>
-              )}
-
-              {/* Progress Bar when downloading */}
-              {model.status === 'DOWNLOADING' && (
-                <div className="w-full space-y-1">
-                  <div className="w-full bg-gray-200 dark:bg-gray-700 h-2 rounded-full overflow-hidden">
-                    <div
-                      className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-                      style={{ width: `${model.progress_percentage}%` }}
-                    ></div>
-                  </div>
-                  <div className="flex justify-between text-[11px] text-gray-500">
-                    <span>Downloading quantized ONNX weights...</span>
-                    <span>{model.progress_percentage}%</span>
-                  </div>
-                </div>
-              )}
-
-              {/* Action Buttons */}
-              <div className="flex items-center gap-3 pt-1 border-t border-gray-200 dark:border-gray-700">
-                {model.status !== 'ACTIVE' && model.status !== 'DOWNLOADING' && (
-                  <button
-                    type="button"
-                    onClick={() => handleDownload(model.id)}
-                    className="btn btn-primary text-xs flex items-center gap-1.5 py-1.5 px-3"
-                  >
-                    <ArrowDownTrayIcon className="h-4 w-4" />
-                    {model.status === 'FAILED' ? 'Retry Download' : `Download Model (${model.size_mb} MB)`}
-                  </button>
-                )}
-
-                {model.status === 'ACTIVE' && (
-                  <button
-                    type="button"
-                    onClick={() => handleDelete(model.id)}
-                    className="btn btn-secondary text-xs flex items-center gap-1.5 py-1.5 px-3 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20"
-                  >
-                    <TrashIcon className="h-4 w-4" />
-                    Delete Model (Free Space)
-                  </button>
-                )}
-
+              <div className="text-[11px] text-gray-500 dark:text-gray-400 flex items-center justify-between pt-2 border-t border-gray-200 dark:border-gray-700">
+                <span>
+                  {model.status === 'ACTIVE'
+                    ? 'All news articles and research pulse insights are scored with deep financial transformer accuracy.'
+                    : 'System is running on the zero-overhead dictionary lexicon engine.'}
+                </span>
                 <button
                   type="button"
                   onClick={fetchModels}
                   disabled={loadingModels}
-                  className="btn btn-secondary text-xs flex items-center gap-1 py-1.5 px-2.5 text-gray-500"
-                  title="Check status"
+                  className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+                  title="Refresh engine status"
                 >
                   <ArrowPathIcon className={`h-3.5 w-3.5 ${loadingModels ? 'animate-spin' : ''}`} />
                 </button>

@@ -4,20 +4,26 @@
 
 ## 1. Current Project Status
 
-*   **Overall Status:** Release v1.5.0 In Progress — Portfolio Research Feed & Edge ML Subsystem (Issue #86 / FR8.2) Implemented & Verified.
+*   **Overall Status:** Release v1.5.0 In Progress — Shared Edge ML Model Administration & Storage Management (Issue #614 / FR10.7) Implemented & Verified.
 
-**Latest Achievement:** Resolved E2E Playwright test locator timeouts caused by the sidebar navigation reorganization into collapsible accordion groups (`Markets & Research`, `Tax & Income`, `Administration`). Updated navigation locators across `watchlists.spec.ts`, `tax-readiness-workflow.spec.ts`, `admin-interest-rates.spec.ts`, `admin-user-management.spec.ts`, and `user-guide-screenshots.spec.ts` with resilient visibility checks and section expansions.
+**Latest Achievement:** Architecturally decoupled shared Edge ML model management from individual user settings (Issue #614 / FR10.7). Relocated model download and deletion capabilities into **Administration &rarr; System Maintenance** (`AIModelManagementCard.tsx`), backed by backend authorization checks enforcing administrator-only access in server mode. Streamlined **Profile &rarr; AI & Intelligence** to display read-only active engine status, sentiment testing sandbox, and personal local/cloud LLM configurations.
 
 ## 2. Test Suite Status
 
 *   **Backend Unit/Integration Tests (Postgres/Redis):** ✅ **Passing (All ML & News tests verified)**
 *   **Backend Integration Tests (Android/SQLite):** ✅ **Passing (All ML & News tests verified)**
-*   **Frontend Unit Tests (Vitest/Jest):** ✅ **215/215 Passing (55 Suites)**
+*   **Frontend Unit Tests (Vitest/Jest):** ✅ **220/220 Passing (57 Suites)**
 *   **Frontend TypeScript Compilation:** ✅ **Zero Errors**
 *   **Linters (Code Quality):** ✅ **Passing (0 Errors - Ruff & ESLint clean)**
 *   **E2E Tests (Playwright):** ✅ **Locators updated and verified**
 
 ## Recent Stabilization & Refinement Efforts
+
+*   **Shared Edge ML Model Administration (Issue #614 / FR10.7) (Updated 2026-11-23):**
+    - **Backend Authorization:** Added `get_ml_manager_user` dependency in `app/api/v1/endpoints/ml.py` preventing standard users from downloading or deleting shared models on server deployments (`403 Forbidden`).
+    - **Admin System Maintenance UI:** Created `frontend/src/components/Admin/AIModelManagementCard.tsx` in System Maintenance for downloading, deleting, and monitoring disk usage of the FinBERT ONNX model.
+    - **User Profile Streamlining:** Updated `AIIntelligenceTab.tsx` to remove destructive actions, show a read-only engine status badge, offer an admin shortcut to System Maintenance, and retain personal LLM parameters.
+    - **Verification:** Unit tests added in `test_ml.py`, `AIModelManagementCard.test.tsx`, and `AIIntelligenceTab.test.tsx`. Ruff, TypeScript, and ESLint clean.
 
 *   **E2E Navigation & Accordion Fixes (Issue #86 / PR #613) (Updated 2026-11-23):**
     - **Sidebar Accordion Support:** Enhanced Playwright E2E tests to conditionally open collapsible groups (`Markets & Research`, `Tax & Income`, `Administration`) on `/dashboard` prior to clicking sublinks (`Watchlists`, `Income & Tax Hub`, `User Management`, `Interest Rates`).

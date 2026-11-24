@@ -1,3 +1,30 @@
+## 2026-11-23: Relocate Shared Edge ML Model Management to Admin & Retain User LLM Settings (Issue #614 / FR10.7)
+
+**Task:** Separate shared system-level Edge Machine Learning model management (FinBERT INT8 ONNX) from individual user-level AI preferences. Restrict model weight downloads and disk deletions to administrators in System Maintenance while keeping read-only active engine status, sentiment testing, and personal LLM configurations in User Profile.  
+**AI Assistant:** Antigravity  
+**Role:** Lead Architect & Full-Stack Developer
+
+### Summary
+
+1. **Backend Access Control (`backend/app/api/v1/endpoints/ml.py`):**
+   - Implemented `get_ml_manager_user` dependency: restricts `POST /api/v1/ml/models/{model_id}/download` and `DELETE /api/v1/ml/models/{model_id}` to administrators (`current_user.is_admin`) when running in server mode (`settings.DEPLOYMENT_MODE == "server"`), returning `403 Forbidden` with a descriptive message to non-admin users.
+   - Preserves standalone parity: in desktop/Android standalone mode, the local primary user maintains unrestricted model management.
+   - Retains public accessibility for `GET /api/v1/ml/models`, `GET /api/v1/ml/models/{model_id}/progress`, and `POST /api/v1/ml/sentiment/test` so all authenticated users can view active engine status and test headlines.
+2. **Administrative UI (`frontend/src/components/Admin/AIModelManagementCard.tsx`):**
+   - Created dedicated `AIModelManagementCard` and integrated it into **Administration &rarr; System Maintenance** (`frontend/src/pages/Admin/SystemMaintenancePage.tsx`).
+   - Displays registered models (FinBERT INT8 Quantized, 105.2 MB), status badges (`Active (ONNX Inference)`, `Downloading`, `Failed`, `Not Downloaded`), real-time download progress bar, disk storage paths, and administrative actions: **Download to Server**, **Delete Model (Free Space)** with confirmation safeguard, and **Refresh**.
+3. **User Profile UI Refinement (`frontend/src/components/Profile/AIIntelligenceTab.tsx`):**
+   - Removed destructive model download and deletion buttons from the personal profile view.
+   - Added clean read-only active sentiment engine status badge and an informational note explaining that shared models are hosted on the server.
+   - For administrators, provides a direct link button (`Manage Models in Administration`) pointing to `/admin/maintenance`.
+   - Retained the interactive **🧪 Test Active Sentiment Engine** headline sandbox and the personal **Local & Cloud LLM Provider** configuration (Ollama URL/model and cloud API key inputs).
+4. **Verification & Testing:**
+   - **Backend:** Added comprehensive API authorization tests in `backend/app/tests/test_ml.py` (`test_ml_api_authorization`) verifying 403 Forbidden on unauthorized downloads/deletions and 200 OK for admins and status queries. All 9 tests passed.
+   - **Frontend:** Created unit tests in `AIModelManagementCard.test.tsx` (3/3 passed) and `AIIntelligenceTab.test.tsx` (2/2 passed). Full 57 test suites verified.
+   - **Linters:** `ruff check .` (0 errors), `tsc --noEmit` (0 errors), and `eslint .` (0 errors).
+
+---
+
 ## 2026-11-23: Update E2E Test Locators for Reorganized Navbar and Collapsible Menus (Issue #86)
 
 **Task:** Resolve Playwright E2E test failures caused by navbar reorganization into collapsible accordion groups (`Markets & Research`, `Tax & Income`, and `Administration`).  
