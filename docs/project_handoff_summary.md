@@ -19,6 +19,12 @@
 
 ## Recent Stabilization & Refinement Efforts
 
+*   **Automatic Concall Speaker Discovery & Boundary Repair (Issue #618 / PR #619) (Updated 2026-11-24):**
+    - **Speaker Discovery Engine (`concall_analyzer.py`):** Parses header blocks (`MANAGEMENT:`), moderator analyst introductions (`from the line of <Name>`), and turn frequency heuristics to classify speakers into Management vs Analyst streams without manual hardcoding or LLMs.
+    - **Pure Management Extraction:** Feeds `mgmt_sentences` strictly into Cautionary Remarks (`red_flags`), Top Takeaways, and Guidance metrics, completely preventing analyst inquiries (e.g. Pramod Amthe) from polluting risk flags.
+    - **Line-Wrap Sentence Normalization:** Repaired PDF page boundary punctuation drops (`([a-z0-9])\n+([A-Z])` -> `\1. \2`), eliminating run-on merged takeaway sentences.
+    - **Verification:** 23/23 backend tests passed; verified against 18-page Exide Industries BSE filing transcript.
+
 *   **Watchlist Crash Guard, Takeaway Deduplication & Concall Hedging Calibrations (Issue #618 / PR #619) (Updated 2026-11-24):**
     - **Watchlist Null Safety:** Hardened `backend/app/api/v1/endpoints/watchlists.py` with eager loading and graceful exception handling for live price fetching; safeguarded `frontend/src/components/Watchlists/WatchlistTable.tsx` against undefined or empty item arrays.
     - **Strict Interrogative Exclusion:** Filtered analyst inquiries lacking question marks (`could you tell us...`, `help us understand...`) to keep Key Takeaways focused exclusively on management facts.

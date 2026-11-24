@@ -97,9 +97,10 @@ class ConcallAnalyzer:
         # Numerals and ordinals
         "first", "second", "third", "one", "two", "three", "take", "look", "lot", "bit",
         "thing", "things", "way", "point", "put", "together", "come", "coming",
-        # Corporate legal entity suffixes & terms
+        # Corporate legal entity suffixes & executive titles
         "industries", "limited", "ltd", "corp", "corporation", "inc", "holdings",
-        "enterprises", "technologies", "private", "pvt",
+        "enterprises", "technologies", "private", "pvt", "director", "finance",
+        "officer", "chief", "executive", "president", "managing", "cfo", "ceo", "coo",
         # Document and presentation artifacts
         "page", "pages", "slide", "presentation", "transcript", "session", "dialogue",
         "january", "february", "march", "april", "may", "june", "july", "august",
@@ -111,8 +112,10 @@ class ConcallAnalyzer:
         "well", "much", "many", "couple", "ramp", "minimum", "maximum", "target",
     }
 
+    HONORIFICS = re.compile(r"\b(?:mr|ms|mrs|dr|shri|smt|ca)\.?\s*", re.IGNORECASE)
+
     def _clean_transcript(self, text: str) -> str:
-        """Strips document pagination, PDF headers/footers, and date stamps."""
+        """Strips document pagination, PDF headers/footers, and repairs wrapped line boundaries."""
         t = re.sub(r"\r\n|\r", "\n", text)
         t = re.sub(r"(?i)\bpage\s*\d+\s*(?:of\s*\d+)?\b", "", t)
         t = re.sub(r"(?i)\b\d+\s*of\s*\d+\b", "", t)
@@ -126,7 +129,130 @@ class ConcallAnalyzer:
             "",
             t,
         )
+        # Strip running page headers like "Exide Industries Limited ... Page X of Y"
+        t = re.sub(
+            r"(?i)[A-Z][a-zA-Z\s\.\-']+\s+[A-Za-z]+\s+\d{1,2},?\s+\d{4}\s+Page\s+\d+\s+of\s+\d+",
+            " ",
+            t,
+        )
+        # Repair missing periods across PDF line wraps before capitalized words
+        t = re.sub(r"([a-z0-9])\s*\n+\s*([A-Z][a-z]+)", r"\1. \2", t)
         return t
+
+    @classmethod
+    def normalize_speaker_name(cls, name: str) -> str:
+        name = cls.HONORIFICS.sub("", name).strip()
+        name = re.sub(r"[^a-zA-Z\s.]", "", name)
+        return re.sub(r"\s+", " ", name).lower().strip()
+
+    def discover_speakers(self, raw_text: str) -> Dict[str, Any]:
+        """
+        Automatically identifies Management executives vs. Analysts from Indian BSE/NSE concall transcripts:
+        - Pass A: Parses explicit MANAGEMENT: header block (Pages 1-2).
+        - Pass B: Extracts analysts announced by Moderator cues ('from the line of <Name> from <Brokerage>').
+        - Pass C: Extracts dialogue turns ('<Speaker>: <Utterance>') and uses frequency heuristics (>=3 turns = mgmt).
+        - Splits turns and extracts clean management and analyst sentence streams.
+        """
+        cleaned = re.sub(r"(?i)\bpage\s+\d+\s+of\s+\d+\b", " ", raw_text)
+        cleaned = re.sub(r"([a-z0-9])\s*\n+\s*([A-Z][a-z]+)", r"\1. \2", cleaned)
+        cleaned = re.sub(r"\s*\n+\s*", " ", cleaned)
+
+        mgmt_names: Set[str] = set()
+        analyst_names: Set[str] = set()
+
+        # Pass A: Parse explicit "MANAGEMENT:" header block if present (e.g. Exide, Chorus Call)
+        header_match = re.search(
+            r"(?i)MANAGEMENT\s*:\s*(.*?)(?=MODERATOR\s*:|Moderator\s*:|Question-and-Answer|Management\s+Discussion)",
+            cleaned,
+            flags=re.DOTALL,
+        )
+        if header_match:
+            block = header_match.group(1)
+            for m in re.finditer(
+                r"(?:MR|MS|MRS|DR)\.?\s+([A-Z][A-Za-z\s.]{2,35}?)(?=\s*[–\-—,]|\s+CHIEF|\s+MANAGING|\s+DIRECTOR|\s+PRESIDENT|\s+HEAD|\s+EXECUTIVE|\s+SENIOR)",
+                block,
+                flags=re.IGNORECASE,
+            ):
+                norm = self.normalize_speaker_name(m.group(1))
+                if norm and len(norm) > 2:
+                    mgmt_names.add(norm)
+
+        # Pass B: Extract analysts announced by Moderator ("from the line of <Name> from/with <Firm>")
+        for m in re.finditer(
+            r"(?i)(?:from the line of|question is from|line of)\s+([A-Z][a-zA-Z.\s]{2,35}?)(?=\s+(?:from|with|,|an Individual|\.))",
+            cleaned,
+        ):
+            norm = self.normalize_speaker_name(m.group(1))
+            if norm and len(norm) > 2:
+                analyst_names.add(norm)
+
+        # Pass C: Split all dialogue turns ("Speaker Name: text")
+        turn_pattern = re.compile(
+            r"(?:^|\s)([A-Z][a-zA-Z.]+(?:\s+[A-Z][a-zA-Z.]+){0,3})\s*:\s*"
+        )
+        matches = list(turn_pattern.finditer(cleaned))
+        turns: List[Tuple[str, str]] = []
+        speaker_turn_counts: collections.Counter = collections.Counter()
+
+        for i, m in enumerate(matches):
+            raw_speaker = m.group(1).strip()
+            norm = self.normalize_speaker_name(raw_speaker)
+            if norm in {"sub", "ref", "note", "cin", "email", "phone", "encl", "q", "a", "question", "answer"}:
+                continue
+            start = m.end()
+            end = matches[i + 1].start() if i + 1 < len(matches) else len(cleaned)
+            utterance = cleaned[start:end].strip()
+            turns.append((norm, utterance))
+            if norm not in {"moderator", "operator"} and norm not in analyst_names:
+                speaker_turn_counts[norm] += 1
+
+        # Check for explicit management tags in dialogue turns (e.g. "Management:", "Executive:")
+        for spk, _ in turns:
+            if any(term in spk for term in {"management", "executive", "mgmt", "cfo", "ceo", "director"}):
+                mgmt_names.add(spk)
+
+        # Fallback: If Pass A found nothing, anyone answering >= 2 separate turns is Management
+        if not mgmt_names:
+            mgmt_names = {spk for spk, cnt in speaker_turn_counts.items() if cnt >= 2}
+
+        # Middle-name variations (e.g. "Manoj Kumar Agarwal" vs "Manoj Agarwal")
+        mgmt_first_last: Set[str] = set()
+        for name in mgmt_names:
+            parts = name.split()
+            if len(parts) >= 2:
+                mgmt_first_last.add(f"{parts[0]} {parts[-1]}")
+
+        # Route every turn into Management vs Analyst buckets
+        mgmt_sents: List[str] = []
+        analyst_sents: List[str] = []
+
+        for spk, utterance in turns:
+            if spk in {"moderator", "operator"}:
+                continue
+            parts = spk.split()
+            fl = f"{parts[0]} {parts[-1]}" if len(parts) >= 2 else spk
+
+            # Split turn into individual clean sentences
+            raw_turn_sents = [
+                s.strip()
+                for s in re.split(r"(?<=[.!?])\s+(?=[A-Z0-9\"'₹])", utterance)
+                if len(s.strip()) >= 20
+            ]
+
+            if spk in mgmt_names or fl in mgmt_first_last:
+                for s in raw_turn_sents:
+                    if not self._is_analyst_question(s):
+                        mgmt_sents.append(s)
+            else:
+                for s in raw_turn_sents:
+                    analyst_sents.append(s)
+
+        return {
+            "discovered_management": sorted(mgmt_names),
+            "discovered_analysts": sorted(analyst_names),
+            "mgmt_sentences": mgmt_sents,
+            "analyst_sentences": analyst_sents,
+        }
 
     def _extract_speaker_names(self, text: str) -> Set[str]:
         """Extracts individual executive and analyst name tokens to avoid them polluting topics."""
@@ -385,12 +511,14 @@ class ConcallAnalyzer:
             for score, text in scored_candidates[:n]
         ]
 
-    def mine_guidance_metrics(self, text: str) -> List[Dict[str, str]]:
+    def mine_guidance_metrics(
+        self, text: str, candidate_sentences: Optional[List[str]] = None
+    ) -> List[Dict[str, str]]:
         """
         Extracts forward-looking financial targets, Capex plans, margins, and debt metrics.
         """
         results: List[Dict[str, str]] = []
-        sentences = self._split_sentences(text)
+        sentences = candidate_sentences if candidate_sentences is not None else self._split_sentences(text)
         seen_snippets: Set[str] = set()
 
         for sent in sentences:
@@ -433,13 +561,15 @@ class ConcallAnalyzer:
 
         return results[:4]
 
-    def extract_top_sentences(self, text: str, n: int = 5) -> List[str]:
+    def extract_top_sentences(
+        self, text: str, n: int = 5, candidate_sentences: Optional[List[str]] = None
+    ) -> List[str]:
         """
         Extractive Summarization using TF-IDF Graph Centrality with Concrete Statement Scoring.
         Excludes analyst questions and conversational filler. Heavily weights statements containing
         concrete numerical metrics (percentages, capex amounts, margins, capacities).
         """
-        raw_sents = self._split_sentences(text)
+        raw_sents = candidate_sentences if candidate_sentences is not None else self._split_sentences(text)
         candidates: List[str] = []
 
         for s in raw_sents:
@@ -597,8 +727,15 @@ class ConcallAnalyzer:
     def analyze(self, text: str) -> Dict[str, Any]:
         """
         Runs full end-to-end non-LLM quantitative concall intelligence analysis.
+        Uses automatic speaker discovery to isolate Management remarks from Analyst Q&A.
         """
-        mgmt_sents, qa_sents = self.segment_transcript(text)
+        speaker_data = self.discover_speakers(text)
+        mgmt_sents = speaker_data["mgmt_sentences"]
+        qa_sents = speaker_data["analyst_sentences"]
+
+        # Fallback if no speakers were identified (e.g. raw text without speaker tags)
+        if not mgmt_sents:
+            mgmt_sents, qa_sents = self.segment_transcript(text)
 
         mgmt_tone = self.analyze_tone(mgmt_sents)
         qa_tone = self.analyze_tone(qa_sents)
@@ -612,10 +749,13 @@ class ConcallAnalyzer:
         spoken_text = " ".join(all_substantive_sents) if all_substantive_sents else text
         hedge_rate = self.compute_hedging_rate(spoken_text)
         topic_scores = self.score_aspects(all_substantive_sents)
-        red_flags = self.extract_red_flags(all_substantive_sents, n=3)
 
-        guidance = self.mine_guidance_metrics(text)
-        takeaways = self.extract_top_sentences(text, n=5)
+        # Strictly feed management sentences into risk flags, guidance, and takeaways
+        target_mgmt = mgmt_sents if mgmt_sents else all_substantive_sents
+        red_flags = self.extract_red_flags(target_mgmt, n=3)
+
+        guidance = self.mine_guidance_metrics(text, candidate_sentences=target_mgmt)
+        takeaways = self.extract_top_sentences(text, n=5, candidate_sentences=target_mgmt)
         topics = self.extract_topics(text, n=6)
 
         return {
@@ -630,6 +770,8 @@ class ConcallAnalyzer:
             "top_takeaways": takeaways,
             "key_themes": topics,
             "sentence_count": len(mgmt_sents) + len(qa_sents),
+            "discovered_management": speaker_data.get("discovered_management", []),
+            "discovered_analysts": speaker_data.get("discovered_analysts", []),
         }
 
 

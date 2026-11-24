@@ -1,3 +1,26 @@
+## 2026-11-24: Automatic Concall Speaker Discovery & Boundary Line-Wrap Normalization (Issue #618 / PR #619)
+
+**Task:** Integrate zero-LLM automatic speaker discovery to partition concall transcripts into Management vs. Analyst turns, preventing analyst remarks (e.g., Pramod Amthe's question) from entering Cautionary Remarks or Top Takeaways. Repair PDF line-wrap punctuation drops to prevent run-on sentence splits.  
+**AI Assistant:** Antigravity  
+**Role:** Lead Architect & Full-Stack Developer
+
+### Summary
+
+1. **Automatic Speaker Discovery Engine (`backend/app/ml/concall_analyzer.py`):**
+   - **Pass A (Header Parsing):** Automatically extracts executive rosters from explicit `MANAGEMENT:` or `EXECUTIVE:` blocks on Page 1–2 before the call begins.
+   - **Pass B (Moderator Cues):** Identifies analysts announced by Moderator lines (`from the line of <Name> from <Brokerage>` / `question is from <Name>`).
+   - **Pass C (Dialogue Turns & Frequency Heuristic):** Parses turn patterns (`<Speaker Name>: <Utterance>`). If header blocks are omitted (e.g. inline introductions), speakers answering $\ge 2$ separate turns after different moderator cues are classified as Management.
+   - **Middle-Name Matching:** Handles full name vs. abbreviated dialogue turns (`Manoj Kumar Agarwal` vs `Manoj Agarwal`).
+2. **Defensive Pipeline Routing:**
+   - Feeds strictly Management sentences (`mgmt_sentences`) into `extract_red_flags`, `extract_top_sentences`, and `mine_guidance_metrics`. Analyst statements can never enter management risk flags or core takeaways.
+   - Evaluates Management Tone (`mgmt_tone`) and Analyst Tone (`qa_tone`) on their respective speaker streams.
+3. **PDF Line-Wrap Sentence Boundary Repair:**
+   - Normalizes PDF line breaks dropping punctuation across wrapped lines (`re.sub(r"([a-z0-9])\s*\n+\s*([A-Z][a-z]+)", r"\1. \2", text)`), resolving merged sentences (e.g., `"500 gigawatt is aspiration. Today, we are at..."`).
+4. **Testing & QA:**
+   - Tested directly on the 18-page Exide Industries BSE filing PDF transcript: Discovered executives `['avik roy', 'jitendra kumar', 'manoj kumar agarwal']`, filtered out Pramod Amthe's inquiry from Cautionary Remarks, cleanly repaired boundary splits, and passed all 23 backend tests.
+
+---
+
 ## 2026-11-24: Watchlist Crash Guard, Takeaway Deduplication & Concall Hedging Calibrations (Issue #618 / PR #619)
 
 **Task:** Fix frontend/backend crash when accessing watchlists. Refine Concall Intelligence takeaways to filter out analyst interrogatives ending in periods, deduplicate overlapping key metrics across turns (e.g., duplicate 80% utilization takeaways), expand the Loughran-McDonald uncertainty vocabulary, and improve the UI presentation of hedging density.  
