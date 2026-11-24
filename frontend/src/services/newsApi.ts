@@ -43,7 +43,8 @@ export const analyzeConcall = async (
 ): Promise<ConcallAnalysis> => {
   const response = await apiClient.post<ConcallAnalysis>(
     `/api/v1/news/${articleId}/analyze-concall`,
-    transcriptText ? { transcript_text: transcriptText } : {}
+    transcriptText ? { transcript_text: transcriptText } : {},
+    { timeout: 300000 } // 5-minute timeout for edge audio speech-to-text
   );
   return response.data;
 };

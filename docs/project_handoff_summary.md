@@ -19,6 +19,13 @@
 
 ## Recent Stabilization & Refinement Efforts
 
+*   **Whisper Financial Prompt Biasing & Post-ASR Phonetic Normalization (Issue #618 / PR #619) (Updated 2026-11-24):**
+    - **Decoder Biasing (`whisper_engine.py`):** Added `FINANCIAL_WHISPER_PROMPT` containing Indian accounting & corporate terminology to prime Whisper's decoder beam search, preventing phonetic hallucinations at source.
+    - **Post-ASR Normalization (`whisper_engine.py`):** Implemented `normalize_whisper_transcript` to correct Indian accent misrecognitions (`"corona"` -> `"crores"`, `"stop line"` -> `"top line"`, `"mental margin"` -> `"maintain margin"`, `"9.6 store"` -> `"9.6 crores"`) and collapse stuttered disfluencies.
+    - **Risk Flag Sentiment Guard (`concall_analyzer.py`):** Prevented bullish guidance (`tone_score > 0.15`) from being categorized as cautionary remarks.
+    - **Theme Tag Sanitization (`concall_analyzer.py`):** Excluded ASR spoken artifact bigrams (`#Per Row`, `#Higher Percent`) from discussion themes.
+    - **Verification:** 31/31 backend tests passing; 3/3 frontend tests passing.
+
 *   **Faster-Whisper On-Device Concall Audio Transcription (Issue #618 / PR #619) (Updated 2026-11-24):**
     - **faster-whisper Engine Integration (`whisper_engine.py`):** Replaced stubbed ONNX decoder with `faster-whisper` (CTranslate2 INT8 quantized on CPU). Leveraged bundled PyAV for native MP3/M4A audio decoding, completely eliminating the need for system `ffmpeg`.
     - **Model Management (`model_manager.py`):** Registered `faster_whisper` in model catalog, supported directory-based weights, and integrated `download_model` helper.

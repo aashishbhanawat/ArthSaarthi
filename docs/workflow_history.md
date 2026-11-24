@@ -1,3 +1,31 @@
+## 2026-11-24: Whisper Financial Prompt Biasing & Post-ASR Phonetic Normalization (Issue #618 / PR #619)
+
+**Task:**
+1. Address Indian financial accent misrecognitions in Whisper output (`"corona"` -> `"crores"`, `"stop line"` -> `"top line"`, `"9.6 store"` -> `"9.6 crores"`, `"per row"` -> `"per crore"`).
+2. Pass `initial_prompt=FINANCIAL_WHISPER_PROMPT` into Faster-Whisper to prime the decoder with Indian corporate and financial vocabulary prior weights.
+3. Implement `normalize_whisper_transcript` to correct ASR phonetic hallucinations and collapse duplicate stuttered words (`"employee employee"` -> `"employee"`).
+4. Guard `extract_red_flags` in `concall_analyzer.py` so unambiguously positive forward guidance statements (`tone_score > 0.15`) are not classified as cautionary risk flags.
+5. Filter ASR spoken artifact bigrams (`#Per Row`, `#Higher Percent`, `#Growth Percent`) from `THEME_STOP_PHRASES`.
+6. Increase `analyzeConcall` frontend timeout to 5 minutes (300,000 ms) to prevent client-side proxy read timeouts on 45-60 min concall audio.  
+**AI Assistant:** Antigravity  
+**Role:** Lead Architect & Full-Stack Developer
+
+### Summary
+
+1. **Decoder Bias Prompting (`backend/app/ml/whisper_engine.py`):**
+   - Injected `FINANCIAL_WHISPER_PROMPT` into `model.transcribe`: primes the model with prior probabilities for Indian numbering and market terms (`crores`, `lakhs`, `EBITDA`, `PAT`, `YoY`, `QoQ`, `basis points`, `bps`, `top line`, `bottom line`, `order book`, `capex`, `guidance`, `margin`, `realization`, etc.).
+2. **Post-ASR Phonetic Normalization (`backend/app/ml/whisper_engine.py`):**
+   - Created `normalize_whisper_transcript` with regex mappings for crore/numbering misrecognitions, growth guidance phrasing (`"to grow by around X%"`), management tracking phrases (`"maintain margin"`, `"tracking closely"`), and stutter collapsing.
+3. **Risk Flag Guard against Bullish Guidance (`backend/app/ml/concall_analyzer.py`):**
+   - Hardened `extract_red_flags`: only admits sentences with `tone_score < 0.0` or `(uncertainty_rate > 0 and tone_score <= 0.15)`, preventing bullish management guidance from being mistakenly categorized as a cautionary risk statement.
+4. **Theme Tag Sanitization (`backend/app/ml/concall_analyzer.py`):**
+   - Added `"per row"`, `"per crore"`, `"higher percent"`, `"growth percent"`, `"get orders"`, `"percent"` to `THEME_STOP_PHRASES`.
+5. **Testing & QA:**
+   - 31/31 backend tests passing (`test_concall_analyzer.py`, `test_news.py`, `test_ml.py`).
+   - 3/3 frontend unit tests passing in `ConcallAnalysisModal.test.tsx`.
+
+---
+
 ## 2026-11-24: Faster-Whisper On-Device Concall Audio Transcription (Issue #618 / PR #619)
 
 **Task:**

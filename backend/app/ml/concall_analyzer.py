@@ -101,6 +101,7 @@ class ConcallAnalyzer:
         "industries", "limited", "ltd", "corp", "corporation", "inc", "holdings",
         "enterprises", "technologies", "private", "pvt", "director", "finance",
         "officer", "chief", "executive", "president", "managing", "cfo", "ceo", "coo",
+        "percent", "percentage", "row", "rows",
         # Document and presentation artifacts
         "page", "pages", "slide", "presentation", "transcript", "session", "dialogue",
         "january", "february", "march", "april", "may", "june", "july", "august",
@@ -126,6 +127,8 @@ class ConcallAnalyzer:
         "third quarter", "full year", "going forward", "few years", "couple years",
         "next couple", "past year", "previous year", "director finance",
         "chief financial", "managing director", "conference call", "earnings call",
+        "per row", "per crore", "higher percent", "growth percent", "get orders",
+        "percent", "percentage",
     }
 
     HONORIFICS = re.compile(r"\b(?:mr|ms|mrs|dr|shri|smt|ca)\.?\s*", re.IGNORECASE)
@@ -558,7 +561,8 @@ class ConcallAnalyzer:
             # Penalize tone score further if uncertainty words are present
             risk_score = res.tone_score - (0.25 if uncertainty_rate > 0 else 0.0)
 
-            if res.tone_score < 0.0 or uncertainty_rate > 0:
+            # If a statement is unambiguously positive (tone > 0.15), it is positive forward guidance, not a risk flag
+            if res.tone_score < 0.0 or (uncertainty_rate > 0 and res.tone_score <= 0.15):
                 scored_candidates.append((risk_score, cleaned))
                 if self.is_high_signal_sentence(cleaned):
                     high_density_candidates.append((risk_score, cleaned))

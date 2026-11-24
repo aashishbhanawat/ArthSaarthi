@@ -1,5 +1,6 @@
 import logging
 import os
+import re
 import tempfile
 from pathlib import Path
 from typing import Optional
@@ -9,6 +10,36 @@ import requests
 from app.ml.model_manager import model_manager
 
 logger = logging.getLogger(__name__)
+
+# Decoder bias prompt for Indian earnings calls (prior weights for financial terms)
+FINANCIAL_WHISPER_PROMPT = (
+    "Indian corporate earnings conference call transcript. "
+    "Terms: crores, lakhs, EBITDA, PAT, YoY, QoQ, basis points, bps, "
+    "top line, bottom line, order book, capex, working capital, guidance, "
+    "railways, RVNL, Vande Bharat, metro, electrification, margin, realization, "
+    "revenue from operations, quarterly results, execution."
+)
+
+# Post-ASR phonetic corrections for common Whisper distortions on Indian accents
+ASR_CORRECTIONS = [
+    # Indian numbering & crore phonetics: "171 corona" -> "171 crores", "9.6 store" -> "9.6 crores"
+    (r"\b(\d+(?:\.\d+)?)\s*(?:corona|coronas|store|stores|grower)\b", r"\1 crores"),
+    (r"\bper\s+row\b", "per crore"),
+    (r"\bstop\s+line\b", "top line"),
+    (r"\bto\s+go\s+by\s+(?:around\s+)?(\d+%)", r"to grow by around \1"),
+    (r"\bselected\s+to\s+increase\b", "expected to increase"),
+    (r"\bcracking\s+closely\b", "tracking closely"),
+    (r"\bmental\s+margin\b", "maintain margin"),
+    # Collapse stuttered duplicate words ("employee employee" -> "employee")
+    (r"\b([a-zA-Z]+)\s+\1\b", r"\1"),
+]
+
+
+def normalize_whisper_transcript(text: str) -> str:
+    """Normalizes Whisper transcription text by correcting common Indian financial mishearings."""
+    for pattern, replacement in ASR_CORRECTIONS:
+        text = re.sub(pattern, replacement, text, flags=re.IGNORECASE)
+    return re.sub(r"\s+", " ", text).strip()
 
 
 class WhisperEngine:
@@ -150,13 +181,14 @@ class WhisperEngine:
             language="en",
             condition_on_previous_text=False,
             vad_filter=True,
+            initial_prompt=FINANCIAL_WHISPER_PROMPT,
         )
 
         transcript_segments = []
         for s in segments:
             text = s.text.strip()
             if text:
-                transcript_segments.append(text)
+                transcript_segments.append(normalize_whisper_transcript(text))
 
         full_transcript = " ".join(transcript_segments).strip()
         logger.info(
