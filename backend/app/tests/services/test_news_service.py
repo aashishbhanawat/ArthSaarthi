@@ -413,6 +413,14 @@ def test_citurgia_result_classification(db):
     # 1. Date-based quarter inference: 30.09.2026 is Q2 FY27
     assert extract_quarter_from_text(desc) == "Q2 FY27"
 
+    # User reported: Subject line with month spelled out in words
+    sub_line = "Sub: Submission of Unaudited Financial Results for Quarter and half year ended 30th September, 2026."
+    assert extract_quarter_from_text(sub_line) == "Q2 FY27"
+
+    # Additional month variations
+    assert extract_quarter_from_text("Results for quarter ended 30th June, 2026") == "Q1 FY27"
+    assert extract_quarter_from_text("Audited Results for year ended 31st March, 2026") == "Q4 FY26"
+
     meta = extract_corporate_metadata(title, desc, is_exchange_filing=True)
     assert meta.get("quarter") == "Q2 FY27"
 

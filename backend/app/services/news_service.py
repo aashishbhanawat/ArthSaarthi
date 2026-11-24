@@ -230,10 +230,31 @@ def extract_concall_metadata(
     return meta
 
 
+MONTH_NAME_TO_NUM = {
+    "jan": 1, "feb": 2, "mar": 3, "apr": 4, "may": 5, "jun": 6,
+    "jul": 7, "aug": 8, "sep": 9, "oct": 10, "nov": 11, "dec": 12,
+}
+
+
+def _fiscal_quarter_from_month_year(month: int, yr: int) -> Optional[str]:
+    """Helper to convert calendar month and year to Indian fiscal quarter (April 1 to March 31)."""
+    if yr < 100:
+        yr += 2000
+    if month in [4, 5, 6]:
+        return f"Q1 FY{str(yr + 1)[-2:]}"
+    elif month in [7, 8, 9]:
+        return f"Q2 FY{str(yr + 1)[-2:]}"
+    elif month in [10, 11, 12]:
+        return f"Q3 FY{str(yr + 1)[-2:]}"
+    elif month in [1, 2, 3]:
+        return f"Q4 FY{str(yr)[-2:]}"
+    return None
+
+
 def extract_quarter_from_text(text: str) -> Optional[str]:
     """
     Extracts financial reporting quarter from text (e.g. 'Q2 FY27', 'Q2FY25',
-    or date-based reporting like 'ended 30.09.2026' -> 'Q2 FY27').
+    or date-based reporting like 'ended 30.09.2026' or 'ended 30th September, 2026' -> 'Q2 FY27').
     """
     if not text:
         return None
@@ -243,28 +264,52 @@ def extract_quarter_from_text(text: str) -> Optional[str]:
         return q_match.group(1).upper()
 
     # 2. Date-based quarter inference for Indian reporting (April 1 to March 31 fiscal year)
-    # Ended 30.06 -> Q1; Ended 30.09 -> Q2; Ended 31.12 -> Q3; Ended 31.03 -> Q4
-    date_match = re.search(
+    # A: Numerical date: ended 30.09.2026 or 30/09/2026 or 30-09-2026
+    num_date_match = re.search(
         r"(?:quarter|half\s*year|year)\s*ended\s*[-–—:]?\s*([0-3]?[0-9])[./-]([0-1]?[0-9])[./-](\d{2,4})",
         text,
         re.IGNORECASE,
     )
-    if date_match:
+    if num_date_match:
         try:
-            month = int(date_match.group(2))
-            yr = int(date_match.group(3))
-            if yr < 100:
-                yr += 2000
-            if month in [4, 5, 6]:
-                return f"Q1 FY{str(yr + 1)[-2:]}"
-            elif month in [7, 8, 9]:
-                return f"Q2 FY{str(yr + 1)[-2:]}"
-            elif month in [10, 11, 12]:
-                return f"Q3 FY{str(yr + 1)[-2:]}"
-            elif month in [1, 2, 3]:
-                return f"Q4 FY{str(yr)[-2:]}"
+            month = int(num_date_match.group(2))
+            yr = int(num_date_match.group(3))
+            return _fiscal_quarter_from_month_year(month, yr)
         except (ValueError, TypeError):
             pass
+
+    # B: Word date: ended 30th September, 2026
+    word_date_match = re.search(
+        r"(?:quarter|half\s*year|year)\s*ended\s*[-–—:]?\s*(?:on\s*)?(?:([0-3]?[0-9])(?:st|nd|rd|th)?\s+)?([A-Za-z]+)[,\s]+(\d{2,4})",
+        text,
+        re.IGNORECASE,
+    )
+    if word_date_match:
+        m_name = word_date_match.group(2).lower()[:3]
+        if m_name in MONTH_NAME_TO_NUM:
+            try:
+                month = MONTH_NAME_TO_NUM[m_name]
+                yr = int(word_date_match.group(3))
+                return _fiscal_quarter_from_month_year(month, yr)
+            except (ValueError, TypeError):
+                pass
+
+    # C: Inverted word date: ended September 30, 2026
+    inv_date_match = re.search(
+        r"(?:quarter|half\s*year|year)\s*ended\s*[-–—:]?\s*(?:on\s*)?([A-Za-z]+)\s+([0-3]?[0-9])(?:st|nd|rd|th)?[,\s]+(\d{2,4})",
+        text,
+        re.IGNORECASE,
+    )
+    if inv_date_match:
+        m_name = inv_date_match.group(1).lower()[:3]
+        if m_name in MONTH_NAME_TO_NUM:
+            try:
+                month = MONTH_NAME_TO_NUM[m_name]
+                yr = int(inv_date_match.group(3))
+                return _fiscal_quarter_from_month_year(month, yr)
+            except (ValueError, TypeError):
+                pass
+
     return None
 
 
