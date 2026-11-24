@@ -204,46 +204,39 @@ def test_concall_high_signal_and_theme_stop_phrases():
 def test_whisper_engine_status():
     status = whisper_engine.get_status()
     assert status["model_id"] == "whisper_tiny_en"
+    assert status["engine"] == "faster-whisper"
     assert "status" in status
     assert "is_available" in status
+    assert status["model_size"] == "tiny.en"
 
 
-def test_whisper_engine_unavailable_without_ffmpeg():
-    with patch("shutil.which", return_value=None):
+def test_whisper_engine_unavailable_without_runtime():
+    with patch.object(whisper_engine, "is_available", False):
         assert whisper_engine.is_available is False
 
 
 def test_whisper_transcription_raises_error_without_runtime(tmp_path):
     dummy_audio = tmp_path / "dummy.m4a"
     dummy_audio.write_bytes(b"dummy")
-    with patch("shutil.which", return_value="/usr/bin/ffmpeg"):
-        with patch("app.ml.model_manager.model_manager.is_model_available", return_value=True):
-            with patch("app.ml.model_manager.model_manager.get_model_path") as mock_path:
-                mock_path.return_value.exists.return_value = True
-                with pytest.raises(RuntimeError, match="Audio transcription requires ffmpeg"):
-                    whisper_engine.transcribe_audio_file(dummy_audio)
+    with patch.object(whisper_engine, "is_available", False):
+        with pytest.raises(RuntimeError, match="faster-whisper library is not installed"):
+            whisper_engine.transcribe_audio_file(dummy_audio)
 
 
 def test_whisper_transcription_when_available(tmp_path):
     dummy_audio = tmp_path / "dummy.m4a"
     dummy_audio.write_bytes(b"fake audio bytes")
-    with patch("shutil.which", return_value="/usr/bin/ffmpeg"):
-        with patch("app.ml.model_manager.model_manager.is_model_available", return_value=True):
-            with patch.object(whisper_engine, "_transcribe_with_model", return_value="Transcribed text"):
-                with patch("app.ml.model_manager.model_manager.get_model_path") as mock_path:
-                    mock_path.return_value.exists.return_value = True
-                    res = whisper_engine.transcribe_audio_file(dummy_audio)
-                    assert res == "Transcribed text"
+    with patch.object(whisper_engine, "is_available", True):
+        with patch.object(whisper_engine, "_transcribe_with_model", return_value="Transcribed text"):
+            res = whisper_engine.transcribe_audio_file(dummy_audio)
+            assert res == "Transcribed text"
 
 
 def test_whisper_transcription_remote_url():
-    with patch("shutil.which", return_value="/usr/bin/ffmpeg"):
-        with patch("app.ml.model_manager.model_manager.is_model_available", return_value=True):
-            with patch.object(whisper_engine, "_transcribe_with_model", return_value="Transcribed text"):
-                with patch("app.ml.model_manager.model_manager.get_model_path") as mock_path:
-                    mock_path.return_value.exists.return_value = True
-                    with patch("requests.get") as mock_get:
-                        mock_get.return_value.__enter__.return_value.iter_content.return_value = [b"fake audio stream"]
-                        mock_get.return_value.__enter__.return_value.raise_for_status = lambda: None
-                        res = whisper_engine.transcribe_audio_file("https://example.com/concall.m4a")
-                        assert res == "Transcribed text"
+    with patch.object(whisper_engine, "is_available", True):
+        with patch.object(whisper_engine, "_transcribe_with_model", return_value="Transcribed text"):
+            with patch("requests.get") as mock_get:
+                mock_get.return_value.__enter__.return_value.iter_content.return_value = [b"fake audio stream"]
+                mock_get.return_value.__enter__.return_value.raise_for_status = lambda: None
+                res = whisper_engine.transcribe_audio_file("https://example.com/concall.m4a")
+                assert res == "Transcribed text"

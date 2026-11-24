@@ -131,7 +131,12 @@ describe('ConcallAnalysisModal', () => {
     expect(screen.getByText(/75% Pos/i)).toBeInTheDocument();
   });
 
-  test('disables analyze button when concall has only audio and no transcript', () => {
+  test('renders transcribe and analyze audio button when concall has audio podcast', async () => {
+    mockedNewsApi.analyzeConcall.mockResolvedValue({
+      ...mockAnalysisResult,
+      transcription_source: 'WHISPER_AUDIO',
+    });
+
     const audioOnlyArticle: MarketNewsArticle = {
       ...mockArticle,
       metadata_json: {
@@ -148,8 +153,16 @@ describe('ConcallAnalysisModal', () => {
       />
     );
 
-    const analyzeBtn = screen.getByRole('button', { name: /Analyze with Edge Engine/i });
-    expect(analyzeBtn).toBeDisabled();
-    expect(screen.getByText(/Automated audio-to-text requires system tool/i)).toBeInTheDocument();
+    expect(screen.getByText(/On-Device Audio Intelligence/i)).toBeInTheDocument();
+    const transcribeBtn = screen.getByRole('button', { name: /Transcribe & Analyze Audio/i });
+    expect(transcribeBtn).toBeEnabled();
+
+    fireEvent.click(transcribeBtn);
+
+    await waitFor(() => {
+      expect(mockedNewsApi.analyzeConcall).toHaveBeenCalledWith(audioOnlyArticle.id, undefined);
+      expect(screen.getByText('Management Discussion Tone')).toBeInTheDocument();
+      expect(screen.getByText(/Source: WHISPER_AUDIO/i)).toBeInTheDocument();
+    });
   });
 });

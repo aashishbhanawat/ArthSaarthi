@@ -248,3 +248,13 @@ xlrd==2.0.2
     # via -r requirements.in
 yfinance==1.1.0
     # via -r requirements.in
+faster-whisper==1.2.1
+    # via -r requirements.in
+av==18.1.1
+    # via faster-whisper
+ctranslate2==4.9.1
+    # via faster-whisper
+tokenizers==0.23.3
+    # via faster-whisper
+huggingface-hub==2.4.0
+    # via faster-whisper

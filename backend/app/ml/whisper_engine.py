@@ -1,8 +1,8 @@
 import logging
 import os
-import shutil
 import tempfile
 from pathlib import Path
+from typing import Optional
 
 import requests
 
@@ -14,87 +14,111 @@ logger = logging.getLogger(__name__)
 class WhisperEngine:
     """
     Edge Speech-to-Text Transcriber for earnings conference calls and audio podcasts.
-    Wraps quantized edge Whisper model managed via ModelManager.
+    Powered by faster-whisper (CTranslate2 INT8 quantized on-device inference).
     """
 
     MODEL_ID = "whisper_tiny_en"
+    MODEL_SIZE = "tiny.en"
 
     def __init__(self):
-        self._session = None
+        self._model = None
 
     @property
     def is_available(self) -> bool:
-        """
-        Returns True if ffmpeg and speech-to-text model are available.
-        Audio transcription requires ffmpeg binary for audio decoding and resampling.
-        """
-        if not shutil.which("ffmpeg"):
+        """Returns True if faster-whisper runtime is installed."""
+        if hasattr(self, "_is_available") and self._is_available is not None:
+            return self._is_available
+        try:
+            import faster_whisper  # noqa: F401
+            return True
+        except ImportError:
             return False
-        return model_manager.is_model_available(self.MODEL_ID)
+
+    @is_available.setter
+    def is_available(self, value: bool) -> None:
+        self._is_available = value
+
+    @is_available.deleter
+    def is_available(self) -> None:
+        if hasattr(self, "_is_available"):
+            del self._is_available
+
+    def _get_model(self):
+        """Lazy loads faster-whisper CTranslate2 model on CPU with INT8 quantization."""
+        if self._model is None:
+            from faster_whisper import WhisperModel
+            download_root = str(model_manager.models_dir / "whisper")
+            logger.info("Initializing faster-whisper '%s' (compute_type=int8) at %s", self.MODEL_SIZE, download_root)
+            self._model = WhisperModel(
+                self.MODEL_SIZE,
+                device="cpu",
+                compute_type="int8",
+                download_root=download_root,
+            )
+        return self._model
 
     def get_status(self) -> dict:
         """Returns model status and readiness for speech-to-text transcription."""
         info = model_manager.get_model_status(self.MODEL_ID)
         return {
             "model_id": self.MODEL_ID,
+            "engine": "faster-whisper",
             "status": info.status,
             "is_available": self.is_available,
             "size_mb": info.size_mb,
             "filename": info.filename,
+            "model_size": self.MODEL_SIZE,
         }
 
-    def transcribe_audio_file(self, audio_path: str | Path) -> str:
+    def transcribe_audio_file(self, audio_path: str | Path, max_bytes: int = 60 * 1024 * 1024) -> str:
         """
-        Transcribes audio file or remote audio URL to text using the edge Whisper model.
+        Transcribes audio file or remote audio URL to text using faster-whisper.
         """
         if not self.is_available:
             raise RuntimeError(
-                "Audio transcription requires ffmpeg and speech-to-text runtime. "
+                "faster-whisper library is not installed. "
                 "Please paste the official conference call transcript or upload the BSE filing PDF directly."
             )
 
-        model_path = model_manager.get_model_path(self.MODEL_ID)
-        if not model_path or not model_path.exists():
-            raise FileNotFoundError(f"Whisper model weights not found at {model_path}")
-
         audio_str = str(audio_path)
         if audio_str.startswith(("http://", "https://")):
-            return self._download_and_transcribe(audio_str, model_path)
+            return self._download_and_transcribe(audio_str, max_bytes=max_bytes)
 
         local_path = Path(audio_path)
         if not local_path.exists():
             raise FileNotFoundError(f"Audio file not found: {local_path}")
 
         try:
-            return self._transcribe_with_model(local_path, model_path)
+            return self._transcribe_with_model(local_path)
         except Exception as e:
             logger.error("Audio transcription failed: %s", e)
             raise RuntimeError(f"Transcription error: {str(e)}")
 
-    def _download_and_transcribe(self, url: str, model_path: Path) -> str:
+    def _download_and_transcribe(self, url: str, max_bytes: int = 60 * 1024 * 1024) -> str:
         """
         Streams and downloads remote audio into a temporary local file,
         then invokes transcription.
         """
         logger.info("Downloading remote concall audio stream from %s", url)
-        with tempfile.NamedTemporaryFile(suffix=".m4a", delete=False) as tmp_file:
+        suffix = ".m4a" if ".m4a" in url.lower() else ".mp3"
+        with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as tmp_file:
             tmp_path = Path(tmp_file.name)
 
         try:
-            # Stream up to 15MB which contains the opening remarks and initial Q&A
-            max_bytes = 15 * 1024 * 1024
-            total_downloaded = 0
-            with requests.get(url, stream=True, timeout=60) as resp:
+            headers = {
+                "User-Agent": (
+                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                    "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+                ),
+            }
+            with requests.get(url, stream=True, timeout=120, headers=headers) as resp:
                 resp.raise_for_status()
                 with open(tmp_path, "wb") as f:
                     for chunk in resp.iter_content(chunk_size=1048576):
                         if chunk:
                             f.write(chunk)
-                            total_downloaded += len(chunk)
-                            if total_downloaded >= max_bytes:
-                                break
 
-            return self._transcribe_with_model(tmp_path, model_path)
+            return self._transcribe_with_model(tmp_path)
         except Exception as e:
             logger.error("Failed to stream and transcribe remote audio %s: %s", url, e)
             raise RuntimeError(f"Transcription error: {str(e)}")
@@ -105,21 +129,43 @@ class WhisperEngine:
                 except Exception:
                     pass
 
-    def _transcribe_with_model(self, audio_path: str | Path, model_path: Path) -> str:
+    def _transcribe_with_model(self, audio_path: str | Path) -> str:
         """
-        Internal transcription runner. Handles audio extraction and inference.
+        Internal transcription runner using faster-whisper.
+        Decodes audio directly via bundled PyAV (no system ffmpeg binary required).
         """
-        if isinstance(audio_path, str) and not os.path.exists(audio_path):
-            raise FileNotFoundError(f"Audio file not found: {audio_path}")
+        path_str = str(audio_path)
+        if not os.path.exists(path_str):
+            raise FileNotFoundError(f"Audio file not found: {path_str}")
 
-        file_size = os.path.getsize(audio_path)
+        file_size = os.path.getsize(path_str)
         if file_size == 0:
             return ""
 
-        raise RuntimeError(
-            "Audio transcription requires ffmpeg and speech-to-text runtime. "
-            "Please paste the official conference call transcript or upload the BSE filing PDF directly."
+        model = self._get_model()
+        logger.info("Starting faster-whisper transcription on %s (%0.1f MB)", path_str, file_size / (1024 * 1024))
+        segments, info = model.transcribe(
+            path_str,
+            beam_size=1,
+            language="en",
+            condition_on_previous_text=False,
+            vad_filter=True,
         )
+
+        transcript_segments = []
+        for s in segments:
+            text = s.text.strip()
+            if text:
+                transcript_segments.append(text)
+
+        full_transcript = " ".join(transcript_segments).strip()
+        logger.info(
+            "Completed faster-whisper transcription: %d segments, %d chars (detected lang: %s)",
+            len(transcript_segments),
+            len(full_transcript),
+            info.language,
+        )
+        return full_transcript
 
 
 whisper_engine = WhisperEngine()

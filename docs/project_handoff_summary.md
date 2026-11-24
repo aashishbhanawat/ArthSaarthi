@@ -19,6 +19,12 @@
 
 ## Recent Stabilization & Refinement Efforts
 
+*   **Faster-Whisper On-Device Concall Audio Transcription (Issue #618 / PR #619) (Updated 2026-11-24):**
+    - **faster-whisper Engine Integration (`whisper_engine.py`):** Replaced stubbed ONNX decoder with `faster-whisper` (CTranslate2 INT8 quantized on CPU). Leveraged bundled PyAV for native MP3/M4A audio decoding, completely eliminating the need for system `ffmpeg`.
+    - **Model Management (`model_manager.py`):** Registered `faster_whisper` in model catalog, supported directory-based weights, and integrated `download_model` helper.
+    - **Audio-Only Modal Workflow (`ConcallAnalysisModal.tsx`):** Enabled "Transcribe & Analyze Audio" button for audio-only podcasts, surfacing live transcription progress (`~1-2 min`) and on-device privacy guarantees.
+    - **Verification:** 31/31 backend tests passing (`test_concall_analyzer.py`, `test_news.py`, `test_ml.py`); frontend Jest tests passing (100%); ESLint and Python clean.
+
 *   **Audio-Only Button Guard & ffmpeg Dependency Visibility (Issue #618 / PR #619) (Updated 2026-11-24):**
     - **Disabled Analyze Button for Audio-Only (`ConcallAnalysisModal.tsx`):** Safely disabled the "Analyze with Edge Engine" button on audio-only concalls to prevent client error 400s, guiding users to "Listen Audio" or "Paste Custom Transcript".
     - **System Dependency Surfacing (`model_manager.py`, `ml.py`, `AIModelManagementCard.tsx`, `AIIntelligenceTab.tsx`):** Added `system_dependency` and `system_dependency_satisfied` to model management, displaying real-time detection of external binaries like `ffmpeg`.

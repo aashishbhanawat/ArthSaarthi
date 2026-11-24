@@ -227,7 +227,7 @@ def test_analyze_concall_audio_only_without_transcript_returns_400(client, db):
     crud.market_news.create_or_update(db, obj_in=article)
 
     # Calling analyze-concall with no transcript and whisper unavailable should return 400
-    with patch("shutil.which", return_value=None):
+    with patch("app.api.v1.endpoints.news.whisper_engine.is_available", False):
         res = client.post(
             f"/api/v1/news/{audio_only_id}/analyze-concall",
             headers=headers,
@@ -235,6 +235,22 @@ def test_analyze_concall_audio_only_without_transcript_returns_400(client, db):
         )
         assert res.status_code == 400
         assert "Only audio podcast is available" in res.json()["detail"]
+
+    # Calling analyze-concall when whisper is available transcribes audio and returns 200
+    with patch("app.api.v1.endpoints.news.whisper_engine.is_available", True):
+        with patch(
+            "app.api.v1.endpoints.news.whisper_engine.transcribe_audio_file",
+            return_value="Management delivered strong results with robust revenue and guidance.",
+        ):
+            res_transcribe = client.post(
+                f"/api/v1/news/{audio_only_id}/analyze-concall",
+                headers=headers,
+                json={},
+            )
+            assert res_transcribe.status_code == 200
+            data = res_transcribe.json()
+            assert data["transcription_source"] == "WHISPER_AUDIO"
+            assert data["management_tone"]["overall"] in ["BULLISH", "BALANCED", "NEUTRAL", "BEARISH"]
 
 
 def test_purge_removes_fake_whisper_analysis(db: Session) -> None:

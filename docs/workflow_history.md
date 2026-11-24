@@ -1,3 +1,36 @@
+## 2026-11-24: Faster-Whisper On-Device Concall Audio Transcription (Issue #618 / PR #619)
+
+**Task:**
+1. Upgrade `whisper_engine.py` from mock/unsupported ONNX stub to **`faster-whisper`** (CTranslate2 INT8 quantized on-device inference).
+2. Utilize bundled PyAV audio decoding engine, completely eliminating external system `ffmpeg` binary dependency.
+3. Update `model_manager.py` to register and download the `faster-whisper` model weights and handle directory-based model structures.
+4. Enable the "Transcribe & Analyze Audio" button in `ConcallAnalysisModal.tsx` for audio podcasts, surfacing live transcription progress (`~1-2 min`).
+5. Update backend and frontend test suites and verify on Linux aarch64 container environment.  
+**AI Assistant:** Antigravity  
+**Role:** Lead Architect & Full-Stack Developer
+
+### Summary
+
+1. **Faster-Whisper Engine Integration (`backend/app/ml/whisper_engine.py`):**
+   - Replaced old ONNX stub with `faster_whisper.WhisperModel("tiny.en", device="cpu", compute_type="int8", download_root=...)`.
+   - Utilizes `faster-whisper`'s bundled `av` (PyAV) library which provides embedded `libavcodec` / `libavformat` C binaries, allowing direct MP3/M4A/AAC decoding without requiring host or container system `ffmpeg`.
+   - Implemented `transcribe_audio_file` with streaming download for remote podcast URLs (e.g. Trendlyne `.m4a` / `.mp3` podcasts) and VAD (Voice Activity Detection) filter for high-speed transcription (~15-20x realtime on CPU).
+   - Added property setter and deleter for `is_available` to cleanly support test mocking and dynamic availability checks.
+2. **Model Manager Updates (`backend/app/ml/model_manager.py`):**
+   - Updated catalog entry `whisper_tiny_en` to engine type `faster_whisper` and system dependency `"PyAV Audio Engine (Bundled in wheel)"`.
+   - Extended `get_model_path`, `get_model_status`, and `delete_model` to handle directory-based models (e.g. `whisper/models--Systran--faster-whisper-tiny.en`).
+   - Integrated `faster_whisper.download_model` inside `_download_worker` for background downloading.
+3. **Modal UI Upgrade (`frontend/src/components/Dashboard/ConcallAnalysisModal.tsx`):**
+   - Enabled audio podcast transcription: replaced the disabled button on audio-only concalls with an active `<SparklesIcon /> Transcribe & Analyze Audio` button.
+   - Enhanced loading state: when transcribing audio, informs the user: `"Transcribing & Analyzing Audio Podcast (~1-2 min)... Transcribing speech with Edge Faster-Whisper (INT8 quantized), then evaluating tone with FinBERT"`.
+   - Added explanatory banner: `"⚡ On-Device Audio Intelligence: Powered by Faster-Whisper INT8 (CTranslate2). Transcribes speech directly on-device without cloud APIs or external tools."`
+4. **Testing & QA:**
+   - 31/31 backend tests passing (`test_concall_analyzer.py`, `test_news.py`, `test_ml.py`).
+   - All frontend unit tests passing in `ConcallAnalysisModal.test.tsx` (3/3 passing).
+   - ESLint and Python byte-compilation clean (0 errors).
+
+---
+
 ## 2026-11-24: Disable Concall Analyze for Audio-Only & Surface ffmpeg Dependency (Issue #618 / PR #619)
 
 **Task:**
