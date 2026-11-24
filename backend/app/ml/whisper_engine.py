@@ -22,14 +22,19 @@ FINANCIAL_WHISPER_PROMPT = (
 
 # Post-ASR phonetic corrections for common Whisper distortions on Indian accents
 ASR_CORRECTIONS = [
-    # Indian numbering & crore phonetics: "171 corona" -> "171 crores", "9.6 store" -> "9.6 crores"
-    (r"\b(\d+(?:\.\d+)?)\s*(?:corona|coronas|store|stores|grower)\b", r"\1 crores"),
+    # Indian numbering & crore phonetics: "171 corona" -> "171 crores", "9.6 store" -> "9.6 crores", "24,801 crew" -> "24,801 crores"
+    (r"\b(\d+(?:\.\d+)?)\s*(?:corona|coronas|store|stores|grower|crew|crews)\b", r"\1 crores"),
     (r"\bper\s+row\b", "per crore"),
     (r"\bstop\s+line\b", "top line"),
     (r"\bto\s+go\s+by\s+(?:around\s+)?(\d+%)", r"to grow by around \1"),
     (r"\bselected\s+to\s+increase\b", "expected to increase"),
     (r"\bcracking\s+closely\b", "tracking closely"),
     (r"\bmental\s+margin\b", "maintain margin"),
+    # Financial acronyms & phrases: "the fact of 6,447" -> "the PAT of 6,447", "back of another" -> "PAT of NRL"
+    (r"\b(?:the\s+)?fact\s+of\s+(\d+)", r"the PAT of \1"),
+    (r"\bthe\s+fact\s+for\b", "the PAT for"),
+    (r"\bhalf\s+yearly\s+back\b", "half yearly PAT"),
+    (r"\boperating\s+revenue\s+of\s+an\s+hour\s+loop\b", "operating revenue of NRL"),
     # Collapse stuttered duplicate words ("employee employee" -> "employee")
     (r"\b([a-zA-Z]+)\s+\1\b", r"\1"),
 ]

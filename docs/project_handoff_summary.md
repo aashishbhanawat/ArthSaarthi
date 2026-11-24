@@ -19,6 +19,12 @@
 
 ## Recent Stabilization & Refinement Efforts
 
+*   **Proxy Timeout Background Polling & Oil India Phonetic Corrections (Issue #618 / PR #619) (Updated 2026-11-24):**
+    - **Timeout UX & Background Polling (`ConcallAnalysisModal.tsx`):** Handled 504 proxy read timeouts with an informative amber progress banner, manual refresh button, and 10-second automatic polling until the backend finishes and saves the analysis.
+    - **Phonetic & Acronym Corrections (`whisper_engine.py`):** Added mappings for `"crew"` -> `"crores"`, `"fact"` -> `"PAT"`, `"half yearly back"` -> `"half yearly PAT"`, and `"an hour loop"` -> `"NRL"`.
+    - **Operator Filler Filtering (`concall_analyzer.py`):** Filtered operator hand-offs from risk flags and pruned oil/gas ASR theme artifacts.
+    - **Verification:** 31/31 backend tests passing; 4/4 frontend tests passing.
+
 *   **Resilient Audio Stream Downloading with Retry & DNS Fallback (Issue #618 / PR #619) (Updated 2026-11-24):**
     - **Audio Download Retries (`whisper_engine.py`):** Wrapped remote audio downloading in a 3-attempt exponential backoff retry loop with user-friendly error formatting to handle transient network drops.
     - **Container DNS Configuration (`docker-compose.yml`):** Added public DNS fallbacks (`8.8.8.8`, `1.1.1.1`) to `backend` service.

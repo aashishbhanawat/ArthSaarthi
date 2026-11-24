@@ -32,6 +32,7 @@ export const ConcallAnalysisModal: React.FC<ConcallAnalysisModalProps> = ({
   const [analysis, setAnalysis] = useState<ConcallAnalysis | null>(initialAnalysis || null);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [isBackgroundProcessing, setIsBackgroundProcessing] = useState<boolean>(false);
   const [showPasteTab, setShowPasteTab] = useState<boolean>(false);
   const [customText, setCustomText] = useState<string>('');
 
@@ -42,6 +43,30 @@ export const ConcallAnalysisModal: React.FC<ConcallAnalysisModalProps> = ({
     !article.url?.toLowerCase().endsWith('.pdf')
   );
 
+  // If a timeout occurred, automatically check for completion every 10 seconds
+  React.useEffect(() => {
+    let timer: NodeJS.Timeout | null = null;
+    if (isBackgroundProcessing) {
+      timer = setInterval(async () => {
+        try {
+          const res = await analyzeConcall(article.id);
+          if (res) {
+            setAnalysis(res);
+            setIsBackgroundProcessing(false);
+            if (onAnalysisUpdated) {
+              onAnalysisUpdated(res);
+            }
+          }
+        } catch {
+          // Still processing on the server, keep polling
+        }
+      }, 10000);
+    }
+    return () => {
+      if (timer) clearInterval(timer);
+    };
+  }, [isBackgroundProcessing, article.id, onAnalysisUpdated]);
+
   if (!isOpen) return null;
 
   const handleRunAnalysis = async (textOverride?: string) => {
@@ -50,15 +75,36 @@ export const ConcallAnalysisModal: React.FC<ConcallAnalysisModalProps> = ({
       setError(null);
       const res = await analyzeConcall(article.id, textOverride || undefined);
       setAnalysis(res);
+      setIsBackgroundProcessing(false);
       if (onAnalysisUpdated) {
         onAnalysisUpdated(res);
       }
       setShowPasteTab(false);
     } catch (err: unknown) {
-      const msg =
-        (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail ||
-        'Failed to analyze concall. Please ensure transcript text or audio model is available.';
-      setError(msg);
+      const axiosErr = err as {
+        response?: { status?: number; data?: { detail?: string } };
+        message?: string;
+        code?: string;
+      };
+      const status = axiosErr.response?.status;
+      const detail = axiosErr.response?.data?.detail;
+      const message = axiosErr.message || '';
+      const isTimeout =
+        status === 504 ||
+        status === 408 ||
+        axiosErr.code === 'ECONNABORTED' ||
+        message.toLowerCase().includes('timeout') ||
+        Boolean(detail && detail.toLowerCase().includes('timeout'));
+
+      if (isTimeout) {
+        setIsBackgroundProcessing(true);
+        setError(null);
+      } else {
+        setIsBackgroundProcessing(false);
+        setError(
+          detail || 'Failed to analyze concall. Please ensure transcript text or audio model is available.'
+        );
+      }
     } finally {
       setLoading(false);
     }
@@ -197,6 +243,35 @@ export const ConcallAnalysisModal: React.FC<ConcallAnalysisModalProps> = ({
           {error && (
             <div className="p-3.5 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-xs text-rose-700 dark:text-rose-300">
               {error}
+            </div>
+          )}
+
+          {isBackgroundProcessing && (
+            <div className="p-4 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-800 text-xs text-amber-900 dark:text-amber-200 space-y-2.5">
+              <div className="flex items-start gap-2.5">
+                <ArrowPathIcon className="w-5 h-5 text-amber-600 dark:text-amber-400 animate-spin flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-bold text-sm">
+                    Transcription In Progress (Background Processing)
+                  </p>
+                  <p className="mt-0.5 text-amber-800 dark:text-amber-300 leading-relaxed">
+                    Earnings calls contain 45–60 minutes of audio and take 1–2 minutes to transcribe on CPU. Your web proxy timed out waiting for the initial response, but the server is actively continuing in the background.
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 pt-1">
+                <button
+                  onClick={() => handleRunAnalysis()}
+                  disabled={loading}
+                  className="px-3.5 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-semibold flex items-center gap-1.5 shadow-sm transition-colors disabled:opacity-50 text-xs"
+                >
+                  <ArrowPathIcon className="w-3.5 h-3.5" />
+                  Refresh &amp; Check Results
+                </button>
+                <span className="text-[11px] text-amber-700 dark:text-amber-400 font-medium">
+                  Auto-checking every 10 seconds...
+                </span>
+              </div>
             </div>
           )}
 

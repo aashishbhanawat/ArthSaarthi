@@ -128,7 +128,7 @@ class ConcallAnalyzer:
         "next couple", "past year", "previous year", "director finance",
         "chief financial", "managing director", "conference call", "earnings call",
         "per row", "per crore", "higher percent", "growth percent", "get orders",
-        "percent", "percentage",
+        "percent", "percentage", "half ended", "metric tons", "million metric", "kilo right",
     }
 
     HONORIFICS = re.compile(r"\b(?:mr|ms|mrs|dr|shri|smt|ca)\.?\s*", re.IGNORECASE)
@@ -555,6 +555,8 @@ class ConcallAnalyzer:
                 continue
             if self._is_boilerplate_or_filler(cleaned) or self._is_analyst_question(cleaned):
                 continue
+            if re.search(r"\b(?:the\s+next\s+one|next\s+question|operator|moderator|take\s+this\s+opportunity)\b", cleaned, re.IGNORECASE):
+                continue
 
             res = sentiment_engine.analyze(cleaned)
             uncertainty_rate = sentiment_engine.lexicon.compute_uncertainty_rate(cleaned)
@@ -763,6 +765,8 @@ class ConcallAnalyzer:
         for sent in raw_sents:
             cleaned = self._clean_sentence(sent)
             if self._is_boilerplate_or_filler(cleaned) or self._is_analyst_question(cleaned):
+                continue
+            if re.search(r"\b(?:the\s+next\s+one|next\s+question|operator|moderator|take\s+this\s+opportunity)\b", cleaned, re.IGNORECASE):
                 continue
 
             words = [

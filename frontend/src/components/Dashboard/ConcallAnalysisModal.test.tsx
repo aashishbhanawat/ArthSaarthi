@@ -165,4 +165,35 @@ describe('ConcallAnalysisModal', () => {
       expect(screen.getByText(/Source: WHISPER_AUDIO/i)).toBeInTheDocument();
     });
   });
+
+  test('displays background processing banner when request times out', async () => {
+    mockedNewsApi.analyzeConcall.mockRejectedValue({
+      response: { status: 504, data: { detail: 'Gateway Timeout / Proxy Read Timeout' } },
+      message: 'timeout of 300000ms exceeded',
+    });
+
+    const audioArticle: MarketNewsArticle = {
+      ...mockArticle,
+      metadata_json: {
+        quarter: 'Q2FY27',
+        audio_url: 'https://example.com/podcast.mp3',
+      },
+    };
+
+    render(
+      <ConcallAnalysisModal
+        article={audioArticle}
+        isOpen={true}
+        onClose={jest.fn()}
+      />
+    );
+
+    const transcribeBtn = screen.getByRole('button', { name: /Transcribe & Analyze Audio/i });
+    fireEvent.click(transcribeBtn);
+
+    await waitFor(() => {
+      expect(screen.getByText(/Transcription In Progress \(Background Processing\)/i)).toBeInTheDocument();
+      expect(screen.getByText(/Refresh & Check Results/i)).toBeInTheDocument();
+    });
+  });
 });

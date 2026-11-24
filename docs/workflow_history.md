@@ -1,3 +1,32 @@
+## 2026-11-24: Proxy Timeout Background Polling & Oil India Phonetic Corrections (Issue #618 / PR #619)
+
+**Task:**
+1. Handle 120-second web proxy read timeouts gracefully by surfacing an informative amber banner with manual and auto-polling (every 10 seconds) until background transcription completes.
+2. Incorporate phonetic corrections identified from Oil India concall audio (`"crew"` -> `"crores"`, `"the fact of X"` -> `"the PAT of X"`, `"half yearly back"` -> `"half yearly PAT"`, `"operating revenue of an hour loop"` -> `"operating revenue of NRL"`).
+3. Filter out operator transition sentences and repetitive filler (`"the next one"`, `"take this opportunity"`) from Cautionary Remarks and Risk Flags.
+4. Add Oil India thematic stops (`#Half Ended`, `#Metric Tons`, `#Million Metric`, `#Kilo Right`) to `THEME_STOP_PHRASES`.  
+**AI Assistant:** Antigravity  
+**Role:** Lead Architect & Full-Stack Developer
+
+### Summary
+
+1. **Proxy Timeout Resilience & Auto-Polling (`ConcallAnalysisModal.tsx`):**
+   - When an HTTP 504 / Proxy Read Timeout occurs on a long earnings call, the modal detects the timeout and displays:
+     `"Transcription In Progress (Background Processing): Earnings calls contain 45–60 minutes of audio and take 1–2 minutes to transcribe on CPU. Your web proxy timed out waiting for the initial response, but the server is actively continuing in the background."`
+   - Added a manual **"Refresh & Check Results"** action and automatic 10-second polling (`setInterval`). Once the background job completes, the modal automatically transitions to the full intelligence report without requiring user reload.
+2. **Oil India & Accent Normalizations (`whisper_engine.py`):**
+   - Added regex rules to map `"crew"` / `"crews"` following numbers to `"crores"`.
+   - Mapped misheard PAT phrases (`"the fact of X"`, `"the fact for"`, `"half yearly back"`) to `"PAT"`.
+   - Corrected Numaligarh Refinery phonetics (`"an hour loop"` -> `"NRL"`).
+3. **Cautionary Remarks Sanitization (`concall_analyzer.py`):**
+   - Guarded `extract_red_flags` against operator transitions (`"the next one is from..."`, `"take this opportunity"`).
+   - Added `"half ended"`, `"metric tons"`, `"million metric"`, `"kilo right"` to `THEME_STOP_PHRASES`.
+4. **Testing & QA:**
+   - 31/31 backend tests passing (`test_concall_analyzer.py`, `test_news.py`, `test_ml.py`).
+   - 4/4 frontend unit tests passing in `ConcallAnalysisModal.test.tsx`.
+
+---
+
 ## 2026-11-24: Resilient Audio Stream Downloading with Retry & DNS Fallback (Issue #618 / PR #619)
 
 **Task:** Resolve transient `NameResolutionError` / DNS failures when streaming audio podcasts from remote S3 hosts (`trendlyne-media-mumbai-new.s3.amazonaws.com`).  
