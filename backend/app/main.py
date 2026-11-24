@@ -14,7 +14,11 @@ from app.db.init_db import run_db_migrations
 from app.services.initialization_service import check_and_seed_on_startup
 
 # --- Logging Configuration ---
-log_level = logging.DEBUG if settings.DEBUG else logging.INFO
+log_level = (
+    getattr(logging, settings.LOG_LEVEL.upper(), logging.INFO)
+    if hasattr(settings, "LOG_LEVEL") and settings.LOG_LEVEL
+    else (logging.DEBUG if settings.DEBUG else logging.INFO)
+)
 log_format = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 
 # Configure root logger
@@ -24,7 +28,14 @@ root_logger.setLevel(log_level)
 # Console handler (always)
 console_handler = logging.StreamHandler(sys.stdout)
 console_handler.setFormatter(logging.Formatter(log_format))
-root_logger.addHandler(console_handler)
+if not any(isinstance(h, logging.StreamHandler) for h in root_logger.handlers):
+    root_logger.addHandler(console_handler)
+
+# Ensure uvicorn, uvicorn.access, uvicorn.error, and app loggers route to stdout
+for logger_name in ["uvicorn", "uvicorn.access", "uvicorn.error", "app"]:
+    l = logging.getLogger(logger_name)
+    l.setLevel(log_level)
+    l.propagate = True
 
 # File handler (desktop and android mode)
 if settings.DEPLOYMENT_MODE in ("desktop", "android") and settings.LOG_FILE:

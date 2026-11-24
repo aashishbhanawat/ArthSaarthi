@@ -19,6 +19,12 @@
 
 ## Recent Stabilization & Refinement Efforts
 
+*   **Backend Logging Visibility & Uvicorn Stream Fix (Issue #618 / PR #619) (Updated 2026-11-24):**
+    - **Alembic Logger Guard (`alembic/env.py`, `init_db.py`):** Prevented programmatic Alembic migrations from resetting the root logger level to `WARN` or disabling existing loggers (`disable_existing_loggers=False`, `configure_logger=False`).
+    - **Live Access & Application Log Streaming (`main.py`, `entrypoint.sh`, `docker-compose.yml`):** Set `PYTHONUNBUFFERED=1`, configured `propagate=True` on `uvicorn.access` / `uvicorn.error`, and enabled `--access-log`.
+    - **Detailed Concall Diagnostics (`news.py`):** Added explicit info and warning logging during concall analysis attempts and client rejections.
+    - **Verification:** 50/50 backend pytest tests passing; live logs confirmed in running dev container.
+
 *   **Whisper Mock Transcription Elimination, Audio-Only Guard & DB Purge (Issue #618 / PR #619) (Updated 2026-11-24):**
     - **Hardcoded Mock Elimination (`whisper_engine.py`):** Removed stubbed mock earnings sentences. Configured `is_available` to require `shutil.which("ffmpeg")` and full speech-to-text runtime before reporting true availability.
     - **Audio-Only 400 Guard (`news.py`):** When only an audio podcast link is present and no STT runtime is configured, returns HTTP 400 detailing that only audio is available and prompting the user to paste the transcript or read the statutory PDF filing.

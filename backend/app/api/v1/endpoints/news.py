@@ -171,7 +171,10 @@ def analyze_concall(
     """
     article = db.query(MarketNewsArticle).filter(MarketNewsArticle.id == article_id).first()
     if not article:
+        logger.warning("Concall analysis requested for non-existent article_id: %s", article_id)
         raise HTTPException(status_code=404, detail="Article not found")
+
+    logger.info("Analyzing concall for article '%s' (%s)", article.title, article.id)
 
     meta = dict(article.metadata_json or {})
 
@@ -228,6 +231,11 @@ def analyze_concall(
                     detail=f"Audio transcription failed: {str(e)}. Please paste the official conference call transcript text.",
                 )
         else:
+            logger.warning(
+                "Concall analysis rejected for article '%s' (%s): only audio podcast is available and speech-to-text runtime is disabled.",
+                article.title,
+                article.id,
+            )
             raise HTTPException(
                 status_code=400,
                 detail="Only audio podcast is available for this concall. Please paste the conference call transcript text in the 'Paste Transcript' tab or read the statutory BSE/NSE filing PDF.",

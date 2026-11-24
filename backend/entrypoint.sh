@@ -26,4 +26,4 @@ fi
 echo "Starting Uvicorn server..."
 # The --host 0.0.0.0 is important to make the server accessible from outside the container
 # The "$@" allows passing additional arguments to the uvicorn command
-exec uvicorn app.main:app --host 0.0.0.0 --port 8000 "$@"
+exec uvicorn app.main:app --host 0.0.0.0 --port 8000 --access-log "$@"

@@ -1,3 +1,28 @@
+## 2026-11-24: Backend Logging Visibility & Uvicorn Stream Fix (Issue #618 / PR #619)
+
+**Task:** Resolve issue where `docker compose logs` was missing application logs and HTTP failure details after `Starting Uvicorn server...`.  
+**AI Assistant:** Antigravity  
+**Role:** Lead Architect & Full-Stack Developer
+
+### Summary
+
+1. **Root Cause Analysis:**
+   - **Alembic Logger Reset**: Programmatic Alembic execution inside FastAPI startup (`command.upgrade(alembic_cfg, "head")`) triggered `fileConfig('alembic.ini')` in `alembic/env.py`. By default, `fileConfig` resets the root logger level to `WARN` (30) and disables existing loggers (`disable_existing_loggers=True`), suppressing FastAPI application logs and Uvicorn access handlers.
+   - **Docker Output Buffering**: Standard Python output buffering in non-interactive containers caused delayed log flushing because `PYTHONUNBUFFERED=1` was absent in `docker-compose.yml`.
+   - **Uvicorn Access Logger**: `uvicorn.access` was not propagating to the root console handler.
+2. **Log Configuration & Propagation Fixes:**
+   - In `backend/alembic/env.py`: Added `disable_existing_loggers=False` and guarded with `configure_logger` check.
+   - In `backend/app/db/init_db.py`: Set `alembic_cfg.attributes["configure_logger"] = False` during programmatic startup migrations.
+   - In `backend/app/main.py`: Honored `settings.LOG_LEVEL` (`DEBUG` / `INFO`) and set `propagate = True` across `uvicorn`, `uvicorn.access`, `uvicorn.error`, and `app` loggers.
+   - In `backend/entrypoint.sh`: Passed `--access-log` to Uvicorn command.
+   - In `docker-compose.yml`: Added `PYTHONUNBUFFERED=1` to backend container environment.
+   - In `backend/app/api/v1/endpoints/news.py`: Added explicit `logger.info` when analyzing concalls and `logger.warning` when rejected (e.g. 400 for audio-only podcasts).
+3. **Testing & Verification:**
+   - Live container logs verified streaming: `INFO:app.api.v1.endpoints.news:Analyzing concall...` and `WARNING:app.api.v1.endpoints.news:Concall analysis rejected...: only audio podcast is available`.
+   - 50/50 backend pytest tests passing.
+
+---
+
 ## 2026-11-24: Whisper Mock Transcription Elimination, Audio-Only Guard & DB Purge (Issue #618 / PR #619)
 
 **Task:** 
