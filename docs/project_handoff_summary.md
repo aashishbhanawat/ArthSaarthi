@@ -19,6 +19,11 @@
 
 ## Recent Stabilization & Refinement Efforts
 
+*   **Resilient Audio Stream Downloading with Retry & DNS Fallback (Issue #618 / PR #619) (Updated 2026-11-24):**
+    - **Audio Download Retries (`whisper_engine.py`):** Wrapped remote audio downloading in a 3-attempt exponential backoff retry loop with user-friendly error formatting to handle transient network drops.
+    - **Container DNS Configuration (`docker-compose.yml`):** Added public DNS fallbacks (`8.8.8.8`, `1.1.1.1`) to `backend` service.
+    - **Verification:** 31/31 backend tests passing.
+
 *   **Whisper Financial Prompt Biasing & Post-ASR Phonetic Normalization (Issue #618 / PR #619) (Updated 2026-11-24):**
     - **Decoder Biasing (`whisper_engine.py`):** Added `FINANCIAL_WHISPER_PROMPT` containing Indian accounting & corporate terminology to prime Whisper's decoder beam search, preventing phonetic hallucinations at source.
     - **Post-ASR Normalization (`whisper_engine.py`):** Implemented `normalize_whisper_transcript` to correct Indian accent misrecognitions (`"corona"` -> `"crores"`, `"stop line"` -> `"top line"`, `"mental margin"` -> `"maintain margin"`, `"9.6 store"` -> `"9.6 crores"`) and collapse stuttered disfluencies.

@@ -1,3 +1,22 @@
+## 2026-11-24: Resilient Audio Stream Downloading with Retry & DNS Fallback (Issue #618 / PR #619)
+
+**Task:** Resolve transient `NameResolutionError` / DNS failures when streaming audio podcasts from remote S3 hosts (`trendlyne-media-mumbai-new.s3.amazonaws.com`).  
+**AI Assistant:** Antigravity  
+**Role:** Lead Architect & Full-Stack Developer
+
+### Summary
+
+1. **Exponential Backoff & Retry in Audio Stream Downloader (`whisper_engine.py`):**
+   - Wrapped `_download_and_transcribe` in an explicit 3-attempt retry loop with exponential backoff (`time.sleep(1.5 * attempt)`).
+   - Catches transient DNS drops (`NameResolutionError`) or socket connection glitches and retries automatically before raising an error.
+   - Cleans up and sanitizes user-facing error messages instead of surfacing raw `urllib3` connection pool exception traces.
+2. **Container DNS Fallback (`docker-compose.yml`):**
+   - Configured `dns: [8.8.8.8, 1.1.1.1]` on `pms-backend` to guarantee fast, resilient upstream DNS resolution if the local bridge/router resolver drops queries.
+3. **Testing & QA:**
+   - 31/31 backend tests passing.
+
+---
+
 ## 2026-11-24: Whisper Financial Prompt Biasing & Post-ASR Phonetic Normalization (Issue #618 / PR #619)
 
 **Task:**

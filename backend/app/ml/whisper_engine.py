@@ -127,32 +127,52 @@ class WhisperEngine:
 
     def _download_and_transcribe(self, url: str, max_bytes: int = 60 * 1024 * 1024) -> str:
         """
-        Streams and downloads remote audio into a temporary local file,
+        Streams and downloads remote audio into a temporary local file with retries,
         then invokes transcription.
         """
-        logger.info("Downloading remote concall audio stream from %s", url)
+        import time
+
         suffix = ".m4a" if ".m4a" in url.lower() else ".mp3"
         with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as tmp_file:
             tmp_path = Path(tmp_file.name)
 
+        headers = {
+            "User-Agent": (
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+            ),
+        }
+        max_attempts = 3
+        last_error = None
+
         try:
-            headers = {
-                "User-Agent": (
-                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-                    "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-                ),
-            }
-            with requests.get(url, stream=True, timeout=120, headers=headers) as resp:
-                resp.raise_for_status()
-                with open(tmp_path, "wb") as f:
-                    for chunk in resp.iter_content(chunk_size=1048576):
-                        if chunk:
-                            f.write(chunk)
+            for attempt in range(1, max_attempts + 1):
+                try:
+                    logger.info("Downloading remote concall audio (attempt %d/%d) from %s", attempt, max_attempts, url)
+                    with requests.get(url, stream=True, timeout=120, headers=headers) as resp:
+                        resp.raise_for_status()
+                        with open(tmp_path, "wb") as f:
+                            for chunk in resp.iter_content(chunk_size=1048576):
+                                if chunk:
+                                    f.write(chunk)
+                    last_error = None
+                    break
+                except Exception as e:
+                    last_error = e
+                    logger.warning("Download attempt %d/%d failed for %s: %s", attempt, max_attempts, url, e)
+                    if attempt < max_attempts:
+                        time.sleep(1.5 * attempt)
+
+            if last_error is not None:
+                err_str = str(last_error)
+                if "NameResolutionError" in err_str or "Failed to resolve" in err_str or "Errno -2" in err_str:
+                    clean_msg = "Temporary DNS/network resolution error while contacting audio storage. Please retry."
+                else:
+                    clean_msg = f"Network error downloading audio: {err_str}"
+                logger.error("Failed to stream remote audio %s after %d attempts: %s", url, max_attempts, clean_msg)
+                raise RuntimeError(clean_msg)
 
             return self._transcribe_with_model(tmp_path)
-        except Exception as e:
-            logger.error("Failed to stream and transcribe remote audio %s: %s", url, e)
-            raise RuntimeError(f"Transcription error: {str(e)}")
         finally:
             if tmp_path.exists():
                 try:
