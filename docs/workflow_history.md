@@ -10,7 +10,7 @@
 1. **Application Version Bump (`1.4.0` -> `1.5.0`):**
    - Updated `backend/app/api/v1/endpoints/system.py` (`APP_VERSION = "1.5.0"`), `backend/app/main.py` (`version="1.5.0"`), `frontend/package.json` (`"version": "1.5.0"`), `frontend/android/app/build.gradle.kts` (`versionCode = 6`, `versionName = "1.5.0"`), `frontend/src/pages/MorePage.tsx`, and `frontend/electron/splash.html`.
 2. **Release & Architecture Docs:**
-   - Created [`docs/v1.5.0.md`](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/docs/v1.5.0.md) and updated `CHANGELOG.md`, `README.md`, `docs/architecture.md`, `docs/code_flow_guide.md`, and `docs/database_schema.md` to document Broker API Sync (`NFR12`), APScheduler (`FR17`/`NFR14`), Automated Bond & Stock Corporate Actions (`#562`, `#607`), Market Research & Edge AI Concall Intelligence (`FR8.2`/`FR8.2.2`), Desktop Update Notifications (`FR-Desktop-2`), and Security Hardening (`#601`, `#602`, `#603`).
+   - Created [`docs/v1.5.0.md`](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/docs/v1.5.0.md) and updated `CHANGELOG.md`, `README.md`, `docs/architecture.md`, `docs/code_flow_guide.md`, and `docs/database_schema.md` to document Broker API Sync (`NFR12`), APScheduler (`FR17`/`NFR14`), Automated Bond & Stock Corporate Actions (`#562`, `#607`), Market Research & Edge AI Concall Intelligence (`FR8.2`/`FR8.2.2`), and Security Hardening (`#601`, `#602`, `#603`).
 3. **User Guides:**
    - Updated `docs/user_guide.md`, `docs/user_guide/index.html`, and synced `frontend/public/user_guide/index.html` with v1.5.0 instructions and release highlights.
 

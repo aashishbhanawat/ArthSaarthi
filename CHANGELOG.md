@@ -21,9 +21,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Quantitative Concall Analytics:** Prepared vs Q&A Tone Divergence Alerts, Loughran-McDonald Hedging & Uncertainty Index, 4-Aspect Financial Sentiment Scorecards (Demand, Margins, Guidance, CapEx), and Extractive Red Flags.
 - **AI Model Management:** Added `AIModelManagementCard.tsx` and `/api/v1/ml/*` endpoints to download and manage local Whisper and FinBERT ONNX models.
 
-#### Desktop & UX
-- **Desktop Update Notifications (`FR-Desktop-2`):** Automatic startup check against GitHub Releases for new desktop versions.
-
 ### Security
 - **PII Log Removal (`#601`):** Removed raw Zerodha/ICICI holdings and trade item `logger.debug` dumps from `broker_api_parser.py`.
 - **Diagnostic Script Guard (`#602`):** Added `ENVIRONMENT=production` exit guard to `backend/scripts/inspect_icici_raw.py`.
