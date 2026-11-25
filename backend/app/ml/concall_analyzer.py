@@ -59,7 +59,7 @@ class ConcallAnalyzer:
         r"^(?:we|i)\s+will\s+be\s+the\s+first\s+one\.?$",
     ]
 
-    # Speaker prefix pattern (e.g. "Avik Roy:", "Management:", "Q - Prabhu Roy:")
+    # Speaker prefix pattern (e.g. "Speaker Name:", "Management:", "Q - Analyst Name:")
     SPEAKER_PREFIX_PATTERN = re.compile(
         r"^(?:(?:[A-Z][a-zA-Z\s\.\-']{1,35}|Operator|Moderator|Analyst|Management)\s*:\s*|(?:[QA]\s*-\s*[A-Z][a-zA-Z\s\.\-']{1,35}\s*:\s*))"
     )

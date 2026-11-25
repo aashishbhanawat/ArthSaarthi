@@ -31,6 +31,7 @@ router = APIRouter()
 
 _concall_lock = threading.Lock()
 _in_flight_concalls: set[str] = set()
+_recent_concall_cache: dict[str, dict] = {}
 
 
 def _get_user_tracked_symbols(db: Session, user_id) -> List[str]:
@@ -181,13 +182,19 @@ def _find_matching_pdf_transcript(db: Session, article: MarketNewsArticle) -> Op
     )
     art_syms = set(article.symbols or [])
     stop_words = {
-        "results", "earnings", "call", "for", "q1", "q2", "q3", "q4",
-        "fy25", "fy26", "fy27", "limited", "ltd", "india", "industries",
+        "results", "earnings", "call", "for", "limited", "ltd", "india", "industries",
     }
-    art_tokens = {
-        w for w in re.findall(r"[a-z0-9]+", (article.title or "").lower())
-        if len(w) > 2 and w not in stop_words
-    }
+
+    def _extract_company_tokens(text_val: str) -> set[str]:
+        return {
+            w for w in re.findall(r"[a-z0-9]+", (text_val or "").lower())
+            if len(w) > 2
+            and w not in stop_words
+            and not re.match(r"^(?:fy|cy)?\d{2,4}$", w)
+            and not re.match(r"^[qh][1-4]$", w)
+        }
+
+    art_tokens = _extract_company_tokens(article.title or "")
     for cand in candidates:
         cand_text = f"{cand.title} {cand.summary or ''} {cand.url}".lower()
         if "transcript" not in cand_text:
@@ -195,10 +202,7 @@ def _find_matching_pdf_transcript(db: Session, article: MarketNewsArticle) -> Op
         cand_syms = set(cand.symbols or [])
         if art_syms and cand_syms and art_syms.intersection(cand_syms):
             return (cand.metadata_json or {}).get("transcript_url") or cand.url
-        cand_tokens = {
-            w for w in re.findall(r"[a-z0-9]+", (cand.title or "").lower())
-            if len(w) > 2 and w not in stop_words
-        }
+        cand_tokens = _extract_company_tokens(cand.title or "")
         if art_tokens and cand_tokens and len(art_tokens.intersection(cand_tokens)) >= 1:
             return (cand.metadata_json or {}).get("transcript_url") or cand.url
     return None
@@ -222,6 +226,10 @@ def analyze_concall(
     """
     article = db.query(MarketNewsArticle).filter(MarketNewsArticle.id == article_id).first()
     if not article:
+        with _concall_lock:
+            cached_fallback = _recent_concall_cache.get(article_id)
+        if cached_fallback and not (payload and payload.transcript_text):
+            return ConcallAnalysisResponse(**cached_fallback)
         logger.warning("Concall analysis requested for non-existent article_id: %s", article_id)
         raise HTTPException(status_code=404, detail="Article not found")
 
@@ -369,6 +377,12 @@ def analyze_concall(
             target_article.metadata_json = meta
             db.add(target_article)
             db.commit()
+        else:
+            # Article was pruned (e.g. >30d expiry) during transcription; retain briefly in memory for polling
+            with _concall_lock:
+                if len(_recent_concall_cache) >= 50:
+                    _recent_concall_cache.pop(next(iter(_recent_concall_cache)))
+                _recent_concall_cache[article_id] = analysis_data
 
         return ConcallAnalysisResponse(**analysis_data)
     finally:
