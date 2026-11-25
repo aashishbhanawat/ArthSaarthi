@@ -21,6 +21,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Quantitative Concall Analytics:** Prepared vs Q&A Tone Divergence Alerts, Loughran-McDonald Hedging & Uncertainty Index, 4-Aspect Financial Sentiment Scorecards (Demand, Margins, Guidance, CapEx), and Extractive Red Flags.
 - **AI Model Management:** Added `AIModelManagementCard.tsx` and `/api/v1/ml/*` endpoints to download and manage local Whisper and FinBERT ONNX models.
 
+### Changed
+- **Navigation & Menu Reorganization:** Grouped sidebar navigation into collapsible sections (**Markets & Research** → `Research & News`, `Watchlists`; **Tax & Income** → `Income & Tax Hub`, `Capital Gains`; **Administration** → `User Management`, `Interest Rates`, `System Maintenance`, `FMV Management`, `Symbol Aliases`), and consolidated **Risk Profile**, **Broker Integrations**, **Data & System**, and **AI & Intelligence** into tabbed sections under **Profile & Settings**.
+
 ### Security
 - **PII Log Removal (`#601`):** Removed raw Zerodha/ICICI holdings and trade item `logger.debug` dumps from `broker_api_parser.py`.
 - **Diagnostic Script Guard (`#602`):** Added `ENVIRONMENT=production` exit guard to `backend/scripts/inspect_icici_raw.py`.
@@ -40,7 +43,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Tax-Deductible Expense & Investment Logging:** Chapter VI-A investment logging (Section 80C ₹1.5L, Section 80D medical, Section 80CCD(1B) NPS, Section 80TTA/80TTB interest) with statutory ceiling limit progress meters and capping (FR16.3 / #518).
 - **Structured Tax Readiness Summary & Regime Comparison:** Consolidated Financial Year tax readiness report comparing Old Tax Regime vs New Tax Regime (Section 115BAC), displaying potential tax savings, non-advisory legal notice banners, and CSV/PDF report exporters (FR16.4, FR16.4.1 / #519).
 
-#### Security & Desktop/Mobile Protection
+### Security & Desktop/Mobile Protection
 - **`SECRET_KEY` Persistence:** Local file persistence of application `SECRET_KEY` to `secret.key` in app data directory to prevent JWT session invalidation across app restarts.
 - **SQLite Bytes Decoding:** Dynamic string decoding in `EncryptedString` database decorator for mobile SQLite drivers.
 
@@ -66,7 +69,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Native Settings Toggle:** Integrated `AndroidSettingsCard` in user profile page.
 - **Pydantic V1 & Chaquopy Compatibility:** Restored SQLite/DiskCache compatibility layer for embedded Android Python environment (#495).
 
-#### Security & Tenant Isolation
+### Security & Tenant Isolation
 - **Tax Report Endpoint Authorization:** Enforced user authentication and strict tenant filtering on Capital Gains and Dividend report endpoints (#423).
 - **Goal Asset IDOR Protection:** Secured goal asset linking endpoints against IDOR vulnerability (#434, #467).
 - **PPF Immutability & Scoping:** Restricted update/delete on system-generated PPF interest credits and introduced user-scoped PPF account tickers (`PPF-{user_id_short}-{account_number}`).

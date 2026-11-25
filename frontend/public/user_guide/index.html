@@ -574,6 +574,14 @@
 
         <h3>5. Unrealized Capital Gains & Sec 112A Exemption Pooling</h3>
         <p>Track lot-level unrealized STCG/LTCG across active holdings and pool Section 112A equity LTCG exemption headroom (₹1,25,000 threshold/FY) with Section 55(2)(ac) grandfathering and statutory capital loss set-off rules (Section 70/71/74).</p>
+        <div class="screenshot">
+          <img src="assets/32_income_tax_hub.png" alt="Income & Tax Hub">
+          <div class="screenshot-caption">Income & Tax Hub with Salary/HRA, Chapter VI-A Deductions, and Old vs New Regime Comparison</div>
+        </div>
+        <div class="screenshot">
+          <img src="assets/33_capital_gains_unrealized.png" alt="Capital Gains & Tax Reports">
+          <div class="screenshot-caption">Tax Reports & Unrealized Capital Gains with Section 112A exemption pooling</div>
+        </div>
       </section>
 
       <!-- Market Research & Concall Intelligence -->
@@ -583,6 +591,10 @@
 
         <h3>1. Multi-Source News & Filings Aggregation</h3>
         <p>Automatically aggregates NSE/BSE corporate announcements, Trendlyne concall audio/transcripts, Yahoo Finance <code>.NS</code> RSS news, and broker research reports.</p>
+        <div class="screenshot">
+          <img src="assets/35_research_intelligence_feed.png" alt="Market Research & Concall Intelligence Feed">
+          <div class="screenshot-caption">Market & Research feed showing corporate filings, concalls, and AI sentiment insights</div>
+        </div>
 
         <h3>2. Edge AI Concall Analyzer</h3>
         <p>Click <strong>Analyze Concall</strong> on any earnings call to run on-device <code>faster-whisper</code> INT8 transcription and <code>finbert-tone</code> INT8 ONNX sentiment analysis (zero external LLM calls), delivering Prepared vs Q&A Tone Divergence Alerts, Hedging Index, 4-Aspect Sentiment Scorecards (Demand, Margins, Guidance, CapEx), and Extractive Red Flags.</p>
@@ -593,6 +605,14 @@
           <li><strong>Daily Authentication:</strong> Both brokers issue daily-expiring tokens—re-authenticate once per day in Profile &amp; Settings.</li>
           <li><strong>Import Scope:</strong> Direct API holdings/tradebook import is supported for <strong>ICICI Breeze</strong> (use Trade Book History mode for original buy dates). <strong>Zerodha Kite</strong> is used for live price quotes only; import Zerodha trades via Tradebook CSV (as Kite's trade API is limited to same-day trades and holdings lack transaction dates).</li>
         </ul>
+        <div class="screenshot">
+          <img src="assets/34_broker_api_settings.png" alt="Broker API Integrations">
+          <div class="screenshot-caption">Broker API Integration settings in Profile &amp; Settings for ICICI Direct Breeze and Zerodha Kite</div>
+        </div>
+        <div class="screenshot">
+          <img src="assets/36_admin_scheduler_and_ai.png" alt="Background Job Scheduler & AI Model Management">
+          <div class="screenshot-caption">System Maintenance with AI Model Management and APScheduler Background Job Dashboard</div>
+        </div>
       </section>
 
       <!-- Getting Help -->
@@ -625,6 +645,9 @@
 
           <h4>Security Hardening (#601, #602, #603)</h4>
           <p>PII-free broker debug logging, production guard for diagnostic scripts, and admin JWT enforcement on system log/snapshot endpoints.</p>
+
+          <h4>Navigation &amp; Menu Reorganization</h4>
+          <p>Grouped sidebar navigation into collapsible sections (<strong>Markets &amp; Research</strong>, <strong>Tax &amp; Income</strong>, <strong>Administration</strong>) and consolidated <strong>Risk Profile</strong> and <strong>Broker Integrations</strong> into tabbed views under <strong>Profile &amp; Settings</strong>.</p>
         </div>
 
         <div style="margin-bottom: 32px; padding-bottom: 24px; border-bottom: 1px dashed var(--border);">

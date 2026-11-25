@@ -598,7 +598,7 @@ Set and track your financial goals in the **Goals** section.
 
 ## Risk Profile
 
-Assess your financial risk tolerance using the built-in **Grable & Lytton 13-Question Risk Scale**.
+Assess your financial risk tolerance using the built-in **Grable & Lytton 13-Question Risk Scale**, now located under **Profile & Settings > Risk Profile**.
 
 **Features:**
 - **13-Question Wizard:** Multi-step questionnaire covering investment horizon, financial reaction to market volatility, and liquidity preferences.
@@ -609,7 +609,7 @@ Assess your financial risk tolerance using the built-in **Grable & Lytton 13-Que
 
 ## Watchlists
 
-Monitor stocks and funds you're interested in without adding them to your portfolio.
+Monitor stocks and funds you're interested in without adding them to your portfolio under **Markets & Research > Watchlists**.
 
 ![Watchlists Page](./images/watchlists_page_1768318466860.png)
 
@@ -743,9 +743,14 @@ Click the **eye icon** next to the page title to toggle privacy mode, which hide
 | Dashboard | Overview of all portfolios |
 | Portfolios | Manage individual portfolios |
 | Transactions | View all transactions |
-| Import | Bulk import data |
-| Watchlists | Track potential investments |
+| Import | Bulk import data & ICICI Breeze API sync |
 | Goals | Financial goal tracking |
+| Markets & Research → Research & News | Corporate filings, concall AI insights, and market news |
+| Markets & Research → Watchlists | Track potential investments |
+| Tax & Income → Income & Tax Hub | Income, HRA, Chapter VI-A deductions & regime comparison |
+| Tax & Income → Capital Gains | Realized/unrealized capital gains & Schedule FA/112A |
+| Administration | User Management, Interest Rates, System Maintenance, FMV & Aliases (Admin only) |
+| Profile & Settings | Account & Security, Risk Profile, Broker Integrations, Data & System, AI & Intelligence |
 
 ---
 
