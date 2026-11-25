@@ -33,9 +33,9 @@ if not any(isinstance(h, logging.StreamHandler) for h in root_logger.handlers):
 
 # Ensure uvicorn, uvicorn.access, uvicorn.error, and app loggers route to stdout
 for logger_name in ["uvicorn", "uvicorn.access", "uvicorn.error", "app"]:
-    l = logging.getLogger(logger_name)
-    l.setLevel(log_level)
-    l.propagate = True
+    log = logging.getLogger(logger_name)
+    log.setLevel(log_level)
+    log.propagate = True
 
 # File handler (desktop and android mode)
 if settings.DEPLOYMENT_MODE in ("desktop", "android") and settings.LOG_FILE:

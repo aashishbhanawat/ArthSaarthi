@@ -5,8 +5,6 @@ from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session, joinedload
 
-logger = logging.getLogger(__name__)
-
 from app import crud
 from app.core.dependencies import get_current_active_user
 from app.db.session import get_db
@@ -21,6 +19,8 @@ from app.schemas.watchlist import (
     WatchlistUpdate,
 )
 from app.services.financial_data_service import financial_data_service
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 

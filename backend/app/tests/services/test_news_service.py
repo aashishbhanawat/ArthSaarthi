@@ -373,7 +373,11 @@ def test_extract_corporate_metadata_dividend_guard():
 
 
 def test_exchange_announcement_deduplication():
-    from app.services.news_service import are_exchange_subjects_similar, extract_core_exchange_subject, is_xbrl_stub
+    from app.services.news_service import (
+        are_exchange_subjects_similar,
+        extract_core_exchange_subject,
+        is_xbrl_stub,
+    )
 
     xbrl_title = "IGL SPIRITS LIMITED has informed the Exchange about Transcripts - earnings or quarterly calls |SUBJECT: Analyst/Investor Meet Para A-XBRL"
     real_title = "IGL Spirits Limited has informed the Exchange about Transcript |SUBJECT: Analysts/Institutional Investor Meet/Con. Call Updates"
@@ -404,7 +408,10 @@ def test_generic_name_blacklist():
 
 def test_citurgia_result_classification(db):
     from app.models.market_news import MarketNewsArticle
-    from app.services.news_service import extract_corporate_metadata, extract_quarter_from_text
+    from app.services.news_service import (
+        extract_corporate_metadata,
+        extract_quarter_from_text,
+    )
 
     desc = "UNAUDITED FINANCE RESULT FOR THE QUARTER AND HALF YEAR ENDED 30.09.2026"
     title = "Citurgia Biochemicals Ltd (506373)"

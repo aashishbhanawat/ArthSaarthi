@@ -130,7 +130,7 @@ def test_concall_aspect_scoring_and_tone_gap():
     Our EBITDA margins expanded 140 bps despite raw material cost inflation.
     Capex for the gigafactory is on track at ₹1,200 crore and working capital debt was reduced.
     We are guiding for 15% revenue growth next quarter.
-    
+
     Question-and-Answer Session:
     Analyst: Are you seeing any demand headwinds or margin pressure in aftermarket?
     Management: We see lingering commodity volatility and cautious customer sentiment creating near-term pressure.

@@ -1,7 +1,7 @@
 import logging
 import re
 from dataclasses import dataclass
-from typing import Optional, Set, Tuple
+from typing import Set, Tuple
 
 from app.ml.model_manager import model_manager
 

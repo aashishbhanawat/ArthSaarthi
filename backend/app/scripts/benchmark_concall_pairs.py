@@ -19,15 +19,13 @@ Usage:
 """
 
 import argparse
-import io
 import json
 import logging
-import os
 import re
 import sys
 import time
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set, Tuple
+from typing import Any, Dict, List, Set
 
 import pdfplumber
 import requests
@@ -35,9 +33,9 @@ import requests
 # Ensure SQLAlchemy declarative mappings are fully registered
 import app.db.base  # noqa: F401
 from app.db.session import SessionLocal
-from app.models.market_news import MarketNewsArticle
 from app.ml.concall_analyzer import concall_analyzer
 from app.ml.whisper_engine import WhisperEngine, normalize_whisper_transcript
+from app.models.market_news import MarketNewsArticle
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger("concall_benchmark")
@@ -192,8 +190,8 @@ def download_and_extract_pdf_transcript(pair: Dict[str, Any], force: bool = Fals
             text = page.extract_text() or ""
             # Strip recurring exchange submission header/footer stubs
             lines = [
-                l for l in text.split("\n")
-                if not re.search(r"^(?:Page \d+ of \d+|November \d+, 2026|National Stock Exchange|BSE Limited)\b", l.strip(), re.IGNORECASE)
+                line for line in text.split("\n")
+                if not re.search(r"^(?:Page \d+ of \d+|November \d+, 2026|National Stock Exchange|BSE Limited)\b", line.strip(), re.IGNORECASE)
             ]
             extracted_pages.append("\n".join(lines))
 

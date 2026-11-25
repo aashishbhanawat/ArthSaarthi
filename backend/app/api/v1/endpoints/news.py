@@ -299,6 +299,7 @@ def analyze_concall(
                 t_url = meta["transcript_url"]
                 try:
                     import io
+
                     import httpx
                     import pdfplumber
                     pdf_headers = {

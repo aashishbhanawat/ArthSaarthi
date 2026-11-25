@@ -448,6 +448,7 @@ def peek_pdf_subject(pdf_url: str, client: Optional[httpx.Client] = None) -> Opt
     """
     try:
         import io
+
         import pdfplumber
 
         c = client or httpx.Client(timeout=6.0, follow_redirects=True, headers=BROWSER_HEADERS)
