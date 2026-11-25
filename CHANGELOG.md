@@ -5,6 +5,36 @@ All notable changes to ArthSaarthi will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.0] - 2026-11-25
+
+### Added
+
+#### Broker API Integration & Data Automation
+- **Direct Broker API Sync (`NFR12`):** Integrated Zerodha Kite and ICICI Breeze API sync workflows (`BrokerApiSyncCard.tsx`, `brokers.py`) with AES-256-GCM encrypted credential storage (`broker_credentials`).
+- **In-Process Background Job Scheduler (`APScheduler`):** Embedded `AsyncIOScheduler` into FastAPI lifespan (`app/core/scheduler.py`) with concurrency guards, execution audit logs (`scheduled_job_logs`), and an Admin Scheduler Dashboard (`SchedulerDashboard.tsx`).
+- **Automated Bond & Stock Corporate Actions (`#562`, `#607`):** Scheduled bond coupon payouts, bond maturity redemptions, and stock dividend/split/bonus ingestion with user notification receipts (`corporate_action_events`, `CorporateActionNotificationModal.tsx`).
+- **API Rate Limiting & Caching (`NFR13`):** Added rate-limiting and multi-tier caching across market data, asset seeding, and research endpoints.
+
+#### Market Research & Edge AI Concall Intelligence (`FR8.2`, `FR8.2.1`, `FR8.2.2`)
+- **Research Intelligence Feed (`#618`):** Multi-source aggregation of NSE/BSE corporate filings, Trendlyne concall audio/transcripts, Yahoo Finance `.NS` RSS feeds, and broker research reports (`market_news_articles`, `ResearchIntelligenceFeed.tsx`).
+- **On-Device Concall Transcription & FinBERT-Tone NLP:** Integrated CTranslate2 INT8 `faster-whisper` (via PyAV, no system `ffmpeg` required) with Indian financial phonetic normalization, official PDF transcript auto-priority, and `yiyanghkust/finbert-tone` INT8 ONNX sentiment analysis (`ConcallAnalysisModal.tsx`).
+- **Quantitative Concall Analytics:** Prepared vs Q&A Tone Divergence Alerts, Loughran-McDonald Hedging & Uncertainty Index, 4-Aspect Financial Sentiment Scorecards (Demand, Margins, Guidance, CapEx), and Extractive Red Flags.
+- **AI Model Management:** Added `AIModelManagementCard.tsx` and `/api/v1/ml/*` endpoints to download and manage local Whisper and FinBERT ONNX models.
+
+#### Desktop & UX
+- **Desktop Update Notifications (`FR-Desktop-2`):** Automatic startup check against GitHub Releases for new desktop versions.
+
+### Security
+- **PII Log Removal (`#601`):** Removed raw Zerodha/ICICI holdings and trade item `logger.debug` dumps from `broker_api_parser.py`.
+- **Diagnostic Script Guard (`#602`):** Added `ENVIRONMENT=production` exit guard to `backend/scripts/inspect_icici_raw.py`.
+- **System Endpoint Auth (`#603`):** Enforced admin JWT authentication on `GET /api/v1/system/logs` and `POST /api/v1/system/snapshots/run-daily` in server and desktop modes while preserving Android WorkManager local loopback access.
+
+### Fixed
+- **Concall Polling & Pool Exhaustion:** Added `_in_flight_concalls` deduplication, `check_only` polling, and early DB session release before long-running Whisper/FinBERT execution.
+- **Docker Build Dependencies:** Resolved `click` vs `huggingface-hub` dependency conflict (`click==8.5.1`).
+
+---
+
 ## [1.4.0] - 2026-09-02
 
 ### Added

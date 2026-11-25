@@ -74,4 +74,18 @@ Tax analytics and regime estimations are driven by modular, decoupled services:
 *   **Statutory Tax Rules Registry (`TaxRulesRegistry`):** `backend/app/core/tax_rules_registry.py` maintains year-over-year statutory rules for Financial Years 2021-22 through 2026-27 (tax slab brackets, standard deduction limits, Section 87A rebate ceilings, 4% Cess, and Section 80C/80D caps).
 *   **Unrealized Tax Service (`UnrealizedTaxService`):** Computes lot-level unsold FIFO unrealized STCG/LTCG across equity, debt, foreign stocks, and mutual funds, pooling Section 112A equity LTCG exemption headroom (₹1,25,000 threshold/FY).
 *   **Salary Exemption Service (`SalaryExemptionService`):** Enforces statutory Section 10(13A) HRA exemption rules with 100% mathematical parity against benchmark Excel tax calculators (`local/TaxCalc_2027.xlsx`).
+
+### 2.6. Edge AI & Quantitative Concall Intelligence (Release v1.5.0)
+
+ArthSaarthi performs privacy-preserving financial NLP and speech-to-text completely on-device without external LLM APIs:
+
+*   **Audio Transcription (`whisper_engine.py`):** Uses `faster-whisper` (CTranslate2 INT8 quantized on CPU) with PyAV stream decoding and Indian financial phonetic normalization (`FINANCIAL_WHISPER_PROMPT` + post-ASR regex calibration).
+*   **Financial Sentiment (`finbert_onnx.py`):** Runs `yiyanghkust/finbert-tone` INT8 ONNX via `onnxruntime` for sentence-level Positive/Negative/Neutral scoring.
+*   **Quantitative Concall Analyzer (`concall_analyzer.py`):** Computes Prepared Remarks vs Q&A Tone Divergence, Loughran-McDonald Hedging & Uncertainty Index, 4-Aspect Sentiment Scorecards (Demand, Margins, Guidance, CapEx), and Extractive Red Flags.
+*   **Concurrency & DB Pool Hygiene:** In-flight transcription deduplication (`_in_flight_concalls` + `check_only` polling) prevents duplicate jobs, and Postgres sessions are released before CPU-intensive inference.
+
+### 2.7. Broker API Integration & Security Hardening (Release v1.5.0)
+
+*   **Broker Sync (`brokers.py`, `broker_api_parser.py`):** Direct Zerodha Kite and ICICI Breeze holdings/tradebook ingestion with AES-256-GCM encrypted `api_secret` and `access_token` storage in `broker_credentials`.
+*   **Security Controls:** Sensitive raw broker payloads are never logged (`#601`), diagnostic scripts enforce `ENVIRONMENT=production` exit guards (`#602`), and `/system/logs` and `/system/snapshots/run-daily` require admin JWT in server/desktop modes while preserving Android WorkManager loopback access (`#603`).
 *   **Dual Regime Tax Service (`TaxRegimeService`):** Aggregates gross income, TDS credits, Chapter VI-A deductions, and capital gains to compute net tax liability under the Old Tax Regime vs. New Tax Regime (Section 115BAC), exporting results with embedded legal non-advisory disclaimer banners (`MANDATORY_TAX_DISCLAIMER`).

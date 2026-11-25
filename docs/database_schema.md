@@ -1,6 +1,6 @@
 # Database Schema Documentation
 
-This document explicitly outlines the constraints, defaults, and relationships for every table in the ArthSaarthi schema (as of version 1.2.0). 
+This document explicitly outlines the constraints, defaults, and relationships for every table in the ArthSaarthi schema (as of version 1.5.0). 
 
 > **Note:** For the visual **Entity-Relationship Diagram (ERD)**, please refer to the unified `[uml_design.md](./uml_design.md)`.
 
@@ -171,3 +171,70 @@ Immutable ledger of security-sensitive events.
 ### `watchlists` & `watchlist_items`
 *   **watchlists**: Name and `user_id`.
 *   **watchlist_items**: M2M associative table linking `watchlist_id` to `asset_id`.
+
+## 7. Tax Readiness & Income Ledger (v1.4.0)
+
+*   **`income_sources` & `income_entries`**: Stores user income sources and entry records with AES-256 encrypted fields (`EncryptedString`) for gross, TDS, net, salary breakdown (Basic, DA, HRA, Rent Paid), and notes.
+*   **`tax_deductions`**: Tracks Chapter VI-A deductions (80C, 80D, 80CCD(1B), 80TTA/80TTB) with encrypted titles, amounts, and proof notes.
+*   **`capital_loss_ledgers`**: Tracks carried-forward STCL and LTCL balances by financial year for Section 70/71/74 set-off.
+
+## 8. Infrastructure, Automation & Research Intelligence (v1.5.0)
+
+### `broker_credentials`
+Stores encrypted API credentials for direct broker integrations (`zerodha`, `icici`).
+
+| Column                   | Type           | Constraints                               |
+| ------------------------ | -------------- | ----------------------------------------- |
+| `id`                     | `UUID`         | `PRIMARY KEY`                             |
+| `user_id`                | `UUID`         | `FOREIGN KEY (users.id)`, `INDEX`         |
+| `provider_name`          | `String(50)`   | `NOT NULL`, `UNIQUE(user_id, provider_name)`|
+| `api_key`                | `String(255)`  | `NOT NULL`                                |
+| `encrypted_api_secret`   | `Text`         | `NOT NULL` (AES-256-GCM encrypted)        |
+| `encrypted_access_token` | `Text`         | `NULLABLE` (AES-256-GCM encrypted)        |
+| `is_active`              | `Boolean`      | `NOT NULL`, `DEFAULT TRUE`                |
+
+### `scheduled_job_logs`
+Audit trail for APScheduler background job executions (`SUCCESS`, `FAILED`, `MISSED`).
+
+| Column                   | Type           | Constraints                               |
+| ------------------------ | -------------- | ----------------------------------------- |
+| `id`                     | `UUID`         | `PRIMARY KEY`                             |
+| `job_id`                 | `String(100)`  | `NOT NULL`, `INDEX`                       |
+| `job_name`               | `String(255)`  | `NOT NULL`                                |
+| `status`                 | `String(20)`   | `NOT NULL`, `INDEX`                       |
+| `started_at`             | `TIMESTAMP(tz)`| `NOT NULL`                                |
+| `finished_at`            | `TIMESTAMP(tz)`| `NULLABLE`                                |
+| `execution_time_seconds` | `Float`        | `NULLABLE`                                |
+| `error_message`          | `Text`         | `NULLABLE`                                |
+
+### `corporate_action_events`
+Tracks automated bond coupon/maturity and stock corporate action notifications.
+
+| Column           | Type            | Constraints                               |
+| ---------------- | --------------- | ----------------------------------------- |
+| `id`             | `UUID`          | `PRIMARY KEY`                             |
+| `user_id`        | `UUID`          | `FOREIGN KEY (users.id)`                  |
+| `portfolio_id`   | `UUID`          | `FOREIGN KEY (portfolios.id)`, `INDEX`    |
+| `asset_id`       | `UUID`          | `FOREIGN KEY (assets.id)`, `INDEX`        |
+| `transaction_id` | `UUID`          | `FOREIGN KEY (transactions.id)`, `NULLABLE`|
+| `event_type`     | `String(50)`    | `NOT NULL`                                |
+| `event_date`     | `Date`          | `NOT NULL`                                |
+| `units`          | `Numeric(18,8)` | `NOT NULL`                                |
+| `amount`         | `Numeric(18,8)` | `NOT NULL`                                |
+| `status`         | `String(20)`    | `NOT NULL`, `DEFAULT 'NEW'`               |
+
+### `market_news_articles`
+Stores aggregated corporate announcements, broker research, and earnings concall analyses.
+
+| Column          | Type           | Constraints                               |
+| --------------- | -------------- | ----------------------------------------- |
+| `id`            | `String(64)`   | `PRIMARY KEY` (SHA-256 of URL or GUID)    |
+| `title`         | `String(500)`  | `NOT NULL`                                |
+| `summary`       | `Text`         | `NULLABLE`                                |
+| `url`           | `String(1000)` | `UNIQUE`, `NOT NULL`, `INDEX`             |
+| `source`        | `String(100)`  | `NOT NULL`, `INDEX`                       |
+| `category`      | `String(30)`   | `NOT NULL`, `DEFAULT 'NEWS'`, `INDEX`     |
+| `published_at`  | `TIMESTAMP(tz)`| `NOT NULL`, `INDEX`                       |
+| `symbols`       | `JSON`         | `NOT NULL`                                |
+| `sentiment`     | `String(20)`   | `NOT NULL`, `DEFAULT 'NEUTRAL'`           |
+| `metadata_json` | `JSON`         | `NULLABLE` (Stores concall AI insights)   |

@@ -474,4 +474,27 @@ The background job scheduler orchestrates automated periodic tasks (daily valuat
 4. **User Notification & Receipts:** Creates records in `corporate_action_events` table (`NEW` status).
 5. **Frontend Review:** Notification bell in navigation bar alerts the user with unread count; clicking opens `CorporateActionNotificationModal.tsx` allowing one-click acknowledgement or individual dismissal.
 
+---
+
+## 10. Market Research & Concall Intelligence Flow (FR8.2 / FR8.2.2)
+
+### Step 1: Multi-Source Ingestion (`news_service.py` & `news.py`)
+1. Triggered on schedule or manually via `POST /api/v1/news/sync` (`ResearchIntelligenceFeed.tsx`).
+2. Aggregates NSE/BSE corporate announcements, Trendlyne concall audio/transcripts, Yahoo Finance `.NS` RSS (`fetch_yahoo_finance_rss`), and Google News broker research (`fetch_broker_research_for_symbol`).
+3. Filters SEO tracker noise (`TRACKER_AND_SEO_PATTERNS`), disambiguates tickers, links official exchange PDF transcripts to audio concalls (`_link_pdf_transcript_to_audio_concalls`), and persists articles in `market_news_articles`.
+
+### Step 2: Edge AI Concall Analysis (`POST /api/v1/news/{id}/analyze-concall`)
+1. **In-Flight Deduplication:** Checks `_in_flight_concalls`; if `check_only=true` and analysis is running, returns HTTP `409 Conflict` so 10-second frontend polling does not launch duplicate jobs.
+2. **DB Session Hygiene:** Reads article metadata and closes/releases the SQLAlchemy session before running CPU-intensive inference.
+3. **Transcript Acquisition:** Uses official PDF text if available, user-pasted transcript, or downloads audio with 3-attempt retry and runs `faster-whisper` INT8 (`whisper_engine.py`) with `FINANCIAL_WHISPER_PROMPT` and post-ASR phonetic normalization.
+4. **Quantitative NLP (`concall_analyzer.py` & `finbert_onnx.py`):** Scores sentences with `yiyanghkust/finbert-tone` INT8 ONNX, computes Prepared vs Q&A Tone Divergence, Loughran-McDonald Hedging Index, 4-Aspect Scorecards (Demand, Margins, Guidance, CapEx), and Extractive Red Flags.
+5. **Persistence:** Re-acquires a short-lived DB session to save `concall_analysis` inside `metadata_json`, rendered by `ConcallAnalysisModal.tsx`.
+
+---
+
+## 11. Broker API Direct Sync Flow (`NFR12`)
+
+1. **Credential Storage (`brokers.py`):** Users connect Zerodha Kite or ICICI Breeze from `BrokerApiSyncCard.tsx`. `api_secret` and `access_token` are encrypted with AES-256-GCM (`KeyManager`) and saved in `broker_credentials`.
+2. **Fetch & Parse (`broker_api_parser.py`):** Fetches live holdings/tradebooks, maps symbols to master `assets`, and stages rows into `import_sessions` / `parsed_transactions` for preview and commit—without logging raw PII payloads (`#601`).
+
 

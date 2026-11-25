@@ -29,12 +29,16 @@ ArthSaarthi is a powerful web-based application designed to help you track, mana
    - Dual Regime Tax Comparison
    - Unrealized Capital Gains & Sec 112A Exemption Pooling
 7. [Import Data](#import-data)
-8. [Goals](#goals)
-9. [Risk Profile](#risk-profile)
-10. [Watchlists](#watchlists)
-11. [Profile & Settings](#profile--settings)
-12. [Admin Features](#admin-features)
-13. [Themes & Privacy](#themes--privacy)
+   - Broker API Direct Sync (Zerodha Kite & ICICI Breeze)
+8. [Market Research & Concall Intelligence](#market-research--concall-intelligence-release-v150)
+9. [Goals](#goals)
+10. [Risk Profile](#risk-profile)
+11. [Watchlists](#watchlists)
+12. [Profile & Settings](#profile--settings)
+13. [Admin Features](#admin-features)
+    - Background Job Scheduler
+    - AI Model Management
+14. [Themes & Privacy](#themes--privacy)
 
 ---
 
@@ -541,6 +545,29 @@ When the system doesn't recognize a ticker from your file:
 > [!TIP]
 > For Mutual Funds, download your Consolidated Account Statement (CAS) from MFCentral for the most complete data.
 
+### Broker API Direct Sync (Zerodha Kite & ICICI Breeze)
+
+Connect your brokerage account directly from the **Import** page using the **Broker API Sync** card:
+
+1. Select your broker (**Zerodha Kite** or **ICICI Breeze**) and enter your API Key and API Secret (encrypted at rest using AES-256-GCM).
+2. Authenticate via the broker OAuth/session flow to obtain an active session token.
+3. Click **Sync Holdings / Tradebook** to stage transactions into the standard Import Preview workflow without manual CSV downloads.
+
+---
+
+## Market Research & Concall Intelligence (Release v1.5.0)
+
+Access the **Research & Intelligence Feed** directly from the Dashboard to stay on top of your portfolio and watchlist companies:
+
+- **Multi-Source Aggregation:** Automatically pulls NSE/BSE corporate filings, Trendlyne earnings concall audio/transcripts, Yahoo Finance `.NS` news, and broker research reports.
+- **Filter & Sync:** Filter by category (`All`, `News`, `Concalls`, `Results`, `Broker Reports`) or click **Sync Now** to fetch the latest updates.
+- **Edge AI Concall Analyzer:** Click **Analyze Concall** (or **View AI Insights**) on any earnings call to run on-device speech-to-text (`faster-whisper`) and financial sentiment analysis (`finbert-tone`) with zero external LLM calls:
+  - **Prepared vs Q&A Tone Divergence:** Flags gaps between scripted management remarks and analyst Q&A responses.
+  - **Hedging & Uncertainty Index:** Measures cautious language density using Loughran-McDonald financial wordlists.
+  - **4-Aspect Scorecard:** Breaks down sentiment across **Demand**, **Margins**, **Guidance**, and **CapEx**.
+  - **Extractive Red Flags & Key Themes:** Highlights cautionary statements and key discussion topics.
+  - **Official PDF Priority:** Automatically prefers official exchange PDF transcripts over audio when available, or lets you paste a custom transcript.
+
 ---
 
 ## Goals
@@ -656,6 +683,16 @@ Perform system maintenance tasks including Asset Master synchronization.
 > [!NOTE]
 > **Server Mode:** Asset seeding runs automatically on every server launch/restart. Use **Sync Assets** to update without restarting.
 > **Desktop Mode:** Asset seeding runs only once on first boot. After that, you must manually run **Sync Assets** to get the latest securities.
+
+### Background Job Scheduler & Corporate Actions
+
+From **Admin > System Maintenance**, view and manage automated background jobs powered by APScheduler:
+- **Scheduled Jobs:** Daily portfolio snapshots, automated bond coupon/maturity corporate actions, stock corporate actions, and market news syncing.
+- **Controls:** Pause/resume schedules, trigger manual runs, and inspect execution logs (`SUCCESS` / `FAILED` with durations).
+
+### AI Model Management
+
+From **Admin > AI Intelligence** (or Profile settings in single-user mode), download and manage on-device Edge AI models (`faster-whisper` for concall audio transcription and `finbert-tone` INT8 ONNX for financial sentiment analysis).
 
 ---
 
