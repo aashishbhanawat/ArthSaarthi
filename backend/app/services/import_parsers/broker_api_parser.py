@@ -29,7 +29,6 @@ def parse_zerodha_api_payload(
                 "Zerodha holdings raw sample (first item keys): %s",
                 list(raw_data[0].keys()) if raw_data else "empty",
             )
-            logger.debug("Zerodha holdings raw sample (first item): %s", raw_data[0])
 
         # Zerodha holdings API is a snapshot — buy dates are NOT available.
         # Use the user-provided as_of_date or fall back to today's date.
@@ -165,7 +164,6 @@ def parse_icici_api_payload(
                 "ICICI holdings raw sample (first item keys): %s",
                 list(raw_data[0].keys()) if raw_data else "empty",
             )
-            logger.debug("ICICI holdings raw sample (first item): %s", raw_data[0])
 
         # ICICI holdings API is a snapshot — buy dates are NOT available.
         # Use the user-provided as_of_date or fall back to today's date.
@@ -216,7 +214,6 @@ def parse_icici_api_payload(
                 "ICICI trades/orderlist raw sample (first item keys): %s",
                 list(raw_data[0].keys()) if raw_data else "empty",
             )
-            logger.debug("ICICI trades/orderlist raw sample (first item): %s", raw_data[0])
 
         for item in raw_data:
             stock_code = (item.get("stock_code") or item.get("stock_name") or "").upper()

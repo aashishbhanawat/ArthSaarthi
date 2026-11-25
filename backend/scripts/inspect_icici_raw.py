@@ -1,3 +1,6 @@
+# DEVELOPER/DEBUG ONLY — DO NOT RUN IN PRODUCTION
+# Reads decrypted broker credentials from DB and makes live API calls.
+
 """Diagnostic CLI utility to inspect raw ICICI Breeze API responses.
 
 Usage:
@@ -9,9 +12,16 @@ Usage:
 import argparse
 import hashlib
 import json
+import os
 import sys
 from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, Optional
+
+if os.environ.get("ENVIRONMENT", "").lower() == "production":
+    print(
+        "ERROR: inspect_icici_raw.py is a developer diagnostic tool and must NOT be run in production."
+    )
+    sys.exit(1)
 
 import httpx
 
