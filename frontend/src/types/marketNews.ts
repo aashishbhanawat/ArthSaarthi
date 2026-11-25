@@ -40,7 +40,11 @@ export interface MarketNewsMetadata {
   broker?: string;
   quarter?: string;
   audio_url?: string;
+  transcript_url?: string;
   transcript_text?: string;
+  action_type?: string;
+  dividend_amount?: number;
+  ex_date?: string;
   concall_analysis?: ConcallAnalysis;
   [key: string]: unknown;
 }

@@ -1,6 +1,6 @@
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
-import { BrokerApiSyncCard } from '../../../components/import/BrokerApiSyncCard';
+import { BrokerApiSyncCard } from '../../../components/Import/BrokerApiSyncCard';
 import * as brokerApi from '../../../services/brokerApi';
 
 const mockNavigate = jest.fn();
