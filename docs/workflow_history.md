@@ -1,3 +1,26 @@
+## 2026-11-25: Docker Build Dependency Conflict Resolution (`click` vs `huggingface-hub`) (Issue #618 / PR #619)
+
+**Task:** Resolve `ResolutionImpossible` pip dependency error during `docker compose build backend` where `click==8.3.1` conflicted with `huggingface-hub 2.4.0` (which requires `click >= 8.4.2`).
+
+**AI Assistant:** Antigravity  
+**Role:** Lead Architect & Full-Stack Developer
+
+### Summary
+
+1. **Root Cause Analysis:**
+   - `backend/requirements.txt` pinned `click==8.3.1` (via `typer` and `uvicorn`).
+   - `faster-whisper 1.2.1` transitively pulls `huggingface-hub 2.4.0`, which strictly requires `click >= 8.4.2, < 9.0.0`.
+   - The pinned `click==8.3.1` broke container image builds during `RUN pip install --upgrade -r /app/requirements.txt`.
+2. **Resolution via `pip-compile`:**
+   - Ran `pip-compile --output-file=requirements.txt requirements.in` in clean Python 3.11 environment.
+   - Upgraded `click` to `8.5.1` (which satisfies `typer >= 8.0.0`, `uvicorn >= 7.0`, and `huggingface-hub >= 8.4.2`).
+   - Automatically locked all transitive sub-dependencies (`filelock`, `fsspec`, `hf-xet`, `httpx2`, `tqdm`, `truststore`).
+3. **Verification:**
+   - `docker compose build backend` completed successfully with code 0 (`pms_backend:latest` built).
+   - `docker compose up -d` started all containers (`pms-backend` healthy).
+
+---
+
 ## 2026-11-24: Ground-Truth Concall Benchmark Harness & Phonetic Calibration (Issue #618 / PR #619)
 
 **Task:**
