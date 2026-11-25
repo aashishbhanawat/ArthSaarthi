@@ -19,7 +19,13 @@ if settings.DATABASE_TYPE == "sqlite":
         cursor.execute("PRAGMA busy_timeout=60000")  # Wait 60 seconds if locked
         cursor.close()
 else:
-    engine = create_engine(str(settings.DATABASE_URL))
+    engine = create_engine(
+        str(settings.DATABASE_URL),
+        pool_pre_ping=True,
+        pool_size=15,
+        max_overflow=30,
+        pool_recycle=1800,
+    )
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 logger = logging.getLogger(__name__)

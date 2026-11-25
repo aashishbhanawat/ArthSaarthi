@@ -4,7 +4,7 @@ import { usePortfolios } from '../../hooks/usePortfolios';
 import { useCreateImportSession, useCreateFDImportSession } from '../../hooks/useImport';
 import { ArrowUpTrayIcon, LockClosedIcon } from '@heroicons/react/24/solid';
 import { AxiosError } from 'axios';
-import { BrokerApiSyncCard } from '../../components/import/BrokerApiSyncCard';
+import { BrokerApiSyncCard } from '../../components/Import/BrokerApiSyncCard';
 
 const DataImportPage: React.FC = () => {
     const navigate = useNavigate();

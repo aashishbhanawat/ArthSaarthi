@@ -46,3 +46,44 @@ class NewsRefreshResponse(BaseModel):
     articles_fetched: int
     articles_inserted: int
     status: str = "success"
+
+
+class ConcallAnalysisRequest(BaseModel):
+    transcript_text: Optional[str] = None
+    check_only: bool = False
+
+
+class ToneBreakdown(BaseModel):
+    positive_pct: float
+    neutral_pct: float
+    negative_pct: float
+    overall: str
+    average_tone_score: float = 0.0
+    sample_size: int = 0
+
+
+class GuidanceMetric(BaseModel):
+    category: str
+    text: str
+
+
+class RedFlagItem(BaseModel):
+    text: str
+    score: float
+
+
+class ConcallAnalysisResponse(BaseModel):
+    article_id: str
+    title: str
+    quarter: Optional[str] = None
+    management_tone: ToneBreakdown
+    qa_tone: ToneBreakdown
+    tone_gap_alert: Optional[float] = None
+    tone_divergence_summary: Optional[str] = None
+    hedge_rate_per_100w: Optional[float] = None
+    topic_sentiment: Optional[Dict[str, float]] = None
+    red_flags: List[RedFlagItem] = []
+    guidance_metrics: List[GuidanceMetric] = []
+    top_takeaways: List[str] = []
+    key_themes: List[str] = []
+    transcription_source: str = "TRANSCRIPT"

@@ -10,6 +10,8 @@ export interface EdgeModelInfo {
   downloaded_bytes: number;
   total_bytes: number;
   error_message?: string | null;
+  system_dependency?: string | null;
+  system_dependency_satisfied?: boolean | null;
 }
 
 export interface SentimentTestResult {

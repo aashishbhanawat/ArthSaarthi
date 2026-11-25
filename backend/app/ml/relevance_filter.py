@@ -34,6 +34,23 @@ class RelevanceFilter:
         r"\bcelebrity\b", r"\bdating\b", r"\bactress\b", r"\bactor\b",
     ]
 
+    # Automated stock price tracker and SEO quote landing pages (HDFC Sky, Upstox, Yahoo Finance, Simply Wall St)
+    TRACKER_AND_SEO_PATTERNS = [
+        r"\bshare\s*price\s*today\b",
+        r"\bstock\s*price\s*live\s*nse/bse\b",
+        r"\bstock\s*price,\s*news,\s*quote\s*and\s*history\b",
+        r"\bstock\s*major\s*holders\b",
+        r"\bstock\s*price\s*&\s*chart\b",
+        r"\bshare\s*price\s*highlights\b",
+        r"\bstock\s*price\s*history\b",
+        r"\bshare\s*price\s*today\s*nse/bse\s*charts\b",
+        r"\bstock\s*analysis\s*-\s*simply\s*wall\s*st\b",
+        r"\b(?:ipo\s*allotment\s*status:\s*check|check\s*share\s*allocation\s*online)\b",
+        r"\bshare\s*price\s*-\s*(?:live\s*nse:?\s*)?[A-Za-z0-9]+\s*stock\s*price\b",
+        r"\bshare\s*price\s*-\s*(?:upstox|hdfc\s*sky|alice\s*blue|groww|zerodha|angel\s*one|5paisa|scanx\.trade)\b",
+        r"\bshare\s*price\s*(?:upstox|hdfc\s*sky|alice\s*blue|groww|zerodha|scanx\.trade)\b",
+    ]
+
     # Positive financial & corporate business signals
     FINANCIAL_KEYWORDS: Set[str] = {
         # Equity & Markets
@@ -99,6 +116,30 @@ class RelevanceFilter:
             "reject": [r"\blt\.\s+[a-z]+\b", r"\blieutenant\b"],
             "require_any": ["larsen", "toubro", "infrastructure", "construction", "order", "shares", "stock", "q1", "q2", "q3", "q4"],
         },
+        "HGS": {
+            # Disallow unrelated SME IPO issue "HGS (India) Limited" (ticker HGSINDIALT on NSE Emerge)
+            "reject": [
+                r"\bhgs\s*\(?india\)?\b", r"\bhgsindialt\b", r"\bnse\s*emerge\b",
+                r"\bnse\s*sme\b", r"\bsme\s*ipo\b", r"\bsme\s*issue\b", r"\bseismic\b",
+            ],
+            "require_any": ["hinduja", "global solutions", "bpm", "bpo", "it services", "shares", "stock", "q1", "q2", "q3", "q4"],
+        },
+        "GICRE": {
+            # Disallow other general insurance companies and generic references
+            "reject": [
+                r"\bicici\s*lombard\b", r"\bbajaj\s*allianz\b", r"\bhdfc\s*ergo\b",
+                r"\bstar\s*health\b", r"\bgeneral\s*insurance\s*council\b",
+                r"\bgeneral\s*insurance\s*company\b",
+            ],
+            "require_any": [
+                "gic re", "general insurance corporation of india", "gicre", "reinsurance", "reinsurer",
+            ],
+        },
+        "VEDL": {
+            # Disallow distinct unlisted business divisions/subsidiaries
+            "reject": [r"\bvedanta\s*oil\s*(?:and|&)\s*gas\b", r"\bcairn\s*oil\b"],
+            "require_any": ["vedanta", "vedl", "mining", "aluminium", "zinc", "metal", "shares", "stock", "dividend"],
+        },
     }
 
     def is_noise(self, title: str, summary: Optional[str] = None) -> bool:
@@ -115,14 +156,19 @@ class RelevanceFilter:
             if re.search(pattern, full_text):
                 return True
 
+        # Check automated price tracker and SEO quote landing pages
+        for pattern in self.TRACKER_AND_SEO_PATTERNS:
+            if re.search(pattern, full_text):
+                return True
+
         return False
 
     def is_financial_relevant(self, title: str, summary: Optional[str] = None, category: str = "NEWS") -> bool:
         """
         Evaluates whether an article has genuine financial market or economic relevance.
-        Broker reports and concalls are inherently relevant.
+        Broker reports, concalls, earnings results, and exchange actions are inherently relevant.
         """
-        if category in ["BROKER_REPORT", "CONCALL"]:
+        if category in ["BROKER_REPORT", "CONCALL", "RESULT", "CORPORATE_ACTION"]:
             return not self.is_noise(title, summary)
 
         if self.is_noise(title, summary):

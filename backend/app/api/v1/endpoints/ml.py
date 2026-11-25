@@ -34,6 +34,8 @@ class EdgeModelResponse(BaseModel):
     downloaded_bytes: int
     total_bytes: int
     error_message: str | None = None
+    system_dependency: str | None = None
+    system_dependency_satisfied: bool | None = None
 
 
 class SentimentTestRequest(BaseModel):

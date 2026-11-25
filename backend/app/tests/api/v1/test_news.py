@@ -145,3 +145,146 @@ def test_purge_noise_and_disambiguate_db(db: Session) -> None:
     assert "SCI" not in retained.symbols
     assert "TATAMOTORS" in retained.symbols
 
+
+def test_analyze_concall_api(client, db):
+    user, password = create_random_user(db)
+    token = get_access_token(client, user.email, password)
+    headers = {"Authorization": f"Bearer {token}"}
+
+    concall_id = f"test-concall-{uuid.uuid4().hex[:8]}"
+    article = MarketNewsArticleCreate(
+        id=concall_id,
+        title="Exide Industries Results Earnings Call for Q2FY27",
+        summary="Conference call discussing Q2 results, margin outlook, and capex.",
+        url=f"https://example.com/exide-call-{concall_id}",
+        source="Trendlyne Concalls",
+        category="CONCALL",
+        published_at=datetime.now(timezone.utc),
+        symbols=["EXIDEIND"],
+        sentiment="NEUTRAL",
+        metadata_json={
+            "quarter": "Q2FY27",
+            "audio_url": "https://example.com/exide.mp3",
+        },
+    )
+    crud.market_news.create_or_update(db, obj_in=article)
+
+    # 1. Analyze with custom transcript text
+    custom_text = (
+        "Opening Remarks: We are pleased to report strong performance for Q2. "
+        "Revenue grew 16% YoY with EBITDA margins at 12.5%. "
+        "Planned capex for the lithium gigafactory is ₹1,200 crore. "
+        "Question-and-Answer Session: "
+        "Analyst: What is your outlook on margins? "
+        "Management: We maintain positive outlook on margins."
+    )
+    res = client.post(
+        f"/api/v1/news/{concall_id}/analyze-concall",
+        headers=headers,
+        json={"transcript_text": custom_text},
+    )
+    assert res.status_code == 200
+    data = res.json()
+    assert data["article_id"] == concall_id
+    assert "management_tone" in data
+    assert "qa_tone" in data
+    assert "guidance_metrics" in data
+    assert len(data["guidance_metrics"]) > 0
+    assert any(g["category"] == "Capex" for g in data["guidance_metrics"])
+    assert data["transcription_source"] == "USER_INPUT"
+
+    # 2. Subsequent call without payload should return cached analysis
+    res_cached = client.post(
+        f"/api/v1/news/{concall_id}/analyze-concall",
+        headers=headers,
+        json={},
+    )
+    assert res_cached.status_code == 200
+    assert res_cached.json()["article_id"] == concall_id
+
+
+def test_analyze_concall_audio_only_without_transcript_returns_400(client, db):
+    user, password = create_random_user(db)
+    token = get_access_token(client, user.email, password)
+    headers = {"Authorization": f"Bearer {token}"}
+
+    audio_only_id = f"audio-only-{uuid.uuid4().hex[:8]}"
+    article = MarketNewsArticleCreate(
+        id=audio_only_id,
+        title="Rail Vikas Nigam Results Earnings Call for Q2FY27",
+        summary="Audio podcast of Q2 concall.",
+        url=f"https://example.com/rvnl-call-{audio_only_id}",
+        source="Trendlyne Concalls",
+        category="CONCALL",
+        published_at=datetime.now(timezone.utc),
+        symbols=["RVNL"],
+        sentiment="NEUTRAL",
+        metadata_json={
+            "quarter": "Q2FY27",
+            "audio_url": "https://example.com/rvnl.mp3",
+        },
+    )
+    crud.market_news.create_or_update(db, obj_in=article)
+
+    # Calling analyze-concall with no transcript and whisper unavailable should return 400
+    with patch("app.api.v1.endpoints.news.whisper_engine.is_available", False):
+        res = client.post(
+            f"/api/v1/news/{audio_only_id}/analyze-concall",
+            headers=headers,
+            json={},
+        )
+        assert res.status_code == 400
+        assert "Only audio podcast is available" in res.json()["detail"]
+
+    # Calling analyze-concall when whisper is available transcribes audio and returns 200
+    with patch("app.api.v1.endpoints.news.whisper_engine.is_available", True):
+        with patch(
+            "app.api.v1.endpoints.news.whisper_engine.transcribe_audio_file",
+            return_value="Management delivered strong results with robust revenue and guidance.",
+        ):
+            res_transcribe = client.post(
+                f"/api/v1/news/{audio_only_id}/analyze-concall",
+                headers=headers,
+                json={},
+            )
+            assert res_transcribe.status_code == 200
+            data = res_transcribe.json()
+            assert data["transcription_source"] == "WHISPER_AUDIO"
+            assert data["management_tone"]["overall"] in ["BULLISH", "BALANCED", "NEUTRAL", "BEARISH"]
+
+
+def test_purge_removes_fake_whisper_analysis(db: Session) -> None:
+    fake_whisper_id = f"fake-whisper-{uuid.uuid4().hex[:8]}"
+    article = MarketNewsArticleCreate(
+        id=fake_whisper_id,
+        title="GHCL Ltd. Results Earnings Call for Q2FY27",
+        summary="Conference call.",
+        url=f"https://example.com/ghcl-{fake_whisper_id}",
+        source="Trendlyne Concalls",
+        category="CONCALL",
+        published_at=datetime.now(timezone.utc),
+        symbols=["GHCL"],
+        sentiment="NEUTRAL",
+        metadata_json={
+            "quarter": "Q2FY27",
+            "audio_url": "https://example.com/ghcl.mp3",
+            "transcript_text": "Management opening remarks: We are pleased to report...",
+            "concall_analysis": {
+                "transcription_source": "WHISPER_AUDIO",
+                "management_tone": {"overall": "NEUTRAL"},
+            },
+        },
+    )
+    crud.market_news.create_or_update(db, obj_in=article)
+
+    # Execute purge
+    deleted, updated = crud.market_news.purge_noise_and_disambiguate(db)
+    assert updated >= 1
+
+    cleaned = crud.market_news.get(db, fake_whisper_id)
+    assert cleaned is not None
+    meta = cleaned.metadata_json or {}
+    assert "concall_analysis" not in meta
+    assert "transcript_text" not in meta
+
+

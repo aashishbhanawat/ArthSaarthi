@@ -49,6 +49,10 @@ services:
       - ./backend/.env
     environment:
       - PYTHONPATH=/app
+      - PYTHONUNBUFFERED=1
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
     networks:
       - pms_network
     depends_on:

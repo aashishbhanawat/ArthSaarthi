@@ -1,5 +1,6 @@
 import logging
 import os
+import shutil
 import threading
 from dataclasses import dataclass
 from pathlib import Path
@@ -24,6 +25,8 @@ class EdgeModelInfo:
     downloaded_bytes: int
     total_bytes: int
     error_message: Optional[str] = None
+    system_dependency: Optional[str] = None
+    system_dependency_satisfied: Optional[bool] = None
 
 
 class ModelManager:
@@ -35,16 +38,26 @@ class ModelManager:
     CATALOG = {
         "finbert_int8": {
             "id": "finbert_int8",
-            "name": "FinBERT INT8 Quantized",
-            "description": "State-of-the-art financial sentiment transformer fine-tuned on corporate earnings calls and financial news.",
-            "size_mb": 105.2,
-            # Verified HuggingFace ONNX quantized release mirror
-            "download_url": "https://huggingface.co/nicechester/finbert-sentiment-onnx-quantized/resolve/main/onnx/model_quantized.onnx",
-            "vocab_url": "https://huggingface.co/nicechester/finbert-sentiment-onnx-quantized/resolve/main/vocab.txt",
+            "name": "FinBERT-Tone INT8 Quantized",
+            "description": "State-of-the-art financial tone transformer fine-tuned on corporate earnings calls and corporate disclosures (HKUST FinBERT-Tone INT8).",
+            "size_mb": 174.2,
+            # Verified HuggingFace Optimum quantized release of yiyanghkust/finbert-tone
+            "download_url": "https://huggingface.co/nickmuchi/quantized-optimum-finbert-tone/resolve/main/model.onnx",
+            "vocab_url": "https://huggingface.co/nickmuchi/quantized-optimum-finbert-tone/resolve/main/vocab.txt",
             "filename": "finbert_int8.onnx",
             "vocab_filename": "vocab.txt",
             "engine_type": "finbert_onnx",
-        }
+        },
+        "whisper_tiny_en": {
+            "id": "whisper_tiny_en",
+            "name": "Faster-Whisper Tiny.en INT8 (Speech-to-Text)",
+            "description": "Fast on-device speech-to-text model for transcribing corporate earnings calls and investor podcasts (CTranslate2 INT8). Bundled PyAV audio engine requires no system ffmpeg.",
+            "size_mb": 75.0,
+            "download_url": "https://huggingface.co/Systran/faster-whisper-tiny.en/resolve/main/model.bin",
+            "filename": "whisper/models--Systran--faster-whisper-tiny.en",
+            "engine_type": "faster_whisper",
+            "system_dependency": "PyAV Audio Engine (Bundled in wheel)",
+        },
     }
 
     def __init__(self, models_dir: Optional[Path] = None):
@@ -68,6 +81,8 @@ class ModelManager:
         if not meta:
             return None
         target = self.models_dir / meta["filename"]
+        if target.is_dir():
+            return target if any(target.iterdir()) else None
         return target if target.exists() and target.stat().st_size > 1000 else None
 
     def is_model_available(self, model_id: str) -> bool:
@@ -80,18 +95,42 @@ class ModelManager:
         if not meta:
             raise ValueError(f"Unknown model ID: {model_id}")
 
+        dep = meta.get("system_dependency")
+        if dep:
+            try:
+                import av  # noqa: F401
+                dep_satisfied = True
+            except ImportError:
+                dep_satisfied = bool(shutil.which("ffmpeg"))
+        else:
+            dep_satisfied = None
+
         with self._lock:
             if model_id in self._active_downloads:
-                return self._active_downloads[model_id]
+                curr = self._active_downloads[model_id]
+                curr.system_dependency = dep
+                curr.system_dependency_satisfied = dep_satisfied
+                return curr
 
         target = self.models_dir / meta["filename"]
-        if target.exists() and target.stat().st_size > 1000:
+        is_ready = False
+        size_bytes = 0
+        if target.is_dir() and any(target.iterdir()):
+            is_ready = True
+            try:
+                size_bytes = sum(f.stat().st_size for f in target.rglob("*") if f.is_file())
+            except Exception:
+                size_bytes = int(meta["size_mb"] * 1024 * 1024)
+        elif target.exists() and target.stat().st_size > 1000:
+            is_ready = True
             size_bytes = target.stat().st_size
+
+        if is_ready:
             return EdgeModelInfo(
                 id=meta["id"],
                 name=meta["name"],
                 description=meta["description"],
-                size_mb=round(size_bytes / (1024 * 1024), 1),
+                size_mb=round(size_bytes / (1024 * 1024), 1) or meta["size_mb"],
                 download_url=meta["download_url"],
                 filename=meta["filename"],
                 engine_type=meta["engine_type"],
@@ -99,6 +138,8 @@ class ModelManager:
                 progress_percentage=100,
                 downloaded_bytes=size_bytes,
                 total_bytes=size_bytes,
+                system_dependency=dep,
+                system_dependency_satisfied=dep_satisfied,
             )
 
         return EdgeModelInfo(
@@ -113,6 +154,8 @@ class ModelManager:
             progress_percentage=0,
             downloaded_bytes=0,
             total_bytes=int(meta["size_mb"] * 1024 * 1024),
+            system_dependency=dep,
+            system_dependency_satisfied=dep_satisfied,
         )
 
     def list_models(self) -> List[EdgeModelInfo]:
@@ -158,6 +201,29 @@ class ModelManager:
 
     def _download_worker(self, model_id: str) -> None:
         meta = self.CATALOG[model_id]
+
+        # Handle faster-whisper model download via library helper
+        if meta.get("engine_type") == "faster_whisper":
+            try:
+                from faster_whisper import download_model
+                download_root = str(self.models_dir / "whisper")
+                logger.info("Downloading faster-whisper model '%s' to %s", meta.get("model_size", "tiny.en"), download_root)
+                download_model(meta.get("model_size", "tiny.en"), output_dir=download_root)
+                with self._lock:
+                    if model_id in self._active_downloads:
+                        self._active_downloads[model_id].progress_percentage = 100
+                        self._active_downloads[model_id].status = "ACTIVE"
+                        self._active_downloads[model_id].downloaded_bytes = int(meta["size_mb"] * 1024 * 1024)
+                logger.info("Successfully downloaded faster-whisper model %s", model_id)
+                return
+            except Exception as e:
+                logger.error("Failed to download faster-whisper model %s: %s", model_id, e)
+                with self._lock:
+                    if model_id in self._active_downloads:
+                        self._active_downloads[model_id].status = "FAILED"
+                        self._active_downloads[model_id].error_message = str(e)
+                return
+
         url = meta["download_url"]
         target_path = self.models_dir / meta["filename"]
         temp_path = self.models_dir / f"{meta['filename']}.part"
@@ -241,10 +307,16 @@ class ModelManager:
 
         deleted = False
         if target_path.exists():
-            target_path.unlink()
+            if target_path.is_dir():
+                shutil.rmtree(target_path)
+            else:
+                target_path.unlink()
             deleted = True
         if part_path.exists():
-            part_path.unlink()
+            if part_path.is_dir():
+                shutil.rmtree(part_path)
+            else:
+                part_path.unlink()
 
         return deleted
 

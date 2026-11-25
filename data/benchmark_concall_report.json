@@ -1,0 +1,1194 @@
+{
+  "summary": {
+    "total_pairs": 12,
+    "avg_token_jaccard": 53.0,
+    "avg_number_recall": 42.0,
+    "avg_mgmt_tone_diff": 0.0743,
+    "avg_qa_tone_diff": 0.0731,
+    "tone_gap_concordance_rate": 83.33
+  },
+  "pairs": [
+    {
+      "id": 1,
+      "key": "oil_india",
+      "company": "Oil India Limited",
+      "quarter": "Q2 FY27",
+      "ground_truth": {
+        "words": 8367,
+        "sentences": 468,
+        "unique_financial_numbers": 58,
+        "management_tone": {
+          "positive_pct": 16.9,
+          "neutral_pct": 83.1,
+          "negative_pct": 0.0,
+          "overall": "NEUTRAL",
+          "average_tone_score": 0.173,
+          "sample_size": 89
+        },
+        "qa_tone": {
+          "positive_pct": 15.3,
+          "neutral_pct": 78.4,
+          "negative_pct": 6.3,
+          "overall": "NEUTRAL",
+          "average_tone_score": 0.07,
+          "sample_size": 111
+        },
+        "tone_gap_alert": 0.106,
+        "red_flags_count": 3,
+        "key_themes": [
+          "Per Barrel",
+          "Metric Ton",
+          "Antique Stock",
+          "Stock Broking",
+          "Gas Production",
+          "Price Realization"
+        ]
+      },
+      "whisper": {
+        "words": 6598,
+        "sentences": 387,
+        "unique_financial_numbers": 24,
+        "management_tone": {
+          "positive_pct": 12.7,
+          "neutral_pct": 87.3,
+          "negative_pct": 0.0,
+          "overall": "NEUTRAL",
+          "average_tone_score": 0.142,
+          "sample_size": 55
+        },
+        "qa_tone": {
+          "positive_pct": 11.1,
+          "neutral_pct": 80.9,
+          "negative_pct": 8.0,
+          "overall": "NEUTRAL",
+          "average_tone_score": 0.025,
+          "sample_size": 288
+        },
+        "tone_gap_alert": 0.117,
+        "red_flags_count": 0,
+        "key_themes": [
+          "Per Barrel",
+          "Price Realization",
+          "Crude Oil",
+          "Gas Production",
+          "Oil India",
+          "Run Rate"
+        ]
+      },
+      "comparative_metrics": {
+        "token_jaccard_similarity": 0.508,
+        "financial_number_recall": 0.2931,
+        "mgmt_tone_abs_diff": 0.031,
+        "qa_tone_abs_diff": 0.045,
+        "tone_gap_concordance": true,
+        "theme_overlap_count": 3
+      },
+      "phonetic_distortions": [
+        {
+          "expected": "PAT",
+          "whisper_heard": "fact",
+          "gt_has_expected": true,
+          "sample_whisper_snippet": "right now to the fact that the white"
+        },
+        {
+          "expected": "PAT",
+          "whisper_heard": "back",
+          "gt_has_expected": true,
+          "sample_whisper_snippet": "Can you please come back"
+        },
+        {
+          "expected": "PAT",
+          "whisper_heard": "part",
+          "gt_has_expected": true,
+          "sample_whisper_snippet": "Part of the sentence I"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "key": "rvnl",
+      "company": "Rail Vikas Nigam Limited",
+      "quarter": "Q2 FY27",
+      "ground_truth": {
+        "words": 4986,
+        "sentences": 258,
+        "unique_financial_numbers": 100,
+        "management_tone": {
+          "positive_pct": 27.5,
+          "neutral_pct": 68.4,
+          "negative_pct": 4.1,
+          "overall": "NEUTRAL",
+          "average_tone_score": 0.236,
+          "sample_size": 244
+        },
+        "qa_tone": {
+          "positive_pct": 0.0,
+          "neutral_pct": 100.0,
+          "negative_pct": 0.0,
+          "overall": "NEUTRAL",
+          "average_tone_score": 0.0,
+          "sample_size": 0
+        },
+        "tone_gap_alert": 0.236,
+        "red_flags_count": 3,
+        "key_themes": [
+          "Inr Crore",
+          "Rail Vikas",
+          "Vikas Nigam",
+          "Stood Inr",
+          "Order Book",
+          "Mritunjay Pratap"
+        ]
+      },
+      "whisper": {
+        "words": 5076,
+        "sentences": 292,
+        "unique_financial_numbers": 44,
+        "management_tone": {
+          "positive_pct": 44.7,
+          "neutral_pct": 54.3,
+          "negative_pct": 1.1,
+          "overall": "BULLISH",
+          "average_tone_score": 0.426,
+          "sample_size": 94
+        },
+        "qa_tone": {
+          "positive_pct": 16.0,
+          "neutral_pct": 78.5,
+          "negative_pct": 5.5,
+          "overall": "NEUTRAL",
+          "average_tone_score": 0.097,
+          "sample_size": 163
+        },
+        "tone_gap_alert": 0.329,
+        "red_flags_count": 2,
+        "key_themes": [
+          "International Market",
+          "Long Term",
+          "People Per",
+          "Term Value",
+          "Explore Fresh",
+          "Revenue Operation"
+        ]
+      },
+      "comparative_metrics": {
+        "token_jaccard_similarity": 0.4505,
+        "financial_number_recall": 0.29,
+        "mgmt_tone_abs_diff": 0.19,
+        "qa_tone_abs_diff": 0.097,
+        "tone_gap_concordance": true,
+        "theme_overlap_count": 0
+      },
+      "phonetic_distortions": [
+        {
+          "expected": "crores?",
+          "whisper_heard": "per hour",
+          "gt_has_expected": true,
+          "sample_whisper_snippet": "5 people per hour building actual"
+        },
+        {
+          "expected": "PAT",
+          "whisper_heard": "fact",
+          "gt_has_expected": true,
+          "sample_whisper_snippet": "situation and the fact of that situation"
+        },
+        {
+          "expected": "PAT",
+          "whisper_heard": "back",
+          "gt_has_expected": true,
+          "sample_whisper_snippet": "Back by a solid order"
+        },
+        {
+          "expected": "PAT",
+          "whisper_heard": "part",
+          "gt_has_expected": true,
+          "sample_whisper_snippet": "show to the bidding part"
+        },
+        {
+          "expected": "Numaligarh Refinery / NRL",
+          "whisper_heard": "an hour",
+          "gt_has_expected": false,
+          "sample_whisper_snippet": "000 six an hour"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "key": "grse",
+      "company": "Garden Reach Shipbuilders & Engineers",
+      "quarter": "Q2 FY27",
+      "ground_truth": {
+        "words": 8304,
+        "sentences": 419,
+        "unique_financial_numbers": 66,
+        "management_tone": {
+          "positive_pct": 5.3,
+          "neutral_pct": 94.7,
+          "negative_pct": 0.0,
+          "overall": "NEUTRAL",
+          "average_tone_score": 0.053,
+          "sample_size": 133
+        },
+        "qa_tone": {
+          "positive_pct": 14.3,
+          "neutral_pct": 84.5,
+          "negative_pct": 1.3,
+          "overall": "NEUTRAL",
+          "average_tone_score": 0.13,
+          "sample_size": 238
+        },
+        "tone_gap_alert": -0.077,
+        "red_flags_count": 1,
+        "key_themes": [
+          "Order Book",
+          "Shallow Water",
+          "Tune Crores",
+          "Order Value",
+          "Anti Submarine",
+          "Submarine Shallow"
+        ]
+      },
+      "whisper": {
+        "words": 8212,
+        "sentences": 403,
+        "unique_financial_numbers": 25,
+        "management_tone": {
+          "positive_pct": 4.1,
+          "neutral_pct": 95.9,
+          "negative_pct": 0.0,
+          "overall": "NEUTRAL",
+          "average_tone_score": 0.042,
+          "sample_size": 121
+        },
+        "qa_tone": {
+          "positive_pct": 10.2,
+          "neutral_pct": 88.2,
+          "negative_pct": 1.6,
+          "overall": "NEUTRAL",
+          "average_tone_score": 0.084,
+          "sample_size": 245
+        },
+        "tone_gap_alert": -0.042,
+        "red_flags_count": 1,
+        "key_themes": [
+          "Long Term",
+          "Expansion Plan",
+          "Pre Production",
+          "Concurrent Construction",
+          "Order Book",
+          "Physical Progress"
+        ]
+      },
+      "comparative_metrics": {
+        "token_jaccard_similarity": 0.4964,
+        "financial_number_recall": 0.303,
+        "mgmt_tone_abs_diff": 0.011,
+        "qa_tone_abs_diff": 0.046,
+        "tone_gap_concordance": true,
+        "theme_overlap_count": 1
+      },
+      "phonetic_distortions": [
+        {
+          "expected": "crores?",
+          "whisper_heard": "store",
+          "gt_has_expected": true,
+          "sample_whisper_snippet": "collector of wood store So"
+        },
+        {
+          "expected": "PAT",
+          "whisper_heard": "fact",
+          "gt_has_expected": false,
+          "sample_whisper_snippet": "the fact fully electric time"
+        },
+        {
+          "expected": "PAT",
+          "whisper_heard": "back",
+          "gt_has_expected": false,
+          "sample_whisper_snippet": "just 15 days back"
+        },
+        {
+          "expected": "PAT",
+          "whisper_heard": "part",
+          "gt_has_expected": false,
+          "sample_whisper_snippet": "As part of the way and"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "key": "genus_power",
+      "company": "Genus Power Infrastructures",
+      "quarter": "Q2 FY27",
+      "ground_truth": {
+        "words": 6506,
+        "sentences": 343,
+        "unique_financial_numbers": 72,
+        "management_tone": {
+          "positive_pct": 41.2,
+          "neutral_pct": 52.6,
+          "negative_pct": 6.2,
+          "overall": "BULLISH",
+          "average_tone_score": 0.362,
+          "sample_size": 97
+        },
+        "qa_tone": {
+          "positive_pct": 30.0,
+          "neutral_pct": 60.0,
+          "negative_pct": 10.0,
+          "overall": "NEUTRAL",
+          "average_tone_score": 0.181,
+          "sample_size": 40
+        },
+        "tone_gap_alert": 0.084,
+        "red_flags_count": 3,
+        "key_themes": [
+          "Genus Power",
+          "Power Infrastructures",
+          "Cash Flow",
+          "Crores Meters",
+          "Meters Installed",
+          "Working Capital"
+        ]
+      },
+      "whisper": {
+        "words": 6329,
+        "sentences": 344,
+        "unique_financial_numbers": 42,
+        "management_tone": {
+          "positive_pct": 32.9,
+          "neutral_pct": 60.0,
+          "negative_pct": 7.1,
+          "overall": "NEUTRAL",
+          "average_tone_score": 0.277,
+          "sample_size": 85
+        },
+        "qa_tone": {
+          "positive_pct": 21.7,
+          "neutral_pct": 75.6,
+          "negative_pct": 2.8,
+          "overall": "NEUTRAL",
+          "average_tone_score": 0.177,
+          "sample_size": 217
+        },
+        "tone_gap_alert": 0.1,
+        "red_flags_count": 3,
+        "key_themes": [
+          "Cash Flow",
+          "Press Star",
+          "Working Capital",
+          "Ask Press",
+          "Wish Ask",
+          "Operating Cash"
+        ]
+      },
+      "comparative_metrics": {
+        "token_jaccard_similarity": 0.5566,
+        "financial_number_recall": 0.5,
+        "mgmt_tone_abs_diff": 0.085,
+        "qa_tone_abs_diff": 0.004,
+        "tone_gap_concordance": false,
+        "theme_overlap_count": 2
+      },
+      "phonetic_distortions": [
+        {
+          "expected": "crores?",
+          "whisper_heard": "corona",
+          "gt_has_expected": true,
+          "sample_whisper_snippet": "lighter point three corona maker so that it"
+        },
+        {
+          "expected": "crores?",
+          "whisper_heard": "store",
+          "gt_has_expected": true,
+          "sample_whisper_snippet": "an irreparable law store family and the"
+        },
+        {
+          "expected": "crores?",
+          "whisper_heard": "crew",
+          "gt_has_expected": true,
+          "sample_whisper_snippet": "coming to our crew to FY27 financial"
+        },
+        {
+          "expected": "PAT",
+          "whisper_heard": "back",
+          "gt_has_expected": true,
+          "sample_whisper_snippet": "what will bring back as an industry"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "key": "john_cockerill",
+      "company": "John Cockerill India",
+      "quarter": "Q3 CY26",
+      "ground_truth": {
+        "words": 5154,
+        "sentences": 277,
+        "unique_financial_numbers": 26,
+        "management_tone": {
+          "positive_pct": 42.6,
+          "neutral_pct": 56.0,
+          "negative_pct": 1.4,
+          "overall": "BULLISH",
+          "average_tone_score": 0.413,
+          "sample_size": 141
+        },
+        "qa_tone": {
+          "positive_pct": 10.3,
+          "neutral_pct": 89.7,
+          "negative_pct": 0.0,
+          "overall": "NEUTRAL",
+          "average_tone_score": 0.1,
+          "sample_size": 29
+        },
+        "tone_gap_alert": 0.17,
+        "red_flags_count": 3,
+        "key_themes": [
+          "John Cockerill",
+          "Cockerill India",
+          "Financial Performance",
+          "Approximately Crores",
+          "Green Steel",
+          "Steel Industry"
+        ]
+      },
+      "whisper": {
+        "words": 4980,
+        "sentences": 282,
+        "unique_financial_numbers": 24,
+        "management_tone": {
+          "positive_pct": 46.3,
+          "neutral_pct": 52.2,
+          "negative_pct": 1.5,
+          "overall": "BULLISH",
+          "average_tone_score": 0.451,
+          "sample_size": 134
+        },
+        "qa_tone": {
+          "positive_pct": 16.7,
+          "neutral_pct": 83.3,
+          "negative_pct": 0.0,
+          "overall": "NEUTRAL",
+          "average_tone_score": 0.168,
+          "sample_size": 126
+        },
+        "tone_gap_alert": 0.283,
+        "red_flags_count": 3,
+        "key_themes": [
+          "Financial Performance",
+          "Approximately Crore",
+          "Project Portfolio",
+          "John Cockrell",
+          "Integrated Organization",
+          "International Platform"
+        ]
+      },
+      "comparative_metrics": {
+        "token_jaccard_similarity": 0.6469,
+        "financial_number_recall": 0.7692,
+        "mgmt_tone_abs_diff": 0.038,
+        "qa_tone_abs_diff": 0.068,
+        "tone_gap_concordance": true,
+        "theme_overlap_count": 1
+      },
+      "phonetic_distortions": [
+        {
+          "expected": "PAT",
+          "whisper_heard": "back",
+          "gt_has_expected": false,
+          "sample_whisper_snippet": "and will come back later"
+        },
+        {
+          "expected": "PAT",
+          "whisper_heard": "part",
+          "gt_has_expected": false,
+          "sample_whisper_snippet": "It forms part of our broader"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "key": "india_glycols",
+      "company": "India Glycols Limited",
+      "quarter": "Q2 FY27",
+      "ground_truth": {
+        "words": 7748,
+        "sentences": 412,
+        "unique_financial_numbers": 73,
+        "management_tone": {
+          "positive_pct": 27.9,
+          "neutral_pct": 67.0,
+          "negative_pct": 5.1,
+          "overall": "NEUTRAL",
+          "average_tone_score": 0.218,
+          "sample_size": 197
+        },
+        "qa_tone": {
+          "positive_pct": 10.4,
+          "neutral_pct": 77.1,
+          "negative_pct": 12.5,
+          "overall": "NEUTRAL",
+          "average_tone_score": -0.02,
+          "sample_size": 48
+        },
+        "tone_gap_alert": 0.145,
+        "red_flags_count": 3,
+        "key_themes": [
+          "Inr Crores",
+          "Performance Chemicals",
+          "Specialty Materials",
+          "Glycol Ethers",
+          "Bio Based",
+          "Ethylene Oxide"
+        ]
+      },
+      "whisper": {
+        "words": 8034,
+        "sentences": 431,
+        "unique_financial_numbers": 27,
+        "management_tone": {
+          "positive_pct": 25.8,
+          "neutral_pct": 69.5,
+          "negative_pct": 4.7,
+          "overall": "NEUTRAL",
+          "average_tone_score": 0.203,
+          "sample_size": 190
+        },
+        "qa_tone": {
+          "positive_pct": 19.1,
+          "neutral_pct": 72.4,
+          "negative_pct": 8.5,
+          "overall": "NEUTRAL",
+          "average_tone_score": 0.115,
+          "sample_size": 199
+        },
+        "tone_gap_alert": 0.088,
+        "red_flags_count": 3,
+        "key_themes": [
+          "Performance Chemicals",
+          "Operating Environment",
+          "Bio Based",
+          "Specialty Materials",
+          "Joint Venture",
+          "Volume Growth"
+        ]
+      },
+      "comparative_metrics": {
+        "token_jaccard_similarity": 0.5736,
+        "financial_number_recall": 0.2329,
+        "mgmt_tone_abs_diff": 0.015,
+        "qa_tone_abs_diff": 0.135,
+        "tone_gap_concordance": false,
+        "theme_overlap_count": 3
+      },
+      "phonetic_distortions": [
+        {
+          "expected": "PAT",
+          "whisper_heard": "fact",
+          "gt_has_expected": true,
+          "sample_whisper_snippet": "the fact that a mind the"
+        },
+        {
+          "expected": "PAT",
+          "whisper_heard": "back",
+          "gt_has_expected": true,
+          "sample_whisper_snippet": "see and I will come back to you"
+        },
+        {
+          "expected": "PAT",
+          "whisper_heard": "part",
+          "gt_has_expected": true,
+          "sample_whisper_snippet": "what is also a part of this business in"
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "key": "kalpataru",
+      "company": "Kalpataru Limited",
+      "quarter": "Q2 FY27",
+      "ground_truth": {
+        "words": 6048,
+        "sentences": 160,
+        "unique_financial_numbers": 0,
+        "management_tone": {
+          "positive_pct": 0.6,
+          "neutral_pct": 99.4,
+          "negative_pct": 0.0,
+          "overall": "NEUTRAL",
+          "average_tone_score": 0.004,
+          "sample_size": 160
+        },
+        "qa_tone": {
+          "positive_pct": 0.0,
+          "neutral_pct": 100.0,
+          "negative_pct": 0.0,
+          "overall": "NEUTRAL",
+          "average_tone_score": 0.0,
+          "sample_size": 0
+        },
+        "tone_gap_alert": 0.004,
+        "red_flags_count": 3,
+        "key_themes": [
+          "Tax Act",
+          "Becoming Effective",
+          "Properties Thane",
+          "Income Tax",
+          "Scheme Becoming",
+          "Effect Appointed"
+        ]
+      },
+      "whisper": {
+        "words": 2707,
+        "sentences": 156,
+        "unique_financial_numbers": 21,
+        "management_tone": {
+          "positive_pct": 28.2,
+          "neutral_pct": 66.2,
+          "negative_pct": 5.6,
+          "overall": "NEUTRAL",
+          "average_tone_score": 0.245,
+          "sample_size": 71
+        },
+        "qa_tone": {
+          "positive_pct": 15.9,
+          "neutral_pct": 84.1,
+          "negative_pct": 0.0,
+          "overall": "NEUTRAL",
+          "average_tone_score": 0.154,
+          "sample_size": 63
+        },
+        "tone_gap_alert": 0.091,
+        "red_flags_count": 3,
+        "key_themes": [
+          "Million Square",
+          "Square Feet",
+          "Net Debt",
+          "Pre Sales",
+          "Ask Questions",
+          "Cash Flow"
+        ]
+      },
+      "comparative_metrics": {
+        "token_jaccard_similarity": 0.1035,
+        "financial_number_recall": 0.0,
+        "mgmt_tone_abs_diff": 0.241,
+        "qa_tone_abs_diff": 0.154,
+        "tone_gap_concordance": true,
+        "theme_overlap_count": 0
+      },
+      "phonetic_distortions": [
+        {
+          "expected": "PAT",
+          "whisper_heard": "fact",
+          "gt_has_expected": false,
+          "sample_whisper_snippet": "the sensation in fact and you know how"
+        },
+        {
+          "expected": "PAT",
+          "whisper_heard": "back",
+          "gt_has_expected": false,
+          "sample_whisper_snippet": "next will that be back ended or e"
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "key": "polycab",
+      "company": "Polycab India Limited",
+      "quarter": "Q2 FY27",
+      "ground_truth": {
+        "words": 9186,
+        "sentences": 480,
+        "unique_financial_numbers": 54,
+        "management_tone": {
+          "positive_pct": 61.3,
+          "neutral_pct": 37.9,
+          "negative_pct": 0.8,
+          "overall": "BULLISH",
+          "average_tone_score": 0.592,
+          "sample_size": 124
+        },
+        "qa_tone": {
+          "positive_pct": 31.7,
+          "neutral_pct": 68.3,
+          "negative_pct": 0.0,
+          "overall": "NEUTRAL",
+          "average_tone_score": 0.307,
+          "sample_size": 41
+        },
+        "tone_gap_alert": 0.305,
+        "red_flags_count": 3,
+        "key_themes": [
+          "Polycab India",
+          "Long Term",
+          "Wires Cables",
+          "Copper Prices",
+          "Volume Growth",
+          "Data Center"
+        ]
+      },
+      "whisper": {
+        "words": 9296,
+        "sentences": 473,
+        "unique_financial_numbers": 32,
+        "management_tone": {
+          "positive_pct": 67.8,
+          "neutral_pct": 28.9,
+          "negative_pct": 3.3,
+          "overall": "BULLISH",
+          "average_tone_score": 0.652,
+          "sample_size": 121
+        },
+        "qa_tone": {
+          "positive_pct": 30.6,
+          "neutral_pct": 66.5,
+          "negative_pct": 2.8,
+          "overall": "NEUTRAL",
+          "average_tone_score": 0.275,
+          "sample_size": 281
+        },
+        "tone_gap_alert": 0.377,
+        "red_flags_count": 2,
+        "key_themes": [
+          "Long Term",
+          "Volume Growth",
+          "Copper Prices",
+          "Project Spring",
+          "Near Term",
+          "Terms Volume"
+        ]
+      },
+      "comparative_metrics": {
+        "token_jaccard_similarity": 0.6236,
+        "financial_number_recall": 0.5556,
+        "mgmt_tone_abs_diff": 0.06,
+        "qa_tone_abs_diff": 0.032,
+        "tone_gap_concordance": true,
+        "theme_overlap_count": 3
+      },
+      "phonetic_distortions": [
+        {
+          "expected": "crores?",
+          "whisper_heard": "crew",
+          "gt_has_expected": true,
+          "sample_whisper_snippet": "man cable business crew by an impressive 50"
+        },
+        {
+          "expected": "crores?",
+          "whisper_heard": "per hour",
+          "gt_has_expected": true,
+          "sample_whisper_snippet": "1 lakh per hour right and wires is"
+        },
+        {
+          "expected": "PAT",
+          "whisper_heard": "fact",
+          "gt_has_expected": true,
+          "sample_whisper_snippet": "to reiterate the fact that last year"
+        },
+        {
+          "expected": "PAT",
+          "whisper_heard": "back",
+          "gt_has_expected": true,
+          "sample_whisper_snippet": "uncertain external back drop"
+        },
+        {
+          "expected": "PAT",
+          "whisper_heard": "part",
+          "gt_has_expected": true,
+          "sample_whisper_snippet": "s the first part"
+        },
+        {
+          "expected": "Numaligarh Refinery / NRL",
+          "whisper_heard": "loop",
+          "gt_has_expected": false,
+          "sample_whisper_snippet": "it is later out loop has raised India"
+        }
+      ]
+    },
+    {
+      "id": 9,
+      "key": "inox_wind",
+      "company": "Inox Wind Limited",
+      "quarter": "Q2 FY27",
+      "ground_truth": {
+        "words": 8438,
+        "sentences": 463,
+        "unique_financial_numbers": 40,
+        "management_tone": {
+          "positive_pct": 40.6,
+          "neutral_pct": 51.7,
+          "negative_pct": 7.8,
+          "overall": "BULLISH",
+          "average_tone_score": 0.326,
+          "sample_size": 180
+        },
+        "qa_tone": {
+          "positive_pct": 15.3,
+          "neutral_pct": 81.4,
+          "negative_pct": 3.4,
+          "overall": "NEUTRAL",
+          "average_tone_score": 0.113,
+          "sample_size": 118
+        },
+        "tone_gap_alert": 0.119,
+        "red_flags_count": 3,
+        "key_themes": [
+          "Inox Green",
+          "Inox Wind",
+          "Wind World",
+          "Balance Sheet",
+          "Order Book",
+          "Green Energy"
+        ]
+      },
+      "whisper": {
+        "words": 8123,
+        "sentences": 405,
+        "unique_financial_numbers": 28,
+        "management_tone": {
+          "positive_pct": 42.8,
+          "neutral_pct": 50.7,
+          "negative_pct": 6.6,
+          "overall": "BULLISH",
+          "average_tone_score": 0.358,
+          "sample_size": 152
+        },
+        "qa_tone": {
+          "positive_pct": 19.6,
+          "neutral_pct": 76.6,
+          "negative_pct": 3.8,
+          "overall": "NEUTRAL",
+          "average_tone_score": 0.145,
+          "sample_size": 209
+        },
+        "tone_gap_alert": 0.213,
+        "red_flags_count": 3,
+        "key_themes": [
+          "Balance Sheet",
+          "Wind World",
+          "Renewable Energy",
+          "Order Book",
+          "Working Capital",
+          "Long Term"
+        ]
+      },
+      "comparative_metrics": {
+        "token_jaccard_similarity": 0.582,
+        "financial_number_recall": 0.6,
+        "mgmt_tone_abs_diff": 0.032,
+        "qa_tone_abs_diff": 0.032,
+        "tone_gap_concordance": true,
+        "theme_overlap_count": 3
+      },
+      "phonetic_distortions": [
+        {
+          "expected": "PAT",
+          "whisper_heard": "fact",
+          "gt_has_expected": true,
+          "sample_whisper_snippet": "of them give the fact that we now have"
+        },
+        {
+          "expected": "PAT",
+          "whisper_heard": "back",
+          "gt_has_expected": true,
+          "sample_whisper_snippet": "on quota cash back of rupees 58 crores"
+        },
+        {
+          "expected": "PAT",
+          "whisper_heard": "part",
+          "gt_has_expected": true,
+          "sample_whisper_snippet": "part of our strategy"
+        }
+      ]
+    },
+    {
+      "id": 10,
+      "key": "action_construction",
+      "company": "Action Construction Equipment",
+      "quarter": "Q2 FY27",
+      "ground_truth": {
+        "words": 9727,
+        "sentences": 510,
+        "unique_financial_numbers": 82,
+        "management_tone": {
+          "positive_pct": 52.4,
+          "neutral_pct": 46.4,
+          "negative_pct": 1.2,
+          "overall": "BULLISH",
+          "average_tone_score": 0.506,
+          "sample_size": 84
+        },
+        "qa_tone": {
+          "positive_pct": 11.9,
+          "neutral_pct": 79.7,
+          "negative_pct": 8.5,
+          "overall": "NEUTRAL",
+          "average_tone_score": 0.017,
+          "sample_size": 59
+        },
+        "tone_gap_alert": 0.38,
+        "red_flags_count": 3,
+        "key_themes": [
+          "Construction Equipment",
+          "Action Construction",
+          "Material Handling",
+          "Basis Points",
+          "Joint Venture",
+          "Backhoe Loaders"
+        ]
+      },
+      "whisper": {
+        "words": 9547,
+        "sentences": 521,
+        "unique_financial_numbers": 50,
+        "management_tone": {
+          "positive_pct": 57.7,
+          "neutral_pct": 41.0,
+          "negative_pct": 1.3,
+          "overall": "BULLISH",
+          "average_tone_score": 0.556,
+          "sample_size": 78
+        },
+        "qa_tone": {
+          "positive_pct": 15.2,
+          "neutral_pct": 82.0,
+          "negative_pct": 2.8,
+          "overall": "NEUTRAL",
+          "average_tone_score": 0.118,
+          "sample_size": 388
+        },
+        "tone_gap_alert": 0.438,
+        "red_flags_count": 3,
+        "key_themes": [
+          "Construction Equipment",
+          "Basis Points",
+          "New Products",
+          "Expanded Basis",
+          "Long Term",
+          "Get Normalized"
+        ]
+      },
+      "comparative_metrics": {
+        "token_jaccard_similarity": 0.574,
+        "financial_number_recall": 0.5244,
+        "mgmt_tone_abs_diff": 0.05,
+        "qa_tone_abs_diff": 0.101,
+        "tone_gap_concordance": true,
+        "theme_overlap_count": 2
+      },
+      "phonetic_distortions": [
+        {
+          "expected": "PAT",
+          "whisper_heard": "fact",
+          "gt_has_expected": true,
+          "sample_whisper_snippet": "offset the fact that the horizon"
+        },
+        {
+          "expected": "PAT",
+          "whisper_heard": "back",
+          "gt_has_expected": true,
+          "sample_whisper_snippet": "case back"
+        },
+        {
+          "expected": "PAT",
+          "whisper_heard": "part",
+          "gt_has_expected": true,
+          "sample_whisper_snippet": "hosted by event as part of institutional"
+        }
+      ]
+    },
+    {
+      "id": 11,
+      "key": "jupiter_wagons",
+      "company": "Jupiter Wagons Limited",
+      "quarter": "Q2 FY27",
+      "ground_truth": {
+        "words": 4741,
+        "sentences": 249,
+        "unique_financial_numbers": 25,
+        "management_tone": {
+          "positive_pct": 43.3,
+          "neutral_pct": 55.0,
+          "negative_pct": 1.7,
+          "overall": "BULLISH",
+          "average_tone_score": 0.425,
+          "sample_size": 60
+        },
+        "qa_tone": {
+          "positive_pct": 16.7,
+          "neutral_pct": 75.0,
+          "negative_pct": 8.3,
+          "overall": "NEUTRAL",
+          "average_tone_score": 0.068,
+          "sample_size": 36
+        },
+        "tone_gap_alert": 0.168,
+        "red_flags_count": 3,
+        "key_themes": [
+          "Jupiter Wagons",
+          "Inr Crore",
+          "Order Book",
+          "High Speed",
+          "Approximately Inr",
+          "Order Books"
+        ]
+      },
+      "whisper": {
+        "words": 4853,
+        "sentences": 264,
+        "unique_financial_numbers": 14,
+        "management_tone": {
+          "positive_pct": 50.0,
+          "neutral_pct": 48.1,
+          "negative_pct": 1.9,
+          "overall": "BULLISH",
+          "average_tone_score": 0.483,
+          "sample_size": 54
+        },
+        "qa_tone": {
+          "positive_pct": 23.1,
+          "neutral_pct": 70.5,
+          "negative_pct": 6.4,
+          "overall": "NEUTRAL",
+          "average_tone_score": 0.176,
+          "sample_size": 173
+        },
+        "tone_gap_alert": 0.307,
+        "red_flags_count": 1,
+        "key_themes": [
+          "High Speed",
+          "Mentioned Earlier",
+          "Manufacturing Capabilities",
+          "Order Book",
+          "International Market",
+          "Technology Transfer"
+        ]
+      },
+      "comparative_metrics": {
+        "token_jaccard_similarity": 0.5784,
+        "financial_number_recall": 0.4,
+        "mgmt_tone_abs_diff": 0.058,
+        "qa_tone_abs_diff": 0.108,
+        "tone_gap_concordance": true,
+        "theme_overlap_count": 2
+      },
+      "phonetic_distortions": [
+        {
+          "expected": "PAT",
+          "whisper_heard": "back",
+          "gt_has_expected": true,
+          "sample_whisper_snippet": "the margins to get back to our historical"
+        },
+        {
+          "expected": "PAT",
+          "whisper_heard": "part",
+          "gt_has_expected": true,
+          "sample_whisper_snippet": "of 12 percent while part was 46 crores"
+        }
+      ]
+    },
+    {
+      "id": 12,
+      "key": "deepak_fertilisers",
+      "company": "Deepak Fertilisers & Petrochem",
+      "quarter": "Q2 FY27",
+      "ground_truth": {
+        "words": 7312,
+        "sentences": 404,
+        "unique_financial_numbers": 35,
+        "management_tone": {
+          "positive_pct": 47.5,
+          "neutral_pct": 47.5,
+          "negative_pct": 5.0,
+          "overall": "BULLISH",
+          "average_tone_score": 0.425,
+          "sample_size": 139
+        },
+        "qa_tone": {
+          "positive_pct": 22.2,
+          "neutral_pct": 73.6,
+          "negative_pct": 4.2,
+          "overall": "NEUTRAL",
+          "average_tone_score": 0.156,
+          "sample_size": 72
+        },
+        "tone_gap_alert": 0.32,
+        "red_flags_count": 3,
+        "key_themes": [
+          "Deepak Fertilisers",
+          "Fertilisers Petrochemicals",
+          "Ammonium Nitrate",
+          "Nitric Acid",
+          "Crop Nutrition",
+          "Value Chain"
+        ]
+      },
+      "whisper": {
+        "words": 7321,
+        "sentences": 382,
+        "unique_financial_numbers": 21,
+        "management_tone": {
+          "positive_pct": 55.0,
+          "neutral_pct": 41.7,
+          "negative_pct": 3.3,
+          "overall": "BULLISH",
+          "average_tone_score": 0.506,
+          "sample_size": 120
+        },
+        "qa_tone": {
+          "positive_pct": 12.7,
+          "neutral_pct": 84.6,
+          "negative_pct": 2.7,
+          "overall": "NEUTRAL",
+          "average_tone_score": 0.101,
+          "sample_size": 221
+        },
+        "tone_gap_alert": 0.405,
+        "red_flags_count": 3,
+        "key_themes": [
+          "Crop Nutrition",
+          "Value Chain",
+          "Nitric Acid",
+          "Long Term",
+          "Ammonium Nitrate",
+          "Mining Chemicals"
+        ]
+      },
+      "comparative_metrics": {
+        "token_jaccard_similarity": 0.6667,
+        "financial_number_recall": 0.5714,
+        "mgmt_tone_abs_diff": 0.081,
+        "qa_tone_abs_diff": 0.055,
+        "tone_gap_concordance": true,
+        "theme_overlap_count": 4
+      },
+      "phonetic_distortions": [
+        {
+          "expected": "crores?",
+          "whisper_heard": "crew",
+          "gt_has_expected": true,
+          "sample_whisper_snippet": "the crew"
+        },
+        {
+          "expected": "PAT",
+          "whisper_heard": "fact",
+          "gt_has_expected": true,
+          "sample_whisper_snippet": "in fact"
+        },
+        {
+          "expected": "PAT",
+          "whisper_heard": "back",
+          "gt_has_expected": true,
+          "sample_whisper_snippet": "it was a decade back"
+        },
+        {
+          "expected": "PAT",
+          "whisper_heard": "part",
+          "gt_has_expected": true,
+          "sample_whisper_snippet": "as a part of a strategy"
+        }
+      ]
+    }
+  ]
+}

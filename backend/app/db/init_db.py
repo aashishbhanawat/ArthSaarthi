@@ -89,6 +89,7 @@ def run_db_migrations() -> None:
                 f"Running Alembic database migrations from {alembic_ini_path}..."
             )
             alembic_cfg = Config(alembic_ini_path)
+            alembic_cfg.attributes["configure_logger"] = False
             alembic_cfg.set_main_option("sqlalchemy.url", str(settings.DATABASE_URL))
 
             # Set absolute script_location path for PyInstaller frozen app bundles
