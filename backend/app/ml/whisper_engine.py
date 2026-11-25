@@ -170,6 +170,11 @@ class WhisperEngine:
                     logger.info("Downloading remote concall audio (attempt %d/%d) from %s", attempt, max_attempts, url)
                     with requests.get(url, stream=True, timeout=120, headers=headers) as resp:
                         resp.raise_for_status()
+                        content_type = resp.headers.get("Content-Type", "").lower()
+                        if "text/html" in content_type or "application/json" in content_type:
+                            raise ValueError(
+                                f"URL returned {content_type} instead of a valid audio stream."
+                            )
                         with open(tmp_path, "wb") as f:
                             for chunk in resp.iter_content(chunk_size=1048576):
                                 if chunk:

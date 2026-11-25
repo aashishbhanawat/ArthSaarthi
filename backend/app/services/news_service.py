@@ -218,10 +218,14 @@ def extract_concall_metadata(
     meta: Dict[str, Any] = {}
     target_link = enclosure_url or url
     if target_link:
-        lower_link = target_link.lower()
+        lower_link = target_link.lower().split("?")[0]
         if lower_link.endswith(".pdf") or "corpfiling" in lower_link or "transcript" in lower_link:
             meta["transcript_url"] = target_link
-        else:
+        elif (
+            enclosure_url
+            or lower_link.endswith((".mp3", ".m4a", ".wav", ".ogg", ".aac", ".opus", ".flac"))
+            or "trendlyne-media" in lower_link
+        ):
             meta["audio_url"] = target_link
 
     quarter_match = re.search(r"\b(Q[1-4]\s*(?:FY\s*\d{2,4}|\d{4})?)\b", title, re.IGNORECASE)
@@ -910,11 +914,14 @@ class MarketNewsService:
             full_text = f"{title} {summary}"
             matched_syms = self.match_symbols(full_text, symbol_mappings)
 
-            # Auto-detect concall transcripts and financial results from announcements
-            if re.search(
-                r"\b(?:transcript|audio\s*recording|earnings\s*(?:call|conference)|concall)\b",
-                full_text,
-                re.IGNORECASE,
+            # Auto-detect concall transcripts and financial results from announcements / official feeds
+            if (
+                (is_exchange_filing or source == "Trendlyne Concalls" or item.get("enclosure_url") or url.lower().endswith(".pdf"))
+                and re.search(
+                    r"\b(?:transcript|audio\s*recording|earnings\s*(?:call|conference)|concall)\b",
+                    full_text,
+                    re.IGNORECASE,
+                )
             ):
                 category = "CONCALL"
             elif re.search(
