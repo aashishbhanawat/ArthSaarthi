@@ -92,13 +92,13 @@ hf-xet==1.8.0
     # via huggingface-hub
 httpcore==1.0.9
     # via httpx
-httpcore2==2.3.0
+httpcore2==2.12.0
     # via httpx2
 httptools==0.7.1
     # via uvicorn
 httpx==0.28.1
     # via -r requirements.in
-httpx2==2.3.0
+httpx2==2.12.0
     # via huggingface-hub
 huggingface-hub==2.4.0
     # via
@@ -106,7 +106,7 @@ huggingface-hub==2.4.0
     #   tokenizers
 humanfriendly==10.0
     # via coloredlogs
-idna==3.11
+idna==3.20
     # via
     #   anyio
     #   email-validator
@@ -272,6 +272,7 @@ typing-extensions==4.15.0
     #   anyio
     #   beautifulsoup4
     #   fastapi
+    #   httpx2
     #   huggingface-hub
     #   pydantic
     #   pydantic-core
