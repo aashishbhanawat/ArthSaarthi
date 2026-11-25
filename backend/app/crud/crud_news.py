@@ -38,7 +38,7 @@ class CRUDMarketNews:
             existing.symbols = list(set(existing.symbols + obj_in.symbols))
             existing.sentiment = obj_in.sentiment
             if obj_in.metadata_json:
-                merged_meta = existing.metadata_json or {}
+                merged_meta = dict(existing.metadata_json or {})
                 merged_meta.update(obj_in.metadata_json)
                 existing.metadata_json = merged_meta
             db.add(existing)
@@ -278,11 +278,31 @@ class CRUDMarketNews:
                 db.add(a)
                 updated_count += 1
 
-            # Purge mock/fake WHISPER_AUDIO analyses retroactively
+            # Purge ONLY legacy mock/stub WHISPER_AUDIO analyses (preserve real Faster-Whisper transcriptions)
             meta_curr = dict(a.metadata_json or {})
-            if meta_curr.get("concall_analysis", {}).get("transcription_source") == "WHISPER_AUDIO":
+            t_text = str(meta_curr.get("transcript_text") or "")
+            if (
+                meta_curr.get("concall_analysis", {}).get("transcription_source") == "WHISPER_AUDIO"
+                and t_text.startswith("Management opening remarks: We are pleased to report")
+            ):
                 meta_curr.pop("concall_analysis", None)
                 meta_curr.pop("transcript_text", None)
+                a.metadata_json = meta_curr if meta_curr else None
+                db.add(a)
+                updated_count += 1
+
+            # Reclassify editorial news (Google/Yahoo) wrongly tagged as CONCALL without audio or PDF transcript
+            if (
+                a.category == "CONCALL"
+                and a.source in ("Google News", "Yahoo Finance", "Google News Research")
+                and not meta_curr.get("audio_url")
+                and not meta_curr.get("transcript_url")
+            ):
+                a.category = "NEWS"
+                if (meta_curr.get("concall_analysis") or {}).get("transcription_source") == "SUMMARY":
+                    meta_curr.pop("concall_analysis", None)
+                if meta_curr.get("transcript_text") == "":
+                    meta_curr.pop("transcript_text", None)
                 a.metadata_json = meta_curr if meta_curr else None
                 db.add(a)
                 updated_count += 1
