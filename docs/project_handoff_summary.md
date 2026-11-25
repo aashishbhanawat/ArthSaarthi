@@ -19,6 +19,12 @@
 
 ## Recent Stabilization & Refinement Efforts
 
+*   **Security Hardening — Broker Logs, Diagnostic Script, & System Endpoints (Issues #601, #602, #603) (Updated 2026-11-25):**
+    - **PII Log Removal (`broker_api_parser.py`, #601):** Removed full-item `logger.debug` dumps of raw Zerodha/ICICI holdings and trade payloads, keeping only key-name diagnostics.
+    - **Production Guard (`inspect_icici_raw.py`, #602):** Added an `ENVIRONMENT=production` exit guard and developer-only warning header.
+    - **Endpoint Auth (`system.py`, #603):** Protected `GET /api/v1/system/logs` and `POST /api/v1/system/snapshots/run-daily` with admin JWT authentication in server/desktop modes while preserving Android WorkManager local access (`DEPLOYMENT_MODE == "android"`).
+    - **Verification:** Added `test_system_security.py`; 9/9 tests passing across security and broker parser suites.
+
 *   **Yahoo Finance RSS, Broker Research Search, & PDF Transcript Priority (Issue #618 / PR #619) (Updated 2026-11-25):**
     - **Yahoo Finance RSS & Broker Research Search (`news_service.py`):** Added `fetch_yahoo_finance_rss()` (`.NS` batched feeds) and `fetch_broker_research_for_symbol()` targeting broker reports and target prices under `BROKER_REPORT`.
     - **Official PDF Priority (`news_service.py`, `news.py`):** Added `_link_pdf_transcript_to_audio_concalls()` and `_find_matching_pdf_transcript()` to auto-discover official exchange PDF transcripts, link them to audio concalls, invalidate stale `WHISPER_AUDIO` caches, and overwrite with PDF text.

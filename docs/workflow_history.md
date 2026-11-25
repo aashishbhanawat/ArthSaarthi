@@ -1,3 +1,28 @@
+## 2026-11-25: Security Hardening for Broker Logs, Diagnostic Script, & System Endpoints (Issues #601, #602, #603)
+
+**Task:** Resolve three post-audit security issues before tagging Release v1.5.0:
+1. `#601`: Remove raw broker API item logging (`logger.debug`) containing PII from `broker_api_parser.py`.
+2. `#602`: Add `ENVIRONMENT=production` safety guard to `backend/scripts/inspect_icici_raw.py`.
+3. `#603`: Enforce admin JWT authentication on `GET /system/logs` and `POST /system/snapshots/run-daily` in server/desktop modes while preserving Android WorkManager local access.
+
+**AI Assistant:** Antigravity  
+**Role:** Lead Architect & Full-Stack Developer
+
+### Summary
+
+1. **Issue #601 (`broker_api_parser.py`):**
+   - Removed the 3 full-value `logger.debug(..., raw_data[0])` statements for Zerodha holdings, ICICI holdings, and ICICI trades, retaining only the safe key-only `list(raw_data[0].keys())` logs.
+2. **Issue #602 (`inspect_icici_raw.py`):**
+   - Added a `# DEVELOPER/DEBUG ONLY — DO NOT RUN IN PRODUCTION` header and an `ENVIRONMENT == "production"` exit guard before DB/API initialization.
+3. **Issue #603 (`system.py`):**
+   - Added `_require_admin_in_non_android` dependency to `GET /api/v1/system/logs` and `POST /api/v1/system/snapshots/run-daily` so unauthenticated requests return `401` and non-admin requests return `403` in server/desktop modes, while preserving loopback access for `SnapshotWorker.kt` in `android` mode.
+4. **Release v1.5.0 Backlog Sync (`product_backlog.md`):**
+   - Marked `NFR12`, `NFR13`, `FR-Desktop-2`, and `FR8.2.1/8.2.2` as `✅ Complete`.
+5. **Verification:**
+   - Added `test_system_security.py` covering #601, #602, and #603 (9/9 passed across `test_system_security.py` and `test_broker_api_parser.py`).
+
+---
+
 ## 2026-11-25: Yahoo Finance RSS, Broker Research Search, & Official PDF Transcript Priority (Issue #618 / PR #619)
 
 **Task:**

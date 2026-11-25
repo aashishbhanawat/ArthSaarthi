@@ -11,18 +11,36 @@ from enum import Enum
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.security import OAuth2PasswordBearer
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from app import models, schemas
 from app.core.config import settings
-from app.core.dependencies import get_current_admin_user
+from app.core.dependencies import get_current_admin_user, get_current_user
 from app.db.session import get_db
 from app.services.snapshot_service import take_daily_snapshots_for_all
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
+
+_optional_oauth2 = OAuth2PasswordBearer(
+    tokenUrl="/api/v1/auth/login", auto_error=False
+)
+
+
+def _require_admin_in_non_android(
+    db: Session = Depends(get_db),
+    token: Optional[str] = Depends(_optional_oauth2),
+) -> Optional[models.User]:
+    """Requires admin JWT in server/desktop modes; allows local calls in single-user Android mode."""
+    if settings.DEPLOYMENT_MODE == "android":
+        return None
+    if not token:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    user = get_current_user(db=db, token=token)
+    return get_current_admin_user(current_user=user)
 
 
 class SeedingStatus(str, Enum):
@@ -339,10 +357,11 @@ def _is_newer_version(v1: str, v2: str) -> bool:
 @router.get("/logs", response_model=schemas.Msg)
 def get_logs(
     db: Session = Depends(get_db),
+    current_user: Optional[models.User] = Depends(_require_admin_in_non_android),
 ):
     """
     Get the last 1000 lines of system logs.
-    Available without auth for remote debugging (Android).
+    Requires admin authentication in server/desktop modes; available locally in Android mode.
     """
     if not settings.LOG_FILE:
         return {"msg": "Logging to file is not enabled in this mode."}
@@ -411,10 +430,13 @@ class SnapshotResponse(BaseModel):
 
 
 @router.post("/snapshots/run-daily", response_model=SnapshotResponse)
-def run_daily_snapshots(db: Session = Depends(get_db)):
+def run_daily_snapshots(
+    db: Session = Depends(get_db),
+    current_user: Optional[models.User] = Depends(_require_admin_in_non_android),
+):
     """
     Run the daily portfolio snapshot process.
-    Used by Android WorkManager background task to automate daily snapshots.
+    Requires admin authentication in server/desktop modes; used by Android WorkManager in Android mode.
     """
     try:
         logger.info("Triggering daily portfolio snapshots via API...")
