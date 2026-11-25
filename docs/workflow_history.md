@@ -1,3 +1,30 @@
+## 2026-11-25: Yahoo Finance RSS, Broker Research Search, & Official PDF Transcript Priority (Issue #618 / PR #619)
+
+**Task:**
+1. Integrate Yahoo Finance RSS (`https://feeds.finance.yahoo.com/rss/2.0/headline?s=...`) for tracked portfolio/watchlist tickers.
+2. Add targeted Broker Research & Target Price search per ticker/company via Google News RSS.
+3. Enforce strict priority for official statutory PDF transcripts over `WHISPER_AUDIO` transcripts—linking PDFs, overwriting audio transcripts, invalidating stale Whisper AI caches, and searching DB filings for matching PDFs.
+4. Add Oil India ASR normalizations (`batch` -> `PAT`, `24,800 and one crew` -> `24,801 crores`, `price realization of Google` -> `price realization of crude oil`) and filter `#Going Pay` / `#Pay Rent` themes.
+
+**AI Assistant:** Antigravity  
+**Role:** Lead Architect & Full-Stack Developer
+
+### Summary
+
+1. **Yahoo Finance RSS & Broker Research Search (`news_service.py`):**
+   - Added `fetch_yahoo_finance_rss()` batching up to 10 `.NS` symbols per headline RSS query.
+   - Added `fetch_broker_research_for_symbol()` querying `"<Company or Ticker>" ("broker research" OR "brokerage" OR "target price" OR "buy rating" OR "sell rating" OR ...)` categorized under `BROKER_REPORT`.
+2. **Official PDF Priority & Auto-Discovery (`news_service.py`, `news.py`):**
+   - Added `_link_pdf_transcript_to_audio_concalls()` during feed sync and `_find_matching_pdf_transcript()` during `analyze_concall`.
+   - When an official PDF transcript is discovered or linked for a concall previously analyzed via `WHISPER_AUDIO`, the cached `concall_analysis` and Whisper `transcript_text` are invalidated so the clean statutory PDF overwrites it.
+3. **ASR & Theme Polish (`whisper_engine.py`, `concall_analyzer.py`):**
+   - Added `batch`/`3D batch` -> `PAT`, `24,800 and one crew` -> `24,801 crores`, and `price realization of Google` -> `price realization of crude oil`.
+   - Added `"going pay"` and `"pay rent"` to `THEME_STOP_PHRASES`.
+4. **Verification:**
+   - 34/34 backend tests passing (`test_news.py`, `test_ml.py`, `test_news_service.py`).
+
+---
+
 ## 2026-11-25: Fix SQLAlchemy QueuePool Exhaustion & Duplicate Whisper Transcription on Polling (Issue #618 / PR #619)
 
 **Task:** Eliminate `sqlalchemy.exc.TimeoutError: QueuePool limit of size 5 overflow 10 reached` tracebacks and noisy `faster_whisper` DEBUG logs caused by concall background polling.

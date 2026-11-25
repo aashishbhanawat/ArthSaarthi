@@ -3,6 +3,7 @@ import hashlib
 import html
 import logging
 import re
+import urllib.parse
 import xml.etree.ElementTree as ET
 from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional, Set, Tuple, Union
@@ -714,14 +715,8 @@ class MarketNewsService:
             logger.warning("Error fetching feed %s: %s", feed_url, e)
         return []
 
-    def fetch_google_news_for_symbol(
-        self, symbol: str, company_name: Optional[str] = None
-    ) -> List[Dict[str, Any]]:
-        """
-        Fetches targeted Google News RSS for a specific equity ticker.
-        Uses full company name where available to avoid false matches against unrelated SME IPOs
-        or short ticker acronym collisions, and searches for business developments rather than SEO quote pages.
-        """
+    def _clean_search_term(self, symbol: str, company_name: Optional[str] = None) -> str:
+        """Resolves a clean company name or ticker symbol for targeted RSS search queries."""
         if company_name and len(company_name) >= 5 and company_name.upper() != symbol:
             clean_company = re.sub(
                 r"\s+(Limited|Ltd\.?|Corporation|Corp\.?|India)\b.*",
@@ -731,12 +726,116 @@ class MarketNewsService:
             ).strip()
             if clean_company.lower() in GENERIC_NAME_BLACKLIST or len(clean_company) < 4:
                 clean_company = company_name
-            query = f'"{clean_company}" (results OR earnings OR business OR shares OR stock)'
+            return clean_company
+        return symbol
+
+    def fetch_google_news_for_symbol(
+        self, symbol: str, company_name: Optional[str] = None
+    ) -> List[Dict[str, Any]]:
+        """
+        Fetches targeted Google News RSS for a specific equity ticker.
+        Uses full company name where available to avoid false matches against unrelated SME IPOs
+        or short ticker acronym collisions, and searches for business developments rather than SEO quote pages.
+        """
+        term = self._clean_search_term(symbol, company_name)
+        if term != symbol:
+            query = f'"{term}" (results OR earnings OR business OR shares OR stock)'
         else:
             query = f'"{symbol}" NSE (results OR earnings OR business OR shares OR order)'
 
-        url = f"https://news.google.com/rss/search?q={query}&hl=en-IN&gl=IN&ceid=IN:en"
+        encoded_q = urllib.parse.quote(query)
+        url = f"https://news.google.com/rss/search?q={encoded_q}&hl=en-IN&gl=IN&ceid=IN:en"
         return self.fetch_feed_items(url, source="Google News", category="NEWS")
+
+    def fetch_broker_research_for_symbol(
+        self, symbol: str, company_name: Optional[str] = None
+    ) -> List[Dict[str, Any]]:
+        """
+        Fetches targeted broker research reports and target-price updates via Google News RSS.
+        """
+        term = self._clean_search_term(symbol, company_name)
+        query = (
+            f'"{term}" ("broker research" OR "brokerage" OR "target price" '
+            f'OR "buy rating" OR "sell rating" OR "Motilal Oswal" OR "ICICI Direct" '
+            f'OR "Kotak" OR "JM Financial" OR "Nuvama")'
+        )
+        encoded_q = urllib.parse.quote(query)
+        url = f"https://news.google.com/rss/search?q={encoded_q}&hl=en-IN&gl=IN&ceid=IN:en"
+        return self.fetch_feed_items(url, source="Google News Research", category="BROKER_REPORT")
+
+    def fetch_yahoo_finance_rss(self, symbols: List[str]) -> List[Dict[str, Any]]:
+        """
+        Fetches headline news from Yahoo Finance RSS in batches of up to 10 NSE tickers (.NS).
+        """
+        if not symbols:
+            return []
+        all_items: List[Dict[str, Any]] = []
+        clean_syms = [f"{s.split('.')[0].upper().strip()}.NS" for s in symbols if s]
+        for i in range(0, len(clean_syms), 10):
+            batch = ",".join(clean_syms[i:i + 10])
+            url = f"https://feeds.finance.yahoo.com/rss/2.0/headline?s={urllib.parse.quote(batch)}&region=IN&lang=en-IN"
+            items = self.fetch_feed_items(url, source="Yahoo Finance", category="NEWS")
+            all_items.extend(items)
+        return all_items
+
+    def _link_pdf_transcript_to_audio_concalls(
+        self,
+        db: Session,
+        matched_syms: List[str],
+        pdf_url: str,
+        quarter: Optional[str],
+        pub_date: datetime,
+    ) -> None:
+        """
+        Prioritizes official statutory PDF transcripts over Whisper audio transcriptions.
+        Links the PDF URL to matching audio-only concall records and invalidates cached
+        WHISPER_AUDIO transcripts/analyses so the next analysis uses the clean PDF.
+        """
+        if not matched_syms or not pdf_url:
+            return
+        from app.models.market_news import MarketNewsArticle
+        window_start = pub_date - timedelta(days=21)
+        window_end = pub_date + timedelta(days=21)
+        candidates = (
+            db.query(MarketNewsArticle)
+            .filter(
+                MarketNewsArticle.category == "CONCALL",
+                MarketNewsArticle.published_at >= window_start,
+                MarketNewsArticle.published_at <= window_end,
+            )
+            .all()
+        )
+        norm_q = (quarter or "").replace(" ", "").upper()
+        for art in candidates:
+            art_syms = set(art.symbols or [])
+            if not art_syms.intersection(matched_syms):
+                continue
+            meta = dict(art.metadata_json or {})
+            if not meta.get("audio_url"):
+                continue
+            art_q = (meta.get("quarter") or "").replace(" ", "").upper()
+            if norm_q and art_q and norm_q != art_q:
+                continue
+            if meta.get("transcript_url") == pdf_url:
+                continue
+
+            meta["transcript_url"] = pdf_url
+            cached_analysis = meta.get("concall_analysis") or {}
+            if cached_analysis.get("transcription_source") == "WHISPER_AUDIO":
+                meta.pop("concall_analysis", None)
+                meta.pop("transcript_text", None)
+                logger.info(
+                    "Invalidated cached WHISPER_AUDIO analysis for '%s' (%s) in favor of official PDF: %s",
+                    art.title,
+                    art.id,
+                    pdf_url,
+                )
+            elif meta.get("transcript_text") and not cached_analysis:
+                meta.pop("transcript_text", None)
+
+            art.metadata_json = meta
+            db.add(art)
+            db.commit()
 
     def sync_all_feeds(self, db: Session, max_targeted_symbols: int = 15) -> Tuple[int, int]:
         """
@@ -762,13 +861,17 @@ class MarketNewsService:
                 items = items[:max_items]
             raw_items.extend(items)
 
-        # 2. Fetch targeted news for up to N active portfolio symbols
+        # 2. Fetch targeted news, broker research, and Yahoo Finance RSS for up to N active portfolio symbols
+        targeted_syms = list(active_symbols)[:max_targeted_symbols]
         targeted_count = 0
-        for sym in list(active_symbols)[:max_targeted_symbols]:
+        for sym in targeted_syms:
             c_name = symbol_to_name.get(sym)
-            sym_items = self.fetch_google_news_for_symbol(sym, company_name=c_name)
-            raw_items.extend(sym_items)
+            raw_items.extend(self.fetch_google_news_for_symbol(sym, company_name=c_name))
+            raw_items.extend(self.fetch_broker_research_for_symbol(sym, company_name=c_name))
             targeted_count += 1
+
+        if targeted_syms:
+            raw_items.extend(self.fetch_yahoo_finance_rss(targeted_syms))
 
         logger.info(
             "Fetched %d raw articles (from general feeds + %d targeted symbols)",
@@ -978,6 +1081,14 @@ class MarketNewsService:
             try:
                 market_news.create_or_update(db, obj_in=obj_in)
                 inserted_count += 1
+                if category == "CONCALL" and meta and meta.get("transcript_url") and matched_syms:
+                    self._link_pdf_transcript_to_audio_concalls(
+                        db,
+                        matched_syms=matched_syms,
+                        pdf_url=meta["transcript_url"],
+                        quarter=meta.get("quarter"),
+                        pub_date=pub_date,
+                    )
             except Exception as e:
                 logger.debug("Failed to upsert article %s: %s", article_id, e)
 

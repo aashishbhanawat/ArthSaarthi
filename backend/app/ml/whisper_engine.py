@@ -25,9 +25,11 @@ FINANCIAL_WHISPER_PROMPT = (
 ASR_CORRECTIONS = [
     # Indian numbering & crore phonetics: "171 corona" -> "171 crores", "9.6 store" -> "9.6 crores", "24,801 crew" -> "24,801 crores", "25.2 per hour" -> "25.2 crore"
     (r"(\b\d+(?:,\d+)*(?:\.\d+)?)\s*(?:corona|coronas|store|stores|grower|crew|crews|through)\b", r"\1 crores"),
+    (r"\b24,800\s+and\s+one\s+(?:crew|crews|crore|crores)\b", "24,801 crores"),
     (r"(\b\d+(?:,\d+)*(?:\.\d+)?)\s*(?:per\s+hour|per\s+or)\b", r"\1 crore"),
     (r"\bper\s+row\b", "per crore"),
     (r"\bper\s+city\s+utilization\b", "capacity utilization"),
+    (r"\bprice\s+realization\s+of\s+Google\b", "price realization of crude oil"),
     (r"\bstop\s+line\b", "top line"),
     (r"\b(?:crew|queue)\s*(?:to|two)\s*(FY\s*\d{2,4}|\d{4})\b", r"Q2 \1"),
     (r"\bcrew\s+by\s+(?:around\s+)?(\d+(?:\.\d+)?%?)", r"grew by \1"),
@@ -38,8 +40,8 @@ ASR_CORRECTIONS = [
     # Financial acronyms & phrases: "the fact of 6,447" -> "the PAT of 6,447", "back of another" -> "PAT of NRL", "part was 46 crores" -> "PAT was 46 crores"
     (r"\b(?:the\s+)?fact\s+of\s+(\d+(?:,\d+)*(?:\.\d+)?)", r"the PAT of \1"),
     (r"\bthe\s+fact\s+for\b", "the PAT for"),
-    (r"\bhalf\s+yearly\s+back\b", "half yearly PAT"),
-    (r"\b3D\s+back\b", "PAT"),
+    (r"\bhalf\s+yearly\s+(?:back|batch)\b", "half yearly PAT"),
+    (r"\b3D\s+(?:back|batch)\b", "PAT"),
     (r"\bback\s+of\s+another\b", "PAT of NRL"),
     (r"\b(?:cash\s+)?back\s+of\s+(?:rupees\s+|INR\s+|₹\s*)?(\d+(?:,\d+)*(?:\.\d+)?\s*(?:crores?|cr|lakhs?))", r"cash PAT of rupees \1"),
     (r"\bpart\s+was\s+(\d+(?:,\d+)*(?:\.\d+)?\s*(?:crores?|cr|lakhs?))", r"PAT was \1"),

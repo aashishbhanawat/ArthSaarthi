@@ -157,6 +157,53 @@ def trigger_news_refresh(
     )
 
 
+def _find_matching_pdf_transcript(db: Session, article: MarketNewsArticle) -> Optional[str]:
+    """
+    Searches MarketNewsArticle for an official BSE/NSE PDF transcript matching this concall
+    by symbol overlap or company name tokens within +/- 21 days.
+    """
+    import re
+    from datetime import timedelta
+
+    if not article.published_at:
+        return None
+    window_start = article.published_at - timedelta(days=21)
+    window_end = article.published_at + timedelta(days=21)
+    candidates = (
+        db.query(MarketNewsArticle)
+        .filter(
+            MarketNewsArticle.id != article.id,
+            MarketNewsArticle.published_at >= window_start,
+            MarketNewsArticle.published_at <= window_end,
+            MarketNewsArticle.url.ilike("%.pdf%"),
+        )
+        .all()
+    )
+    art_syms = set(article.symbols or [])
+    stop_words = {
+        "results", "earnings", "call", "for", "q1", "q2", "q3", "q4",
+        "fy25", "fy26", "fy27", "limited", "ltd", "india", "industries",
+    }
+    art_tokens = {
+        w for w in re.findall(r"[a-z0-9]+", (article.title or "").lower())
+        if len(w) > 2 and w not in stop_words
+    }
+    for cand in candidates:
+        cand_text = f"{cand.title} {cand.summary or ''} {cand.url}".lower()
+        if "transcript" not in cand_text:
+            continue
+        cand_syms = set(cand.symbols or [])
+        if art_syms and cand_syms and art_syms.intersection(cand_syms):
+            return (cand.metadata_json or {}).get("transcript_url") or cand.url
+        cand_tokens = {
+            w for w in re.findall(r"[a-z0-9]+", (cand.title or "").lower())
+            if len(w) > 2 and w not in stop_words
+        }
+        if art_tokens and cand_tokens and len(art_tokens.intersection(cand_tokens)) >= 1:
+            return (cand.metadata_json or {}).get("transcript_url") or cand.url
+    return None
+
+
 @router.post(
     "/{article_id}/analyze-concall",
     response_model=ConcallAnalysisResponse,
@@ -186,7 +233,27 @@ def analyze_concall(
     transcript = payload.transcript_text.strip() if (payload and payload.transcript_text) else None
     source = "USER_INPUT"
 
-    # 2. Check if already analyzed and no override text is provided
+    # 2. Discover official PDF transcript if not yet linked, and prioritize PDF over WHISPER_AUDIO
+    if not transcript and not meta.get("transcript_url") and not (payload and payload.check_only):
+        discovered_pdf = _find_matching_pdf_transcript(db, article)
+        if discovered_pdf:
+            meta["transcript_url"] = discovered_pdf
+            logger.info("Linked discovered PDF transcript for '%s': %s", article.title, discovered_pdf)
+
+    if (
+        not transcript
+        and meta.get("transcript_url")
+        and (meta.get("concall_analysis") or {}).get("transcription_source") == "WHISPER_AUDIO"
+    ):
+        logger.info(
+            "Invalidating cached WHISPER_AUDIO analysis for '%s' (%s) in favor of PDF transcript",
+            article.title,
+            article.id,
+        )
+        meta.pop("concall_analysis", None)
+        meta.pop("transcript_text", None)
+
+    # 2a. Check if already analyzed and no override text is provided
     if not transcript and "concall_analysis" in meta:
         return ConcallAnalysisResponse(**meta["concall_analysis"])
 

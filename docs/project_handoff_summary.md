@@ -19,6 +19,12 @@
 
 ## Recent Stabilization & Refinement Efforts
 
+*   **Yahoo Finance RSS, Broker Research Search, & PDF Transcript Priority (Issue #618 / PR #619) (Updated 2026-11-25):**
+    - **Yahoo Finance RSS & Broker Research Search (`news_service.py`):** Added `fetch_yahoo_finance_rss()` (`.NS` batched feeds) and `fetch_broker_research_for_symbol()` targeting broker reports and target prices under `BROKER_REPORT`.
+    - **Official PDF Priority (`news_service.py`, `news.py`):** Added `_link_pdf_transcript_to_audio_concalls()` and `_find_matching_pdf_transcript()` to auto-discover official exchange PDF transcripts, link them to audio concalls, invalidate stale `WHISPER_AUDIO` caches, and overwrite with PDF text.
+    - **ASR & Theme Polish (`whisper_engine.py`, `concall_analyzer.py`):** Added `batch`/`3D batch` -> `PAT`, `24,800 and one crew` -> `24,801 crores`, `price realization of Google` -> `price realization of crude oil`, and pruned `#Going Pay`/`#Pay Rent`.
+    - **Verification:** 34/34 backend tests passing.
+
 *   **SQLAlchemy QueuePool Exhaustion & Concall Polling Deduplication Fix (Issue #618 / PR #619) (Updated 2026-11-25):**
     - **In-Flight Deduplication & `check_only` Polling (`news.py`, `market_news.py`, `newsApi.ts`, `ConcallAnalysisModal.tsx`):** Prevented 10s background polling from launching duplicate Faster-Whisper transcriptions using `_in_flight_concalls` + `check_only: true` (returns HTTP `409` while in progress).
     - **DB Connection Release & Pool Tuning (`news.py`, `session.py`):** Released Postgres DB connections before long-running Whisper/FinBERT execution and configured `pool_pre_ping=True`, `pool_size=15`, `max_overflow=30`, `pool_recycle=1800`.

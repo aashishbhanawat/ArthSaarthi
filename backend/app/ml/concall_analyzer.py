@@ -129,6 +129,7 @@ class ConcallAnalyzer:
         "chief financial", "managing director", "conference call", "earnings call",
         "per row", "per crore", "higher percent", "growth percent", "get orders",
         "percent", "percentage", "half ended", "metric tons", "million metric", "kilo right",
+        "going pay", "pay rent",
     }
 
     HONORIFICS = re.compile(r"\b(?:mr|ms|mrs|dr|shri|smt|ca)\.?\s*", re.IGNORECASE)
