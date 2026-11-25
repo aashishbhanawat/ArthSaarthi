@@ -49,8 +49,8 @@ export const ConcallAnalysisModal: React.FC<ConcallAnalysisModalProps> = ({
     if (isBackgroundProcessing) {
       timer = setInterval(async () => {
         try {
-          const res = await analyzeConcall(article.id);
-          if (res) {
+          const res = await analyzeConcall(article.id, undefined, true);
+          if (res && res.management_tone) {
             setAnalysis(res);
             setIsBackgroundProcessing(false);
             if (onAnalysisUpdated) {
@@ -90,6 +90,7 @@ export const ConcallAnalysisModal: React.FC<ConcallAnalysisModalProps> = ({
       const detail = axiosErr.response?.data?.detail;
       const message = axiosErr.message || '';
       const isTimeout =
+        status === 409 ||
         status === 504 ||
         status === 408 ||
         axiosErr.code === 'ECONNABORTED' ||

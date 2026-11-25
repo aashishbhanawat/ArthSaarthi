@@ -10,6 +10,7 @@ import requests
 from app.ml.model_manager import model_manager
 
 logger = logging.getLogger(__name__)
+logging.getLogger("faster_whisper").setLevel(logging.INFO)
 
 # Decoder bias prompt for Indian earnings calls (prior weights for financial terms)
 FINANCIAL_WHISPER_PROMPT = (

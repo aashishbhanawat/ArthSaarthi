@@ -1,3 +1,28 @@
+## 2026-11-25: Fix SQLAlchemy QueuePool Exhaustion & Duplicate Whisper Transcription on Polling (Issue #618 / PR #619)
+
+**Task:** Eliminate `sqlalchemy.exc.TimeoutError: QueuePool limit of size 5 overflow 10 reached` tracebacks and noisy `faster_whisper` DEBUG logs caused by concall background polling.
+
+**AI Assistant:** Antigravity  
+**Role:** Lead Architect & Full-Stack Developer
+
+### Summary
+
+1. **Root Cause Analysis:**
+   - When `POST /api/v1/news/{id}/analyze-concall` hit the 120s proxy timeout, the frontend transitioned to a 10-second polling `setInterval` calling `analyzeConcall(article.id)` again.
+   - Each 10s poll arrived while the first transcription was still in progress, saw no cached `concall_analysis` yet, and launched a duplicate 5–7 minute Faster-Whisper CPU transcription while holding a `Depends(get_db)` connection open.
+   - Within 2 minutes, all 15 `QueuePool` slots were exhausted, causing `TimeoutError` across `/auth/setup-status` and other endpoints.
+2. **Fixes Implemented:**
+   - **In-Flight Deduplication & `check_only` Status Guard (`news.py`, `market_news.py`):** Added `_concall_lock` / `_in_flight_concalls` set and `check_only: bool = False` on `ConcallAnalysisRequest`. Polling or duplicate requests immediately return HTTP `409 Conflict` without starting duplicate transcriptions.
+   - **DB Connection Release (`news.py`):** Explicitly release the Postgres connection (`db.expunge(article); db.close()`) before long-running PDF download / Whisper transcription, then re-checkout briefly to persist the result.
+   - **SQLAlchemy Pool Resilience (`session.py`):** Configured `pool_pre_ping=True`, `pool_size=15`, `max_overflow=30`, and `pool_recycle=1800` for PostgreSQL.
+   - **Frontend Polling Guard (`newsApi.ts`, `ConcallAnalysisModal.tsx`):** Polling now passes `checkOnly = true` (`timeout: 10000`) and treats HTTP `409` as in-progress background processing.
+   - **Log Hygiene (`whisper_engine.py`):** Set `faster_whisper` logger level to `INFO` to silence repetitive `Compression ratio threshold` debug spam.
+3. **Verification:**
+   - 34/34 backend tests passing (`test_news.py`, `test_ml.py`, `test_news_service.py`).
+   - 4/4 frontend unit tests passing in `ConcallAnalysisModal.test.tsx`.
+
+---
+
 ## 2026-11-25: Docker Build Dependency Conflict Resolution (`click` vs `huggingface-hub`) (Issue #618 / PR #619)
 
 **Task:** Resolve `ResolutionImpossible` pip dependency error during `docker compose build backend` where `click==8.3.1` conflicted with `huggingface-hub 2.4.0` (which requires `click >= 8.4.2`).

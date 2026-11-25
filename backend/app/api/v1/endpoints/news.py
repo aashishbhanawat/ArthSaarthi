@@ -1,4 +1,5 @@
 import logging
+import threading
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -27,6 +28,9 @@ from app.services.news_service import news_service
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
+
+_concall_lock = threading.Lock()
+_in_flight_concalls: set[str] = set()
 
 
 def _get_user_tracked_symbols(db: Session, user_id) -> List[str]:
@@ -186,91 +190,121 @@ def analyze_concall(
     if not transcript and "concall_analysis" in meta:
         return ConcallAnalysisResponse(**meta["concall_analysis"])
 
-    # 3. Check for pre-existing transcript in metadata or fetch from transcript_url (e.g. BSE PDF filing)
-    if not transcript:
-        if meta.get("transcript_text"):
-            transcript = meta["transcript_text"]
-            source = "TRANSCRIPT"
-        elif meta.get("transcript_url"):
-            t_url = meta["transcript_url"]
-            try:
-                import io
-                import httpx
-                import pdfplumber
-                pdf_headers = {
-                    "User-Agent": (
-                        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-                        "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-                    ),
-                    "Accept": "application/pdf,*/*",
-                }
-                with httpx.Client(headers=pdf_headers, timeout=30.0, follow_redirects=True) as client:
-                    resp = client.get(t_url)
-                    if resp.status_code == 200:
-                        with pdfplumber.open(io.BytesIO(resp.content)) as pdf:
-                            pages_text = [p.extract_text() or "" for p in pdf.pages]
-                            full_pdf_text = "\n".join(pages_text).strip()
-                            if full_pdf_text:
-                                transcript = full_pdf_text
-                                source = "BSE_PDF" if "bseindia" in t_url.lower() else "TRANSCRIPT_PDF"
-                                meta["transcript_text"] = transcript
-            except Exception as e:
-                logger.warning("Failed to download or parse PDF transcript from %s: %s", t_url, e)
+    # 2b. Polling status check: never trigger new transcription/analysis
+    if payload and payload.check_only:
+        with _concall_lock:
+            if article_id in _in_flight_concalls:
+                raise HTTPException(status_code=409, detail="Concall analysis is still in progress.")
+        raise HTTPException(status_code=404, detail="Concall analysis has not been generated yet.")
 
-    # 4. Check for audio URL and Whisper fallback
-    if not transcript and meta.get("audio_url"):
-        if whisper_engine.is_available:
-            try:
-                transcript = whisper_engine.transcribe_audio_file(meta["audio_url"])
-                source = "WHISPER_AUDIO"
-                meta["transcript_text"] = transcript
-            except Exception as e:
-                logger.warning("Whisper audio transcription failed: %s", e)
+    # 2c. Deduplicate concurrent requests for the same article
+    if not transcript:
+        with _concall_lock:
+            if article_id in _in_flight_concalls:
+                raise HTTPException(
+                    status_code=409,
+                    detail="Concall transcription and analysis is already in progress in the background.",
+                )
+            _in_flight_concalls.add(article_id)
+
+    article_title = article.title
+    article_summary = article.summary
+    # Release Postgres connection back to QueuePool before long-running network/CPU work
+    if db.bind and db.bind.dialect.name != "sqlite":
+        db.expunge(article)
+        db.close()
+
+    try:
+        # 3. Check for pre-existing transcript in metadata or fetch from transcript_url (e.g. BSE PDF filing)
+        if not transcript:
+            if meta.get("transcript_text"):
+                transcript = meta["transcript_text"]
+                source = "TRANSCRIPT"
+            elif meta.get("transcript_url"):
+                t_url = meta["transcript_url"]
+                try:
+                    import io
+                    import httpx
+                    import pdfplumber
+                    pdf_headers = {
+                        "User-Agent": (
+                            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                            "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+                        ),
+                        "Accept": "application/pdf,*/*",
+                    }
+                    with httpx.Client(headers=pdf_headers, timeout=30.0, follow_redirects=True) as client:
+                        resp = client.get(t_url)
+                        if resp.status_code == 200:
+                            with pdfplumber.open(io.BytesIO(resp.content)) as pdf:
+                                pages_text = [p.extract_text() or "" for p in pdf.pages]
+                                full_pdf_text = "\n".join(pages_text).strip()
+                                if full_pdf_text:
+                                    transcript = full_pdf_text
+                                    source = "BSE_PDF" if "bseindia" in t_url.lower() else "TRANSCRIPT_PDF"
+                                    meta["transcript_text"] = transcript
+                except Exception as e:
+                    logger.warning("Failed to download or parse PDF transcript from %s: %s", t_url, e)
+
+        # 4. Check for audio URL and Whisper fallback
+        if not transcript and meta.get("audio_url"):
+            if whisper_engine.is_available:
+                try:
+                    transcript = whisper_engine.transcribe_audio_file(meta["audio_url"])
+                    source = "WHISPER_AUDIO"
+                    meta["transcript_text"] = transcript
+                except Exception as e:
+                    logger.warning("Whisper audio transcription failed: %s", e)
+                    raise HTTPException(
+                        status_code=400,
+                        detail=f"Audio transcription failed: {str(e)}. Please paste the official conference call transcript text.",
+                    )
+            else:
+                logger.warning(
+                    "Concall analysis rejected for article '%s' (%s): only audio podcast is available and speech-to-text runtime is disabled.",
+                    article_title,
+                    article_id,
+                )
                 raise HTTPException(
                     status_code=400,
-                    detail=f"Audio transcription failed: {str(e)}. Please paste the official conference call transcript text.",
+                    detail="Only audio podcast is available for this concall. Please paste the conference call transcript text in the 'Paste Transcript' tab or read the statutory BSE/NSE filing PDF.",
                 )
-        else:
-            logger.warning(
-                "Concall analysis rejected for article '%s' (%s): only audio podcast is available and speech-to-text runtime is disabled.",
-                article.title,
-                article.id,
-            )
-            raise HTTPException(
-                status_code=400,
-                detail="Only audio podcast is available for this concall. Please paste the conference call transcript text in the 'Paste Transcript' tab or read the statutory BSE/NSE filing PDF.",
-            )
 
-    # 5. Last fallback: analyze title and summary
-    if not transcript:
-        transcript = f"{article.title}. {article.summary or ''}"
-        source = "SUMMARY"
+        # 5. Last fallback: analyze title and summary
+        if not transcript:
+            transcript = f"{article_title}. {article_summary or ''}"
+            source = "SUMMARY"
 
-    # Run extractive intelligence pipeline
-    analysis = concall_analyzer.analyze(transcript)
+        # Run extractive intelligence pipeline
+        analysis = concall_analyzer.analyze(transcript)
 
-    analysis_data = {
-        "article_id": article.id,
-        "title": article.title,
-        "quarter": meta.get("quarter"),
-        "management_tone": analysis["management_tone"],
-        "qa_tone": analysis["qa_tone"],
-        "tone_gap_alert": analysis.get("tone_gap_alert"),
-        "tone_divergence_summary": analysis.get("tone_divergence_summary"),
-        "hedge_rate_per_100w": analysis.get("hedge_rate_per_100w"),
-        "topic_sentiment": analysis.get("topic_sentiment"),
-        "red_flags": analysis.get("red_flags", []),
-        "guidance_metrics": analysis["guidance_metrics"],
-        "top_takeaways": analysis["top_takeaways"],
-        "key_themes": analysis["key_themes"],
-        "transcription_source": source,
-    }
+        analysis_data = {
+            "article_id": article_id,
+            "title": article_title,
+            "quarter": meta.get("quarter"),
+            "management_tone": analysis["management_tone"],
+            "qa_tone": analysis["qa_tone"],
+            "tone_gap_alert": analysis.get("tone_gap_alert"),
+            "tone_divergence_summary": analysis.get("tone_divergence_summary"),
+            "hedge_rate_per_100w": analysis.get("hedge_rate_per_100w"),
+            "topic_sentiment": analysis.get("topic_sentiment"),
+            "red_flags": analysis.get("red_flags", []),
+            "guidance_metrics": analysis["guidance_metrics"],
+            "top_takeaways": analysis["top_takeaways"],
+            "key_themes": analysis["key_themes"],
+            "transcription_source": source,
+        }
 
-    # Cache result in metadata_json
-    meta["concall_analysis"] = analysis_data
-    article.metadata_json = meta
-    db.add(article)
-    db.commit()
+        # Cache result in metadata_json using a fresh short-lived DB checkout
+        target_article = db.query(MarketNewsArticle).filter(MarketNewsArticle.id == article_id).first()
+        if target_article:
+            meta["concall_analysis"] = analysis_data
+            target_article.metadata_json = meta
+            db.add(target_article)
+            db.commit()
 
-    return ConcallAnalysisResponse(**analysis_data)
+        return ConcallAnalysisResponse(**analysis_data)
+    finally:
+        with _concall_lock:
+            _in_flight_concalls.discard(article_id)
 

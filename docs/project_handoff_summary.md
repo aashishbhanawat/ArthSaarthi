@@ -19,6 +19,12 @@
 
 ## Recent Stabilization & Refinement Efforts
 
+*   **SQLAlchemy QueuePool Exhaustion & Concall Polling Deduplication Fix (Issue #618 / PR #619) (Updated 2026-11-25):**
+    - **In-Flight Deduplication & `check_only` Polling (`news.py`, `market_news.py`, `newsApi.ts`, `ConcallAnalysisModal.tsx`):** Prevented 10s background polling from launching duplicate Faster-Whisper transcriptions using `_in_flight_concalls` + `check_only: true` (returns HTTP `409` while in progress).
+    - **DB Connection Release & Pool Tuning (`news.py`, `session.py`):** Released Postgres DB connections before long-running Whisper/FinBERT execution and configured `pool_pre_ping=True`, `pool_size=15`, `max_overflow=30`, `pool_recycle=1800`.
+    - **Log Hygiene (`whisper_engine.py`):** Silenced verbose `faster_whisper` DEBUG logs (`level=INFO`).
+    - **Verification:** 34/34 backend tests passing; 4/4 frontend tests passing.
+
 *   **Docker Build Dependency Conflict Resolution (`click` vs `huggingface-hub`) (Issue #618 / PR #619) (Updated 2026-11-25):**
     - **Dependency Resolution (`requirements.txt`):** Re-compiled requirements with `pip-compile` to resolve `ResolutionImpossible` conflict between `click==8.3.1` (from `typer`/`uvicorn`) and `huggingface-hub 2.4.0` (which requires `click >= 8.4.2`). Locked `click==8.5.1` and all transitive dependencies cleanly.
     - **Verification:** `docker compose build backend` succeeded with zero errors (`pms_backend:latest` image built); `docker compose up -d` healthy.

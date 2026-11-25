@@ -50,6 +50,7 @@ class NewsRefreshResponse(BaseModel):
 
 class ConcallAnalysisRequest(BaseModel):
     transcript_text: Optional[str] = None
+    check_only: bool = False
 
 
 class ToneBreakdown(BaseModel):

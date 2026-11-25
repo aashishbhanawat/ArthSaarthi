@@ -39,12 +39,16 @@ export const refreshMarketNews = async (): Promise<NewsRefreshResponse> => {
 
 export const analyzeConcall = async (
   articleId: string,
-  transcriptText?: string
+  transcriptText?: string,
+  checkOnly = false
 ): Promise<ConcallAnalysis> => {
+  const payload: { transcript_text?: string; check_only?: boolean } = {};
+  if (transcriptText) payload.transcript_text = transcriptText;
+  if (checkOnly) payload.check_only = true;
   const response = await apiClient.post<ConcallAnalysis>(
     `/api/v1/news/${articleId}/analyze-concall`,
-    transcriptText ? { transcript_text: transcriptText } : {},
-    { timeout: 300000 } // 5-minute timeout for edge audio speech-to-text
+    payload,
+    { timeout: checkOnly ? 10000 : 300000 } // 10s for status check, 5-minute timeout for edge audio speech-to-text
   );
   return response.data;
 };
