@@ -494,7 +494,7 @@ The background job scheduler orchestrates automated periodic tasks (daily valuat
 
 ## 11. Broker API Direct Sync Flow (`NFR12`)
 
-1. **Credential Storage (`brokers.py`):** Users connect Zerodha Kite or ICICI Breeze from `BrokerApiSyncCard.tsx`. `api_secret` and `access_token` are encrypted with AES-256-GCM (`KeyManager`) and saved in `broker_credentials`.
+1. **Credential Storage (`broker.py`):** Users connect ICICI Breeze or Zerodha Kite from `BrokerSettings.tsx` (and sync ICICI Breeze from `BrokerApiSyncCard.tsx`). `api_secret` and `access_token` are encrypted with AES-256-GCM (`KeyManager`) and saved in `broker_credentials`.
 2. **Fetch & Parse (`broker_api_parser.py`):** Fetches live holdings/tradebooks, maps symbols to master `assets`, and stages rows into `import_sessions` / `parsed_transactions` for preview and commit—without logging raw PII payloads (`#601`).
 
 

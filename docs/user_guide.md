@@ -545,13 +545,24 @@ When the system doesn't recognize a ticker from your file:
 > [!TIP]
 > For Mutual Funds, download your Consolidated Account Statement (CAS) from MFCentral for the most complete data.
 
-### Broker API Direct Sync (Zerodha Kite & ICICI Breeze)
+### Broker API Integration & Direct Sync (ICICI Breeze & Zerodha Kite)
 
-Connect your brokerage account directly from the **Import** page using the **Broker API Sync** card:
+Connect your brokerage account in **Profile & Settings** (`Broker API Integration`) to fetch **live market data quotes** (ICICI Breeze and Zerodha Kite) and sync **holdings/tradebook data** directly (ICICI Breeze):
 
-1. Select your broker (**Zerodha Kite** or **ICICI Breeze**) and enter your API Key and API Secret (encrypted at rest using AES-256-GCM).
-2. Authenticate via the broker OAuth/session flow to obtain an active session token.
-3. Click **Sync Holdings / Tradebook** to stage transactions into the standard Import Preview workflow without manual CSV downloads.
+#### 1. Obtaining Your API Key & API Secret
+- **ICICI Direct Breeze:** Log in to the ICICI Direct Breeze API portal (`api.icicidirect.com`), create/register an app with a redirect URL, and copy your **App Key (API Key)** and **Secret Key**.
+- **Zerodha Kite:** Log in to the Zerodha Kite Developer portal (`developers.kite.trade`), create a Kite Connect app with a redirect URL, and copy your **API Key** and **API Secret**.
+
+#### 2. Setup & Daily Authentication
+1. Go to **Profile & Settings > Broker API Integration**, select **ICICI Direct Breeze** or **Zerodha Kite**, and save your **API Key** and **API Secret** (encrypted at rest with AES-256-GCM).
+2. Click **Login / Generate Session** to open the broker login page, sign in, and paste the callback URL (or `apisession` / `request_token`) back into ArthSaarthi.
+3. For **ICICI Breeze**, you can then go to **Import > Direct Broker API Sync** to stage **Holdings** or **Trade Book History** into the Import Preview workflow without manual CSV uploads.
+
+> [!IMPORTANT]
+> **Limitations & Daily Re-Authentication:**
+> - **Daily Authentication Required:** Both ICICI Breeze and Zerodha Kite issue session tokens that expire daily. You must re-authenticate once per day in **Profile & Settings** to keep live market quotes and broker sync active.
+> - **Zerodha Kite Import Limitation:** Zerodha Kite is supported for fetching live market prices/quotes, **not** for importing holdings or trade history via API—Kite's trade API is limited to same-day trades only, and its holdings API does not include original transaction dates. Use **Zerodha Tradebook CSV** file upload on the Import page for Zerodha transactions.
+> - **ICICI Breeze Holdings Date Note:** ICICI's Holdings API returns current holdings with average purchase prices **without original buy dates** (entries use the selected snapshot date). Switch to **Trade Book History** mode for full historical trade dates.
 
 ---
 

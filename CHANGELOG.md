@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 #### Broker API Integration & Data Automation
-- **Direct Broker API Sync (`NFR12`):** Integrated Zerodha Kite and ICICI Breeze API sync workflows (`BrokerApiSyncCard.tsx`, `brokers.py`) with AES-256-GCM encrypted credential storage (`broker_credentials`).
+- **Direct Broker API Sync (`NFR12`):** Integrated ICICI Breeze direct holdings/tradebook sync (`BrokerApiSyncCard.tsx`, `broker.py`) and Zerodha Kite / ICICI Breeze live market quote integration (`BrokerSettings.tsx`) with AES-256-GCM encrypted credential storage (`broker_credentials`).
 - **In-Process Background Job Scheduler (`APScheduler`):** Embedded `AsyncIOScheduler` into FastAPI lifespan (`app/core/scheduler.py`) with concurrency guards, execution audit logs (`scheduled_job_logs`), and an Admin Scheduler Dashboard (`SchedulerDashboard.tsx`).
 - **Automated Bond & Stock Corporate Actions (`#562`, `#607`):** Scheduled bond coupon payouts, bond maturity redemptions, and stock dividend/split/bonus ingestion with user notification receipts (`corporate_action_events`, `CorporateActionNotificationModal.tsx`).
 - **API Rate Limiting & Caching (`NFR13`):** Added rate-limiting and multi-tier caching across market data, asset seeding, and research endpoints.
@@ -25,10 +25,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **PII Log Removal (`#601`):** Removed raw Zerodha/ICICI holdings and trade item `logger.debug` dumps from `broker_api_parser.py`.
 - **Diagnostic Script Guard (`#602`):** Added `ENVIRONMENT=production` exit guard to `backend/scripts/inspect_icici_raw.py`.
 - **System Endpoint Auth (`#603`):** Enforced admin JWT authentication on `GET /api/v1/system/logs` and `POST /api/v1/system/snapshots/run-daily` in server and desktop modes while preserving Android WorkManager local loopback access.
-
-### Fixed
-- **Concall Polling & Pool Exhaustion:** Added `_in_flight_concalls` deduplication, `check_only` polling, and early DB session release before long-running Whisper/FinBERT execution.
-- **Docker Build Dependencies:** Resolved `click` vs `huggingface-hub` dependency conflict (`click==8.5.1`).
 
 ---
 

@@ -86,6 +86,6 @@ ArthSaarthi performs privacy-preserving financial NLP and speech-to-text complet
 
 ### 2.7. Broker API Integration & Security Hardening (Release v1.5.0)
 
-*   **Broker Sync (`brokers.py`, `broker_api_parser.py`):** Direct Zerodha Kite and ICICI Breeze holdings/tradebook ingestion with AES-256-GCM encrypted `api_secret` and `access_token` storage in `broker_credentials`.
+*   **Broker Sync (`broker.py`, `broker_api_parser.py`):** Direct ICICI Breeze holdings/tradebook ingestion and Zerodha Kite / ICICI Breeze live market quote integration with AES-256-GCM encrypted `api_secret` and `access_token` storage in `broker_credentials`.
 *   **Security Controls:** Sensitive raw broker payloads are never logged (`#601`), diagnostic scripts enforce `ENVIRONMENT=production` exit guards (`#602`), and `/system/logs` and `/system/snapshots/run-daily` require admin JWT in server/desktop modes while preserving Android WorkManager loopback access (`#603`).
 *   **Dual Regime Tax Service (`TaxRegimeService`):** Aggregates gross income, TDS credits, Chapter VI-A deductions, and capital gains to compute net tax liability under the Old Tax Regime vs. New Tax Regime (Section 115BAC), exporting results with embedded legal non-advisory disclaimer banners (`MANDATORY_TAX_DISCLAIMER`).

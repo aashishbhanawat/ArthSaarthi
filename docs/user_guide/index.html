@@ -587,8 +587,12 @@
         <h3>2. Edge AI Concall Analyzer</h3>
         <p>Click <strong>Analyze Concall</strong> on any earnings call to run on-device <code>faster-whisper</code> INT8 transcription and <code>finbert-tone</code> INT8 ONNX sentiment analysis (zero external LLM calls), delivering Prepared vs Q&A Tone Divergence Alerts, Hedging Index, 4-Aspect Sentiment Scorecards (Demand, Margins, Guidance, CapEx), and Extractive Red Flags.</p>
 
-        <h3>3. Direct Broker API Sync & Automated Corporate Actions</h3>
-        <p>Connect <strong>Zerodha Kite</strong> or <strong>ICICI Breeze</strong> from the Import page with AES-256-GCM encrypted credentials, and receive automated notifications for bond coupons, bond maturities, and stock corporate actions powered by the in-process APScheduler engine.</p>
+        <h3>3. Direct Broker API Integration &amp; Limitations</h3>
+        <p>Configure <strong>ICICI Direct Breeze</strong> (from <code>api.icicidirect.com</code>) or <strong>Zerodha Kite</strong> (from <code>developers.kite.trade</code>) under <strong>Profile &amp; Settings</strong> using your API Key and API Secret (encrypted with AES-256-GCM) to fetch live market quotes, and receive automated notifications for bond coupons, bond maturities, and stock corporate actions powered by APScheduler.</p>
+        <ul>
+          <li><strong>Daily Authentication:</strong> Both brokers issue daily-expiring tokens—re-authenticate once per day in Profile &amp; Settings.</li>
+          <li><strong>Import Scope:</strong> Direct API holdings/tradebook import is supported for <strong>ICICI Breeze</strong> (use Trade Book History mode for original buy dates). <strong>Zerodha Kite</strong> is used for live price quotes only; import Zerodha trades via Tradebook CSV (as Kite's trade API is limited to same-day trades and holdings lack transaction dates).</li>
+        </ul>
       </section>
 
       <!-- Getting Help -->
