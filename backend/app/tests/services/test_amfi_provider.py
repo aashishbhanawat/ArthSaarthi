@@ -156,6 +156,7 @@ def test_parse_non_numeric_nav_and_fd_account_coercion(monkeypatch):
         "Open Ended Schemes(Equity Scheme - Large Cap Fund)\n"
         "100099;INF090I01099;-;Test Dash NAV Fund;-;26-Nov-2026\n"
         "100100;INF090I01100;-;Test Blank NAV Fund;;N.A.\n"
+        "103360;INF090I01569;-;Franklin India Small Cap Fund;Regular Plan;Growth;171.7843;25-Nov-2026\n"
     )
     mock_resp = MagicMock()
     mock_resp.text = sample_nav
@@ -170,6 +171,9 @@ def test_parse_non_numeric_nav_and_fd_account_coercion(monkeypatch):
     data = provider.get_all_nav_data()
     assert data["100099"]["nav"] == "0.0"
     assert data["100100"]["nav"] == "0.0"
+    assert data["103360"]["nav"] == "171.7843"
+    assert data["103360"]["scheme_name"] == "Franklin India Small Cap Fund - Regular Plan - Growth"
+    assert provider.get_scheme_by_isin("INF090I01569")["ticker_symbol"] == "103360"
 
     fd = ParsedFixedDeposit(
         bank="HDFC",

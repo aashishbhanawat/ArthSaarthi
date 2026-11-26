@@ -87,28 +87,34 @@ class AmfiIndiaProvider(FinancialDataProvider):
                     current_sub_category = sub_cat
                     continue
 
-                # Parse data rows (scheme code;ISIN;ISIN2;name;NAV;date)
+                # Parse data rows (scheme code;ISIN;ISIN2;name[;plan;option];NAV;date)
                 if ";" in line:
-                    parts = line.split(";")
+                    parts = [p.strip() for p in line.rstrip(";").split(";")]
                     if len(parts) >= 5 and parts[0].isdigit():
                         try:
                             scheme_code = parts[0]
-                            raw_nav = parts[4].strip() if len(parts) > 4 else ""
+                            if len(parts) >= 6:
+                                scheme_name = " - ".join(p for p in parts[3:-2] if p)
+                                raw_nav = parts[-2]
+                                raw_date = parts[-1]
+                            else:
+                                scheme_name = parts[3]
+                                raw_nav = parts[4]
+                                raw_date = ""
                             nav_value = (
                                 str(Decimal(raw_nav))
                                 if raw_nav and raw_nav not in ("N.A.", "NA", "N/A", "-")
                                 else "0.0"
                             )
-                            raw_date = parts[5].strip() if len(parts) > 5 else ""
                             data[scheme_code] = {
                                 "scheme_code": scheme_code,
-                                "isin": parts[1] if parts[1] != "N.A." else None,
+                                "isin": parts[1] if parts[1] not in ("N.A.", "-", "") else None,
                                 "isin2": (
                                     parts[2]
-                                    if len(parts) > 2 and parts[2] != "N.A."
+                                    if len(parts) > 2 and parts[2] not in ("N.A.", "-", "")
                                     else None
                                 ),
-                                "scheme_name": parts[3],
+                                "scheme_name": scheme_name,
                                 "nav": nav_value,
                                 "date": (
                                     datetime.strptime(raw_date, "%d-%b-%Y")
