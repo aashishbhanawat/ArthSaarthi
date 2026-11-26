@@ -203,7 +203,9 @@ class FinancialDataService:
             mf_details = self.amfi_provider.get_scheme_by_isin(isin_code)
             if mf_details:
                 return mf_details
-            # 2. Try yfinance search for other assets
+            if asset_type in ("Mutual Fund", "MUTUAL_FUND") or isin_code.upper().startswith("INF"):
+                return None
+            # 2. Try yfinance search for other assets (equities/ETFs)
             search_results = self.yfinance_provider.search(isin_code)
             if search_results:
                 # Use the first match from yfinance

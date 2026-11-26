@@ -462,11 +462,15 @@ class YFinanceProvider(FinancialDataProvider):
 
         logger.debug(f"get_asset_details: Looking up {ticker_symbol}")
         ticker_obj = None
-        for yf_ticker_str in [
-            f"{ticker_symbol}.NS",
-            f"{ticker_symbol}.BO",
-            ticker_symbol,
-        ]:
+        if ticker_symbol.upper().endswith((".NS", ".BO")):
+            variants = [ticker_symbol]
+        else:
+            variants = [
+                f"{ticker_symbol}.NS",
+                f"{ticker_symbol}.BO",
+                ticker_symbol,
+            ]
+        for yf_ticker_str in variants:
             try:
                 logger.debug(f"Trying ticker variant: {yf_ticker_str}")
                 temp_ticker = yf.Ticker(yf_ticker_str)

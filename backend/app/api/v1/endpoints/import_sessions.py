@@ -395,6 +395,14 @@ def get_import_session_preview(
     pending_alias_map = {
         alias.alias_symbol: alias.asset_id for alias in aliases_to_create
     }
+    external_lookup_cache: dict[str, Optional[dict]] = {}
+
+    def _cached_get_asset_details(lookup_key: str) -> Optional[dict]:
+        if lookup_key not in external_lookup_cache:
+            external_lookup_cache[lookup_key] = financial_data_service.get_asset_details(
+                lookup_key
+            )
+        return external_lookup_cache[lookup_key]
 
     try:
         for _, row in df.iterrows():
@@ -422,9 +430,7 @@ def get_import_session_preview(
 
             # If ISIN lookup externally for new mutual funds (side-effect free preview)
             if not asset and isin_code:
-                details = financial_data_service.get_asset_details(
-                    f"ISIN:{isin_code}"
-                )
+                details = _cached_get_asset_details(f"ISIN:{isin_code}")
                 if details:
                     # Validate and filter through schema to prevent TypeError
                     asset_in = schemas.AssetCreate(
@@ -443,7 +449,7 @@ def get_import_session_preview(
             # If ticker looks like "ISIN:XXX", try to find externally
             # (side-effect free preview)
             if not asset and ticker_symbol.upper().startswith("ISIN:"):
-                details = financial_data_service.get_asset_details(ticker_symbol)
+                details = _cached_get_asset_details(ticker_symbol)
                 if details:
                     # Validate and filter through schema to prevent TypeError
                     asset_in = schemas.AssetCreate(
