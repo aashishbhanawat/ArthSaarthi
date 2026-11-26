@@ -611,3 +611,100 @@ def test_get_import_session_preview_icici_broker_alias_auto_match(
     assert data["valid_new"][0]["quantity"] == 100.0
     assert data["valid_new"][0]["price_per_unit"] == 1125.58
 
+
+def test_commit_import_session_empty_payload_rejected(
+    client: TestClient,
+    db: Session,
+    normal_user: tuple[User, str],
+    parsed_import_session: models.ImportSession,
+    get_auth_headers: Callable[[str, str], Dict[str, str]],
+):
+    user, password = normal_user
+    auth_headers = get_auth_headers(user.email, password)
+
+    response = client.post(
+        f"/api/v1/import-sessions/{parsed_import_session.id}/commit",
+        headers=auth_headers,
+        json={"transactions_to_commit": [], "aliases_to_create": []},
+    )
+    assert response.status_code == 400
+    assert response.json()["detail"] == "No transactions selected to commit."
+
+    db.refresh(parsed_import_session)
+    assert parsed_import_session.status == "PARSED"
+
+
+def test_commit_import_session_mutual_fund_by_isin(
+    client: TestClient,
+    db: Session,
+    normal_user: tuple[User, str],
+    user_portfolio: Portfolio,
+    get_auth_headers: Callable[[str, str], Dict[str, str]],
+    monkeypatch,
+):
+    user, password = normal_user
+    auth_headers = get_auth_headers(user.email, password)
+
+    session_in = models.ImportSession(
+        user_id=user.id,
+        portfolio_id=user_portfolio.id,
+        file_name="kfintech_cas.pdf",
+        file_path="/tmp/kfintech_cas.pdf",  # nosec B108 - test data only
+        source="KFintech PDF",
+        status="PARSED",
+    )
+    db.add(session_in)
+    db.commit()
+    db.refresh(session_in)
+
+    from app.services.financial_data_service import financial_data_service
+
+    def fake_get_asset_details(ticker_symbol: str, asset_type=None):
+        if ticker_symbol == "ISIN:INF090I01569":
+            return {
+                "ticker_symbol": "103360",
+                "name": "Franklin India Small Cap Fund - Regular Plan - Growth",
+                "asset_type": "Mutual Fund",
+                "currency": "INR",
+                "exchange": "AMFI",
+                "isin": "INF090I01569",
+            }
+        return None
+
+    monkeypatch.setattr(
+        financial_data_service, "get_asset_details", fake_get_asset_details
+    )
+
+    commit_payload = {
+        "transactions_to_commit": [
+            {
+                "transaction_date": "2023-05-10T00:00:00",
+                "ticker_symbol": "Franklin India Small Cap Fund - Regular Plan - Growth",
+                "transaction_type": "BUY",
+                "quantity": 100.5,
+                "price_per_unit": 120.25,
+                "fees": 0.0,
+                "isin": "INF090I01569",
+                "name": "Franklin India Small Cap Fund - Regular Plan - Growth",
+            }
+        ],
+        "aliases_to_create": [],
+    }
+
+    response = client.post(
+        f"/api/v1/import-sessions/{session_in.id}/commit",
+        headers=auth_headers,
+        json=commit_payload,
+    )
+    assert response.status_code == 200
+    assert "Successfully committed 1 transactions" in response.json()["msg"]
+
+    transactions = crud.transaction.get_multi_by_portfolio(
+        db, portfolio_id=user_portfolio.id
+    )
+    assert len(transactions) == 1
+    assert transactions[0].asset.ticker_symbol == "103360"
+    assert transactions[0].asset.isin == "INF090I01569"
+    assert transactions[0].quantity == Decimal("100.5")
+
+

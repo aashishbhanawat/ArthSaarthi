@@ -1,3 +1,14 @@
+## 2026-11-26: Guard Empty Import Commits & Prevent Redundant Post-Commit Preview
+
+**Task:** Prevent silent 0-transaction import commits (`200 OK` -> `0` holdings/transactions) and eliminate the redundant `POST /preview` triggered on commit success:
+1. **Backend (`import_sessions.py`):** Rejected empty `transactions_to_commit` payloads in `commit_import_session` (and empty `fds_to_commit` in `commit_fd_import_session`) with HTTP `400` instead of marking the session `COMPLETED` with `0` transactions.
+2. **Frontend (`useImport.ts`, `ImportPreviewPage.tsx`, `import.ts`):** Removed `['importSessionPreview', sessionId]` invalidation from `useCommitImportSession.onSuccess` (which fired an unnecessary `POST /preview` while `ImportPreviewPage` waited to redirect), prevented auto-redirect when `0 transactions` are committed (showing `alert-warning` instead), and added optional `isin`/`name` fields to `ParsedTransaction`.
+3. **Tests (`test_import_sessions.py`):** Added `test_commit_import_session_empty_payload_rejected` and `test_commit_import_session_mutual_fund_by_isin`.
+
+**Verification:** `pytest app/tests/api/test_import_sessions.py` (`14/14` passing); `npx tsc --noEmit`, `npx eslint .`, and `npm test` (`58/58` suites, `224/224` tests passing).
+
+---
+
 ## 2026-11-26: Fix v1.5.0 Live QA P2 & Security Header Findings (Issues #627, #629)
 
 **Task:** Resolve remaining live QA findings on `fix/v1.5.0-qa-blockers`:

@@ -35,15 +35,17 @@ const ImportPreviewPage: React.FC = () => {
         }
     }, [previewData?.valid_new]);
 
+    const hasCommittedTransactions =
+        commitMutation.data?.msg.startsWith("Successfully committed") &&
+        !commitMutation.data?.msg.includes(" 0 transactions");
+
     useEffect(() => {
-        if (commitMutation.isSuccess && session && commitMutation.data) {
-            if (commitMutation.data.msg.startsWith("Successfully committed")) {
-                setTimeout(() => {
-                    navigate(`/portfolios/${session.portfolio_id}`);
-                }, 2000);
-            }
+        if (commitMutation.isSuccess && session && hasCommittedTransactions) {
+            setTimeout(() => {
+                navigate(`/portfolios/${session.portfolio_id}`);
+            }, 2000);
         }
-    }, [commitMutation.isSuccess, commitMutation.data, session, navigate]);
+    }, [commitMutation.isSuccess, hasCommittedTransactions, session, navigate]);
 
     if (!sessionId) return <div className="alert alert-error">No session ID provided.</div>;
     if (isLoadingSession || isLoadingPreview) return <div>Loading import preview...</div>;
@@ -361,9 +363,9 @@ const ImportPreviewPage: React.FC = () => {
             </div>
 
             {commitMutation.isSuccess && (
-                <div className={`alert ${commitMutation.data?.msg.startsWith("Successfully committed") ? 'alert-success' : 'alert-warning'} mt-4`}>
+                <div className={`alert ${hasCommittedTransactions ? 'alert-success' : 'alert-warning'} mt-4`}>
                     {commitMutation.data?.msg}
-                    {commitMutation.data?.msg.startsWith("Successfully committed") && " Redirecting to portfolio..."}
+                    {hasCommittedTransactions && " Redirecting to portfolio..."}
                 </div>
             )}
             {commitMutation.isError && (

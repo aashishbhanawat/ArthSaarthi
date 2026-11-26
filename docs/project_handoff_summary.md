@@ -6,7 +6,7 @@
 
 *   **Overall Status:** Release v1.5.0 QA Stabilization — All P1 & P2 QA Blockers (`#624`–`#629`) Fixed & Verified on branch `fix/v1.5.0-qa-blockers`.
 
-**Latest Achievement:** Resolved P1 blockers (`#624`–`#628`) and P2/security findings (`#629`): holding fee parity, Top Movers % scaling, `Quote N/A` missing-quote state, deterministic same-day pagination, unique Capital Gains React keys, actionable Generic CSV errors, `422` FD preview guard, and Nginx security headers. Verified with `58/58` frontend suites (`224/224` tests) and backend pytest/ruff.
+**Latest Achievement:** Resolved P1 blockers (`#624`–`#628`), P2/security findings (`#629`), and import commit safeguards (HTTP `400` on empty `transactions_to_commit`/`fds_to_commit`, removed redundant post-commit preview refetch, and blocked redirect on 0-transaction commits). Verified with `14/14` import session backend tests and `58/58` frontend suites (`224/224` tests).
 
 ## 2. Test Suite Status
 

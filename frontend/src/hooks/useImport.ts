@@ -79,7 +79,6 @@ export const useCommitImportSession = () => {
             const { sessionId, portfolioId } = variables;
             // Invalidate queries to refetch data after commit
             queryClient.invalidateQueries({ queryKey: ['importSession', sessionId] });
-            queryClient.invalidateQueries({ queryKey: ['importSessionPreview', sessionId] });
             queryClient.invalidateQueries({ queryKey: ['portfolio', portfolioId] });
             queryClient.invalidateQueries({ queryKey: ['portfolioHoldings', portfolioId] });
             queryClient.invalidateQueries({ queryKey: ['portfolioSummary', portfolioId] });

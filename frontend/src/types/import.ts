@@ -24,6 +24,8 @@ export interface ParsedTransaction {
     quantity: number;
     price_per_unit: number;
     fees: number;
+    isin?: string | null;
+    name?: string | null;
 }
 
 export interface AssetAliasCreate {

@@ -555,6 +555,11 @@ def commit_import_session(
             status_code=400,
             detail=f"Cannot commit session with status '{import_session.status}'",
         )
+    if not commit_payload.transactions_to_commit:
+        raise HTTPException(
+            status_code=400,
+            detail="No transactions selected to commit.",
+        )
 
     try:
         # 1. Create any new asset aliases that the user has defined.
@@ -872,6 +877,11 @@ def commit_fd_import_session(
         raise HTTPException(
             status_code=400,
             detail=f"Cannot commit session with status '{import_session.status}'",
+        )
+    if not commit_payload.fds_to_commit:
+        raise HTTPException(
+            status_code=400,
+            detail="No fixed deposits selected to commit.",
         )
 
     try:
