@@ -188,6 +188,30 @@ async def create_import_session(
     except HTTPException:
         # Re-raise HTTP exceptions (like PASSWORD_REQUIRED) without wrapping
         raise
+    except pd.errors.EmptyDataError as e:
+        log.error(f"Error parsing file {temp_file_path}: {e}", exc_info=True)
+        crud.import_session.update(
+            db,
+            db_obj=import_session,
+            obj_in={
+                "status": "FAILED",
+                "error_message": "An error occurred during file parsing.",
+            },
+        )
+        raise HTTPException(
+            status_code=400, detail="An error occurred during file parsing."
+        )
+    except ValueError as e:
+        log.warning(f"Validation error parsing file {temp_file_path}: {e}")
+        crud.import_session.update(
+            db,
+            db_obj=import_session,
+            obj_in={
+                "status": "FAILED",
+                "error_message": str(e),
+            },
+        )
+        raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         log.error(f"Error parsing file {temp_file_path}: {e}", exc_info=True)
         crud.import_session.update(
@@ -804,10 +828,18 @@ def get_fd_import_session_preview(
             else:
                 parsed_fds.append(parsed_fd)
 
+        if len(df) > 0 and not parsed_fds and not duplicates:
+            raise HTTPException(
+                status_code=422,
+                detail="FD rows were extracted from the file but failed validation.",
+            )
+
         return schemas.FDImportPreview(
             parsed_fds=parsed_fds,
             duplicates=duplicates,
         )
+    except HTTPException:
+        raise
     except Exception as e:
         log.error(f"Error in get_fd_import_session_preview: {e}", exc_info=True)
         raise HTTPException(

@@ -471,7 +471,8 @@ def _process_market_traded_assets(
                 cost_basis_price = Decimal(str(tx.details.get("fmv", 0)))
             else:  # For BUY and ESPP, cost basis is the actual price paid.
                 cost_basis_price = tx.price_per_unit
-            cost_in_inr = tx.quantity * cost_basis_price * fx_rate
+            buy_fees = tx.fees or Decimal("0")
+            cost_in_inr = ((tx.quantity * cost_basis_price) + buy_fees) * fx_rate
             holdings_state[ticker]["total_invested"] += cost_in_inr
         elif tx.transaction_type == "DIVIDEND":
             fx_rate = (
@@ -570,16 +571,24 @@ def _process_market_traded_assets(
                                 if buy_tx.details
                                 else Decimal(1)
                             )
+                            effective_buy_qty = buy_tx.quantity * split_factor
+                            prop_buy_fees = (
+                                (buy_tx.fees or Decimal("0")) / effective_buy_qty
+                            ) * link.quantity if effective_buy_qty > 0 else Decimal("0")
                             buy_price_inr = buy_price * buy_fx_rate
+                            lot_cost_inr = (
+                                (buy_price_inr * link.quantity)
+                                + (prop_buy_fees * buy_fx_rate)
+                            )
 
                             # Calculate P&L: both sell and buy in INR
                             pnl = (
-                                (tx.price_per_unit * fx_rate) - buy_price_inr
-                            ) * link.quantity
+                                (tx.price_per_unit * fx_rate) * link.quantity
+                            ) - lot_cost_inr
                             realized_pnl_for_sale += pnl
 
                             # Cost is in INR (matches total_invested)
-                            cost_of_shares_sold += buy_price_inr * link.quantity
+                            cost_of_shares_sold += lot_cost_inr
                             sold_qty -= link.quantity
 
                             logger.debug(
@@ -607,6 +616,8 @@ def _process_market_traded_assets(
                         avg_buy_price,
                         pnl,
                     )
+                sell_fees_inr = (tx.fees or Decimal("0")) * fx_rate
+                realized_pnl_for_sale -= sell_fees_inr
                 total_realized_pnl += realized_pnl_for_sale
                 holdings_state[ticker]["realized_pnl"] += realized_pnl_for_sale
 

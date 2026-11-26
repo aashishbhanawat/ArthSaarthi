@@ -41,16 +41,20 @@ const HoldingCard: React.FC<HoldingCardProps> = ({ holding, onClick }) => {
                 <div className="text-right">
                     <div className="text-[10px] text-gray-500 uppercase tracking-tighter">LTP</div>
                     <div className="text-xs font-medium dark:text-gray-300">
-                        {isPrivacyMode ? '••••' : Number(holding.current_price).toFixed(2)}
+                        {isPrivacyMode ? '••••' : Number(holding.current_price) <= 0 && Number(holding.total_invested_amount) > 0 ? <span className="text-amber-600 dark:text-amber-400">Quote N/A</span> : Number(holding.current_price).toFixed(2)}
                     </div>
                 </div>
             </div>
             <div className="grid grid-cols-2 gap-2 mt-2">
                 <div className="min-w-0">
                     <div className="text-[10px] text-gray-500 uppercase tracking-tighter truncate">Unrealized P&L</div>
-                    <div className={`text-xs font-bold truncate ${isPositive ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
-                        {formatCurrency(holding.unrealized_pnl)} ({formatPercentage(holding.unrealized_pnl_percentage)})
-                    </div>
+                    {Number(holding.current_price) <= 0 && Number(holding.total_invested_amount) > 0 ? (
+                        <div className="text-xs font-medium text-amber-600 dark:text-amber-400">Quote N/A</div>
+                    ) : (
+                        <div className={`text-xs font-bold truncate ${isPositive ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                            {formatCurrency(holding.unrealized_pnl)} ({formatPercentage(holding.unrealized_pnl_percentage)})
+                        </div>
+                    )}
                 </div>
                 <div className="text-right min-w-0">
                     <div className="text-[10px] text-gray-500 uppercase tracking-tighter truncate">Day's P&L</div>

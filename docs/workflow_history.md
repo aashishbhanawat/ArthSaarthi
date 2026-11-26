@@ -1,3 +1,19 @@
+## 2026-11-26: Fix v1.5.0 Live QA P2 & Security Header Findings (Issues #627, #629)
+
+**Task:** Resolve remaining live QA findings on `fix/v1.5.0-qa-blockers`:
+1. **P2-01 (`crud_holding.py`):** Included buy/sell trade fees in `total_invested` and `realized_pnl` for holdings parity with Capital Gains.
+2. **P2-02 (`TopMoversTable.tsx`):** Scaled `daily_change_percentage` by `100` to match `formatPercentage` (`+1.70%` instead of `+0.02%`).
+3. **P2-03 (`EquityHoldingRow.tsx`, `HoldingCard.tsx`):** Displayed `Quote N/A` / `—` when a market-traded holding's quote is unavailable (`current_price <= 0`) instead of `₹0.00` / `-100%`.
+4. **P2-04 (`crud_transaction.py`):** Added `Transaction.id.desc()` secondary sort key for deterministic same-day pagination.
+5. **P2-05 (`CapitalGainsPage.tsx`):** Used composite row keys (`${transaction_id}-${idx}`) for multi-lot sales.
+6. **P2-06 (`generic_parser.py`, `import_sessions.py`):** Added required CSV header validation and row error reporting (preserving `EmptyDataError` handling).
+7. **P1-05 (`import_sessions.py`):** Raised HTTP `422` when extracted FD rows fail validation instead of silently returning `0` rows.
+8. **Security P2 (`frontend/nginx.conf`):** Added `X-Frame-Options`, `X-Content-Type-Options`, `Referrer-Policy`, and `Content-Security-Policy` headers.
+
+**Verification:** `ruff check .` (0 errors), `test_import_sessions.py`, `test_dashboard.py`, `test_corporate_actions.py` passing, `npx tsc --noEmit`, `npx eslint .`, and `58/58` frontend Jest suites (`224/224` tests) passing.
+
+---
+
 ## 2026-11-26: Fix v1.5.0 Live QA P1 Blockers (Issues #624–#628)
 
 **Task:** Resolve P1 release blockers discovered during live QA testing of v1.5.0:

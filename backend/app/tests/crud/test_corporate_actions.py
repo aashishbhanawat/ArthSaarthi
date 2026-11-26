@@ -1100,3 +1100,72 @@ def test_p1_02_merger_after_demerger_preserves_remaining_basis(db: Session) -> N
     assert dest_holding is not None
     assert dest_holding.quantity == Decimal("76")
     assert dest_holding.total_invested_amount == Decimal("10010.00")
+
+
+@pytest.mark.usefixtures("pre_unlocked_key_manager")
+def test_p2_01_and_p2_03_holding_fees_and_missing_quote_fallback(db: Session) -> None:
+    """
+    P2-01 & P2-03 regression:
+    - Buy 10 @ 100 (fee 5) + Buy 5 @ 160 (fee 3) -> Sell 12 @ 200 (fee 7).
+    - Realized gain = 1066.80, remaining basis = 481.80.
+    - When quote is missing (0), current_price falls back to cost basis (0% loss, not -100%).
+    """
+    user, _ = create_random_user(db)
+    portfolio = create_test_portfolio(db, user_id=user.id, name="P2-01 Fees")
+    asset = create_test_asset(db, ticker_symbol="P2_FEES_NOQUOTE")
+    asset.currency = "INR"
+    db.flush()
+
+    crud.transaction.create_with_portfolio(
+        db,
+        obj_in=schemas.TransactionCreate(
+            asset_id=asset.id,
+            transaction_type=TransactionType.BUY,
+            quantity=Decimal("10"),
+            price_per_unit=Decimal("100"),
+            fees=Decimal("5"),
+            transaction_date=datetime(2025, 1, 10),
+        ),
+        portfolio_id=portfolio.id,
+    )
+    crud.transaction.create_with_portfolio(
+        db,
+        obj_in=schemas.TransactionCreate(
+            asset_id=asset.id,
+            transaction_type=TransactionType.BUY,
+            quantity=Decimal("5"),
+            price_per_unit=Decimal("160"),
+            fees=Decimal("3"),
+            transaction_date=datetime(2025, 2, 10),
+        ),
+        portfolio_id=portfolio.id,
+    )
+    crud.transaction.create_with_portfolio(
+        db,
+        obj_in=schemas.TransactionCreate(
+            asset_id=asset.id,
+            transaction_type=TransactionType.SELL,
+            quantity=Decimal("12"),
+            price_per_unit=Decimal("200"),
+            fees=Decimal("7"),
+            transaction_date=datetime(2025, 3, 10),
+        ),
+        portfolio_id=portfolio.id,
+    )
+    db.commit()
+
+    from app.cache.utils import invalidate_caches_for_portfolio
+
+    invalidate_caches_for_portfolio(db, portfolio_id=portfolio.id)
+    with patch("app.crud.crud_holding.financial_data_service") as mock_service:
+        mock_service.get_current_prices.return_value = {}
+        mock_service.yfinance_provider.get_enrichment_data.return_value = {}
+        holdings_data = crud.holding.get_portfolio_holdings_and_summary(
+            db=db, portfolio_id=portfolio.id
+        )
+
+    h = next((x for x in holdings_data.holdings if x.asset_id == asset.id), None)
+    assert h is not None
+    assert h.realized_pnl == Decimal("1066.80")
+    assert h.total_invested_amount == Decimal("481.80")
+    assert h.current_price == Decimal("0")

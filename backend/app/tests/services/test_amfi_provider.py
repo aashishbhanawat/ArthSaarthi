@@ -180,3 +180,16 @@ def test_parse_non_numeric_nav_and_fd_account_coercion(monkeypatch):
         maturity_date="2026-07-13",
     )
     assert fd.account_number == "50300049402823"
+
+
+def test_generic_csv_parser_missing_headers_error():
+    """P2-06: GenericCsvParser raises actionable ValueError listing missing headers."""
+    import pandas as pd
+    import pytest
+
+    from app.services.import_parsers.generic_parser import GenericCsvParser
+
+    parser = GenericCsvParser()
+    df = pd.DataFrame([{"foo": "bar"}])
+    with pytest.raises(ValueError, match="Missing required CSV headers"):
+        parser.parse(df)

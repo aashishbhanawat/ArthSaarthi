@@ -51,7 +51,7 @@ const TopMoversTable: React.FC<TopMoversTableProps> = ({ assets }) => {
                                         </div>
                                     </td>
                                     <td className={`p-3 text-right font-semibold ${isPositive ? 'text-green-600' : 'text-red-600'}`}>
-                                        {isPositive ? '+' : ''}{Number(asset.daily_change_percentage).toFixed(2)}%
+                                        {isPositive ? '+' : ''}{(Number(asset.daily_change_percentage) * 100).toFixed(2)}%
                                     </td>
                                 </tr>
                             );

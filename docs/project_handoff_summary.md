@@ -4,9 +4,9 @@
 
 ## 1. Current Project Status
 
-*   **Overall Status:** Release v1.5.0 QA Stabilization — P1 Blockers (`#624`–`#628`) Fixed & Verified on branch `fix/v1.5.0-qa-blockers`.
+*   **Overall Status:** Release v1.5.0 QA Stabilization — All P1 & P2 QA Blockers (`#624`–`#629`) Fixed & Verified on branch `fix/v1.5.0-qa-blockers`.
 
-**Latest Achievement:** Fixed P1-01 (split-adjusted FIFO sell cost basis), P1-02 (merger-after-demerger basis), P1-03 (compounded FD maturity in history), P1-04/P1-05 (AMFI `InvalidOperation` & FD `account_number` coercion), and Security P1 (React Query cache clear on account switch); added regression tests (`59/59` backend tests passing).
+**Latest Achievement:** Resolved P1 blockers (`#624`–`#628`) and P2/security findings (`#629`): holding fee parity, Top Movers % scaling, `Quote N/A` missing-quote state, deterministic same-day pagination, unique Capital Gains React keys, actionable Generic CSV errors, `422` FD preview guard, and Nginx security headers. Verified with `58/58` frontend suites (`224/224` tests) and backend pytest/ruff.
 
 ## 2. Test Suite Status
 

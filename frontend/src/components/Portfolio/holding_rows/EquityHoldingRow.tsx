@@ -26,6 +26,7 @@ const PnlCell: React.FC<{ value: number; currency?: string; isPercentage?: boole
 
 const EquityHoldingRow: React.FC<EquityHoldingRowProps> = ({ holding, onRowClick }) => {
     const formatPrivateCurrency = usePrivacySensitiveCurrency();
+    const quoteUnavailable = Number(holding.current_price) <= 0 && Number(holding.total_invested_amount) > 0;
     return (
         <tr key={holding.asset_id} className="border-t hover:bg-gray-100 cursor-pointer dark:border-gray-700 dark:hover:bg-gray-700/50" onClick={() => onRowClick(holding)}>
             <td className="p-2 max-w-xs">
@@ -36,11 +37,24 @@ const EquityHoldingRow: React.FC<EquityHoldingRowProps> = ({ holding, onRowClick
             </td>
             <td className="p-2 text-right font-mono">{Number(holding.quantity).toLocaleString()}</td>
             <td className="p-2 text-right font-mono">{formatPrivateCurrency(holding.average_buy_price, 'INR')}</td>
-            <td className="p-2 text-right font-mono">{formatCurrency(holding.current_price, holding.currency)}</td>
-            <td className="p-2 text-right font-mono">{formatPrivateCurrency(holding.current_value, 'INR')}</td>
-            <PnlCell value={holding.days_pnl} currency="INR" />
-            <PnlCell value={holding.unrealized_pnl} currency="INR" />
-            <PnlCell value={holding.unrealized_pnl_percentage} isPercentage />
+            <td className="p-2 text-right font-mono" title={quoteUnavailable ? 'Live market quote unavailable' : undefined}>
+                {quoteUnavailable ? <span className="text-amber-600 dark:text-amber-400 text-xs">Quote N/A</span> : formatCurrency(holding.current_price, holding.currency)}
+            </td>
+            {quoteUnavailable ? (
+                <>
+                    <td className="p-2 text-right font-mono text-gray-400">—</td>
+                    <td className="p-2 text-right font-mono text-gray-400">—</td>
+                    <td className="p-2 text-right font-mono text-gray-400">—</td>
+                    <td className="p-2 text-right font-mono text-gray-400">—</td>
+                </>
+            ) : (
+                <>
+                    <td className="p-2 text-right font-mono">{formatPrivateCurrency(holding.current_value, 'INR')}</td>
+                    <PnlCell value={holding.days_pnl} currency="INR" />
+                    <PnlCell value={holding.unrealized_pnl} currency="INR" />
+                    <PnlCell value={holding.unrealized_pnl_percentage} isPercentage />
+                </>
+            )}
         </tr>
     );
 };
