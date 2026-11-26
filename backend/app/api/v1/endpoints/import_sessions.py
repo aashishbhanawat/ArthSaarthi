@@ -507,6 +507,12 @@ def get_import_session_preview(
                     price_per_unit=Decimal(str(row_data["price_per_unit"])),
                 )
 
+            # Preserve ISIN before replacing ticker_symbol for display so commit can resolve it
+            if ticker_symbol.upper().startswith("ISIN:") and not parsed_transaction.isin:
+                parsed_transaction.isin = ticker_symbol.split(":", 1)[1].strip()
+            if asset and getattr(asset, "isin", None) and not parsed_transaction.isin:
+                parsed_transaction.isin = asset.isin
+
             # For display: replace ISIN ticker with actual fund name/ticker
             if ticker_symbol.startswith("ISIN:") and asset:
                 parsed_transaction.ticker_symbol = asset.name or asset.ticker_symbol

@@ -6,7 +6,7 @@
 
 *   **Overall Status:** Release v1.5.0 QA Stabilization — All P1 & P2 QA Blockers (`#624`–`#629`) Fixed & Verified on branch `fix/v1.5.0-qa-blockers`.
 
-**Latest Achievement:** Resolved P1 blockers (`#624`–`#628`), P2/security findings (`#629`), and import commit safeguards (HTTP `400` on empty `transactions_to_commit`/`fds_to_commit`, removed redundant post-commit preview refetch, and blocked redirect on 0-transaction commits). Verified with `14/14` import session backend tests and `58/58` frontend suites (`224/224` tests).
+**Latest Achievement:** Resolved P1 blockers (`#624`–`#628`), P2/security findings (`#629`), and mutual fund import commit bugs (preserved `isin` when `get_import_session_preview` replaces `ISIN:...` with display name, guarded empty commit payloads with HTTP `400`, removed redundant post-commit preview refetch, and blocked redirect on 0-transaction commits). Verified with `15/15` import session backend tests and `58/58` frontend suites (`224/224` tests).
 
 ## 2. Test Suite Status
 

@@ -708,3 +708,85 @@ def test_commit_import_session_mutual_fund_by_isin(
     assert transactions[0].quantity == Decimal("100.5")
 
 
+def test_preview_then_commit_isin_ticker_preserves_isin(
+    client: TestClient,
+    db: Session,
+    normal_user: tuple[User, str],
+    user_portfolio: Portfolio,
+    get_auth_headers: Callable[[str, str], Dict[str, str]],
+    monkeypatch,
+    tmp_path,
+):
+    """Regression test: KFintech/CAMS parsers emit ticker_symbol='ISIN:...' without isin.
+    Preview replaces ticker_symbol with fund name for display; it must preserve isin
+    so commit can resolve/create the asset via AMFI."""
+    user, password = normal_user
+    auth_headers = get_auth_headers(user.email, password)
+
+    df = pd.DataFrame(
+        [
+            {
+                "transaction_date": "2023-05-10T00:00:00",
+                "ticker_symbol": "ISIN:INF090I01569",
+                "transaction_type": "BUY",
+                "quantity": 100.5,
+                "price_per_unit": 120.25,
+                "fees": 0.0,
+            }
+        ]
+    )
+    parsed_file_path = tmp_path / f"{uuid.uuid4()}.json"
+    df.to_json(parsed_file_path, orient="records", date_format="iso")
+
+    session_in = models.ImportSession(
+        user_id=user.id,
+        portfolio_id=user_portfolio.id,
+        file_name="kfintech_cas.pdf",
+        file_path=str(parsed_file_path),
+        source="KFintech PDF",
+        status="PARSED",
+        parsed_file_path=str(parsed_file_path),
+    )
+    db.add(session_in)
+    db.commit()
+    db.refresh(session_in)
+
+    from app.services.financial_data_service import financial_data_service
+
+    def fake_get_asset_details(ticker_symbol: str, asset_type=None):
+        if ticker_symbol == "ISIN:INF090I01569":
+            return {
+                "ticker_symbol": "103360",
+                "name": "Franklin India Small Cap Fund - Regular Plan - Growth",
+                "asset_type": "Mutual Fund",
+                "currency": "INR",
+                "exchange": "AMFI",
+                "isin": "INF090I01569",
+            }
+        return None
+
+    monkeypatch.setattr(
+        financial_data_service, "get_asset_details", fake_get_asset_details
+    )
+
+    preview_res = client.post(
+        f"/api/v1/import-sessions/{session_in.id}/preview",
+        headers=auth_headers,
+        json=[],
+    )
+    assert preview_res.status_code == 200
+    valid_new = preview_res.json()["valid_new"]
+    assert len(valid_new) == 1
+    assert valid_new[0]["ticker_symbol"] == "Franklin India Small Cap Fund - Regular Plan - Growth"
+    assert valid_new[0]["isin"] == "INF090I01569"
+
+    commit_res = client.post(
+        f"/api/v1/import-sessions/{session_in.id}/commit",
+        headers=auth_headers,
+        json={"transactions_to_commit": valid_new, "aliases_to_create": []},
+    )
+    assert commit_res.status_code == 200
+    assert "Successfully committed 1 transactions" in commit_res.json()["msg"]
+
+
+

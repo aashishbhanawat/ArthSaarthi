@@ -1,3 +1,13 @@
+## 2026-11-26: Preserve ISIN Across Import Preview -> Commit for Mutual Funds
+
+**Task:** Fix KFintech/CAMS mutual fund import commit failing with `Asset '<Fund Name>' not found during commit`:
+- **`backend/app/api/v1/endpoints/import_sessions.py`:** Preserved `parsed_transaction.isin` from `ISIN:<isin>` (or `asset.isin`) in `get_import_session_preview` before overwriting `parsed_transaction.ticker_symbol` with the fund's display name, allowing `commit_import_session` to resolve and create transient AMFI mutual fund assets by ISIN.
+- **`backend/app/tests/api/test_import_sessions.py`:** Added end-to-end `test_preview_then_commit_isin_ticker_preserves_isin`.
+
+**Verification:** `pytest app/tests/api/test_import_sessions.py` (`15/15` passing).
+
+---
+
 ## 2026-11-26: Guard Empty Import Commits & Prevent Redundant Post-Commit Preview
 
 **Task:** Prevent silent 0-transaction import commits (`200 OK` -> `0` holdings/transactions) and eliminate the redundant `POST /preview` triggered on commit success:
