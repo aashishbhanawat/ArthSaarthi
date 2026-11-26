@@ -928,3 +928,175 @@ def test_handle_split_issue_fractional_inr(db: Session) -> None:
 
     assert asset_holding is not None
     assert asset_holding.quantity == Decimal("1")
+
+
+@pytest.mark.usefixtures("pre_unlocked_key_manager")
+def test_p1_01_split_bonus_reinvest_then_fifo_sell_cost_basis(db: Session) -> None:
+    """
+    P1-01 regression: Buy 20 @ 100 -> 2:1 Split -> 1:1 Bonus -> Reinvest 99 @ 40 -> Sell 45 @ 60 (fee 9).
+    Expected: Capital Gains net gain = 691, Holdings remaining basis = 99.
+    """
+    from app.services.capital_gains_service import CapitalGainsService
+
+    user, _ = create_random_user(db)
+    portfolio = create_test_portfolio(db, user_id=user.id, name="P1-01 Split Sell")
+    asset = create_test_asset(db, ticker_symbol="P1_SPLIT_SELL")
+    asset.currency = "INR"
+    db.flush()
+
+    crud.transaction.create_with_portfolio(
+        db,
+        obj_in=schemas.TransactionCreate(
+            asset_id=asset.id,
+            transaction_type=TransactionType.BUY,
+            quantity=Decimal("20"),
+            price_per_unit=Decimal("100"),
+            transaction_date=datetime(2025, 1, 10),
+        ),
+        portfolio_id=portfolio.id,
+    )
+    crud.crud_corporate_action.handle_stock_split(
+        db,
+        portfolio_id=portfolio.id,
+        asset_id=asset.id,
+        transaction_in=schemas.TransactionCreate(
+            asset_id=asset.id,
+            transaction_type=TransactionType.SPLIT,
+            quantity=Decimal("2"),
+            price_per_unit=Decimal("1"),
+            transaction_date=datetime(2025, 2, 10),
+        ),
+    )
+    crud.crud_corporate_action.handle_bonus_issue(
+        db,
+        portfolio_id=portfolio.id,
+        asset_id=asset.id,
+        transaction_in=schemas.TransactionCreate(
+            asset_id=asset.id,
+            transaction_type=TransactionType.BONUS,
+            quantity=Decimal("1"),
+            price_per_unit=Decimal("1"),
+            transaction_date=datetime(2025, 3, 10),
+        ),
+    )
+    crud.transaction.create_with_portfolio(
+        db,
+        obj_in=schemas.TransactionCreate(
+            asset_id=asset.id,
+            transaction_type=TransactionType.BUY,
+            quantity=Decimal("2.475"),
+            price_per_unit=Decimal("40"),
+            transaction_date=datetime(2025, 4, 10),
+        ),
+        portfolio_id=portfolio.id,
+    )
+    crud.transaction.create_with_portfolio(
+        db,
+        obj_in=schemas.TransactionCreate(
+            asset_id=asset.id,
+            transaction_type=TransactionType.SELL,
+            quantity=Decimal("45"),
+            price_per_unit=Decimal("60"),
+            fees=Decimal("9"),
+            transaction_date=datetime(2025, 5, 10),
+        ),
+        portfolio_id=portfolio.id,
+    )
+    db.commit()
+
+    cg = CapitalGainsService(db).calculate_capital_gains(
+        user_id=user.id, portfolio_id=portfolio.id, fy_year="2025-26"
+    )
+    # 45 * 60 - (40 * 50 + 5 * 0) - 9 = 2700 - 2000 - 9 = 691
+    assert cg.total_stcg == Decimal("691.00")
+
+    from app.cache.utils import invalidate_caches_for_portfolio
+
+    invalidate_caches_for_portfolio(db, portfolio_id=portfolio.id)
+    with patch("app.crud.crud_holding.financial_data_service") as mock_service:
+        mock_service.get_current_prices.return_value = {}
+        mock_service.yfinance_provider.get_enrichment_data.return_value = {}
+        holdings_data = crud.holding.get_portfolio_holdings_and_summary(
+            db=db, portfolio_id=portfolio.id
+        )
+
+    h = next((x for x in holdings_data.holdings if x.asset_id == asset.id), None)
+    assert h is not None
+    assert h.total_invested_amount == Decimal("99.00")
+
+
+@pytest.mark.usefixtures("pre_unlocked_key_manager")
+def test_p1_02_merger_after_demerger_preserves_remaining_basis(db: Session) -> None:
+    """
+    P1-02 regression: Buy 100 parent @ 100 + 1 dest @ 10 -> 1:2 Demerger (25% cost) -> 1:4 Merger.
+    Expected: 76 dest shares carrying 10,010 combined basis.
+    """
+    user, _ = create_random_user(db)
+    portfolio = create_test_portfolio(db, user_id=user.id, name="P1-02 Demerger Merger")
+    parent = create_test_asset(db, ticker_symbol="P1_PARENT")
+    dest = create_test_asset(db, ticker_symbol="P1_DEST")
+
+    crud.transaction.create_with_portfolio(
+        db,
+        obj_in=schemas.TransactionCreate(
+            asset_id=parent.id,
+            transaction_type=TransactionType.BUY,
+            quantity=Decimal("100"),
+            price_per_unit=Decimal("100"),
+            transaction_date=datetime(2025, 1, 10),
+        ),
+        portfolio_id=portfolio.id,
+    )
+    crud.transaction.create_with_portfolio(
+        db,
+        obj_in=schemas.TransactionCreate(
+            asset_id=dest.id,
+            transaction_type=TransactionType.BUY,
+            quantity=Decimal("1"),
+            price_per_unit=Decimal("10"),
+            transaction_date=datetime(2025, 1, 15),
+        ),
+        portfolio_id=portfolio.id,
+    )
+    crud.crud_corporate_action.handle_demerger(
+        db,
+        portfolio_id=portfolio.id,
+        asset_id=parent.id,
+        transaction_in=schemas.TransactionCreate(
+            asset_id=parent.id,
+            transaction_type=TransactionType.DEMERGER,
+            quantity=Decimal("0.5"),
+            price_per_unit=Decimal("1"),
+            transaction_date=datetime(2025, 2, 10),
+            details={"new_asset_id": str(dest.id), "cost_allocation_pct": "25"},
+        ),
+    )
+    crud.crud_corporate_action.handle_merger(
+        db,
+        portfolio_id=portfolio.id,
+        asset_id=parent.id,
+        transaction_in=schemas.TransactionCreate(
+            asset_id=parent.id,
+            transaction_type=TransactionType.MERGER,
+            quantity=Decimal("0.25"),
+            price_per_unit=Decimal("1"),
+            transaction_date=datetime(2025, 3, 10),
+            details={"new_asset_id": str(dest.id)},
+        ),
+    )
+    db.commit()
+
+    from app.cache.utils import invalidate_caches_for_portfolio
+
+    invalidate_caches_for_portfolio(db, portfolio_id=portfolio.id)
+    with patch("app.crud.crud_holding.financial_data_service") as mock_service:
+        mock_service.get_current_prices.return_value = {}
+        mock_service.yfinance_provider.get_enrichment_data.return_value = {}
+        holdings_data = crud.holding.get_portfolio_holdings_and_summary(
+            db=db, portfolio_id=portfolio.id
+        )
+
+    dest_holding = next((x for x in holdings_data.holdings if x.asset_id == dest.id), None)
+    assert dest_holding is not None
+    assert dest_holding.quantity == Decimal("76")
+    assert dest_holding.total_invested_amount == Decimal("10010.00")

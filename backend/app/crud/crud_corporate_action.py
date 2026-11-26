@@ -297,13 +297,77 @@ def handle_merger(
         .all()
     )
 
+    # Fetch prior DEMERGER and SPLIT events up to record_date to compute remaining cost basis
+    prior_demergers = (
+        db.query(models.Transaction)
+        .filter(
+            models.Transaction.portfolio_id == portfolio_id,
+            models.Transaction.asset_id == asset_id,
+            models.Transaction.transaction_type == TransactionType.DEMERGER,
+            models.Transaction.transaction_date <= record_date,
+        )
+        .order_by(models.Transaction.transaction_date.asc())
+        .all()
+    )
+    prior_splits = (
+        db.query(models.Transaction)
+        .filter(
+            models.Transaction.portfolio_id == portfolio_id,
+            models.Transaction.asset_id == asset_id,
+            models.Transaction.transaction_type == TransactionType.SPLIT,
+            models.Transaction.transaction_date <= record_date,
+        )
+        .order_by(models.Transaction.transaction_date.asc())
+        .all()
+    )
+
     # Create BUY transactions for new asset preserving original acquisition dates
     for orig_buy in original_buys:
+        # Check how much of this buy lot was already consumed by SELLs before record_date
+        consumed_qty = sum(
+            (
+                link.quantity
+                for link in db.query(models.TransactionLink)
+                .join(
+                    models.Transaction,
+                    models.TransactionLink.sell_transaction_id == models.Transaction.id,
+                )
+                .filter(
+                    models.TransactionLink.buy_transaction_id == orig_buy.id,
+                    models.Transaction.transaction_date <= record_date,
+                )
+                .all()
+            ),
+            Decimal("0"),
+        )
+
+        # Replay splits between orig_buy and record_date
+        split_mult = Decimal("1")
+        for sp in prior_splits:
+            if (
+                orig_buy.transaction_date < sp.transaction_date <= record_date
+                and sp.price_per_unit > 0
+                and sp.quantity > 0
+            ):
+                split_mult *= sp.quantity / sp.price_per_unit
+
+        remaining_qty = (orig_buy.quantity * split_mult) - consumed_qty
+        if remaining_qty <= 0:
+            continue
+
+        # Replay demerger cost reductions between orig_buy and record_date
+        effective_unit_price = orig_buy.price_per_unit / split_mult
+        for dm in prior_demergers:
+            if orig_buy.transaction_date < dm.transaction_date <= record_date:
+                dm_pct = Decimal(
+                    str((dm.details or {}).get("cost_allocation_pct", "0"))
+                ) / Decimal("100")
+                effective_unit_price *= Decimal("1") - dm_pct
+
         # Adjust quantity by conversion ratio
-        new_qty = orig_buy.quantity * conversion_ratio
-        # Adjust price inversely to preserve total cost basis
-        # (new_qty * new_price = orig_qty * orig_price)
-        adjusted_price = orig_buy.price_per_unit / conversion_ratio
+        new_qty = remaining_qty * conversion_ratio
+        # Adjust price inversely to preserve remaining cost basis
+        adjusted_price = effective_unit_price / conversion_ratio
         new_share_buy = schemas.TransactionCreate(
             asset_id=UUID(new_asset_id),
             transaction_type=TransactionType.BUY,

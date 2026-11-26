@@ -1,12 +1,12 @@
 # Project Handoff & Status Summary
 
-**Last Updated:** 2026-11-25
+**Last Updated:** 2026-11-26
 
 ## 1. Current Project Status
 
-*   **Overall Status:** Release v1.5.0 Release Candidate Ready for Real-Data Testing — Version bumped to `1.5.0` across Backend, Frontend, Electron, and Android; all documentation and user guides synchronized on branch `chore/release-v1.5.0-docs`.
+*   **Overall Status:** Release v1.5.0 QA Stabilization — P1 Blockers (`#624`–`#628`) Fixed & Verified on branch `fix/v1.5.0-qa-blockers`.
 
-**Latest Achievement:** Completed v1.5.0 version bump (`1.4.0` -> `1.5.0`, Android `versionCode = 6`) and synchronized `docs/v1.5.0.md`, `CHANGELOG.md`, `README.md`, `docs/architecture.md`, `docs/code_flow_guide.md`, `docs/database_schema.md`, `docs/user_guide.md`, `docs/user_guide/index.html`, and `frontend/public/user_guide/index.html`.
+**Latest Achievement:** Fixed P1-01 (split-adjusted FIFO sell cost basis), P1-02 (merger-after-demerger basis), P1-03 (compounded FD maturity in history), P1-04/P1-05 (AMFI `InvalidOperation` & FD `account_number` coercion), and Security P1 (React Query cache clear on account switch); added regression tests (`59/59` backend tests passing).
 
 ## 2. Test Suite Status
 

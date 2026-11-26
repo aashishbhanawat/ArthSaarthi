@@ -419,6 +419,20 @@ def _process_market_traded_assets(
     # Sort transactions by date to ensure chronological processing
     transactions.sort(key=lambda tx: tx.transaction_date)
 
+    # Pre-collect SPLIT events per asset_id so linked SELLs can adjust pre-split buy prices
+    split_events_by_asset = defaultdict(list)
+    for tx in transactions:
+        if (
+            tx.transaction_type == TransactionType.SPLIT
+            and tx.price_per_unit
+            and tx.price_per_unit > 0
+            and tx.quantity
+            and tx.quantity > 0
+        ):
+            split_events_by_asset[tx.asset_id].append(
+                (tx.transaction_date, tx.quantity / tx.price_per_unit)
+            )
+
     # --- Pre-fetch Transaction Links ---
     transaction_ids = [tx.id for tx in transactions]
     all_links = (
@@ -541,6 +555,15 @@ def _process_market_traded_assets(
                                 buy_price = Decimal(str(buy_tx.details["fmv"]))
                             else:
                                 buy_price = buy_tx.price_per_unit
+
+                            # Adjust pre-split buy price for any splits between buy and sell
+                            split_factor = Decimal("1")
+                            for s_date, s_ratio in split_events_by_asset.get(tx.asset_id, []):
+                                if buy_tx.transaction_date < s_date <= tx.transaction_date:
+                                    split_factor *= s_ratio
+                            if split_factor != Decimal("1"):
+                                buy_price = buy_price / split_factor
+
                             # Get buy transaction's FX rate to convert to INR
                             buy_fx_rate = (
                                 Decimal(str(buy_tx.details.get("fx_rate", 1)))

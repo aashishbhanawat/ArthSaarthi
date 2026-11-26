@@ -1,3 +1,22 @@
+## 2026-11-26: Fix v1.5.0 Live QA P1 Blockers (Issues #624–#628)
+
+**Task:** Resolve P1 release blockers discovered during live QA testing of v1.5.0:
+1. `#624` (P1-01): Replay chronological `SPLIT` ratios in `CapitalGainsService` and `crud_holding` linked-sell cost basis.
+2. `#625` (P1-02): Subtract prior `DEMERGER` cost allocations (and `SPLIT`/`SELL` consumption) inside `handle_merger`.
+3. `#626` (P1-03): Compute compounded maturity value on synthetic `FD_MATURITY` history entries (`_calculate_fd_current_value`).
+4. `#627` (P1-04 & P1-05): Catch `decimal.InvalidOperation` on non-numeric AMFI `NAVAll.txt` values (`"-"`, `""`) and coerce integer `account_number` in `ParsedFixedDeposit`.
+5. `#628` (Security P1): Clear React Query cache (`queryClient?.clear()`) in `AuthContext` on `logout` and `login` to prevent cross-account portfolio flashes.
+
+**AI Assistant:** Antigravity  
+**Role:** Lead Architect & Full-Stack Developer
+
+### Summary
+- Fixed `capital_gains_service.py`, `crud_holding.py`, `crud_corporate_action.py`, `transactions.py`, `amfi_provider.py`, `schemas/import_session.py`, and `AuthContext.tsx`.
+- Added regression unit tests in `test_amfi_provider.py` and `test_corporate_actions.py`.
+- Verified `ruff check .`, `59` backend pytest tests, `npx tsc --noEmit`, `npx eslint .`, and `AuthContextSessionTimeout.test.tsx`.
+
+---
+
 ## 2026-11-25: Release v1.5.0 Version Bump & Comprehensive Documentation Synchronization
 
 **Task:** Bump all application version strings from `1.4.0` to `1.5.0` and synchronize all project documentation (user guides, architecture, code flow, database schema, changelog, README, and release scope) ahead of real-data testing for Release v1.5.0 ("Infrastructure, Data & Automation").

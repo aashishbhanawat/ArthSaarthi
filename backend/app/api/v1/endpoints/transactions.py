@@ -102,11 +102,21 @@ def read_transactions(
             # 2️⃣  FD_MATURITY entry – maturity payout
             # (matured FDs only, deletable → deletes the FD record)
             if fd.maturity_date <= today:
+                from app.crud.crud_holding import _calculate_fd_current_value
+
+                maturity_value = _calculate_fd_current_value(
+                    fd.principal_amount,
+                    fd.interest_rate,
+                    fd.start_date,
+                    fd.maturity_date,
+                    fd.compounding_frequency,
+                    fd.interest_payout,
+                ).quantize(Decimal("0.01"))
                 maturity_dt = datetime.combine(fd.maturity_date, datetime.min.time())
                 sell_tx = models.Transaction(
                     id=fd.id,
                     transaction_type="FD_MATURITY",
-                    quantity=fd.principal_amount,
+                    quantity=maturity_value,
                     price_per_unit=Decimal("1.0"),
                     fees=Decimal("0.0"),
                     is_reinvested=False,

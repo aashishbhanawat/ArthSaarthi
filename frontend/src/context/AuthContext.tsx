@@ -1,4 +1,5 @@
 import { createContext, useState, useContext, useEffect, ReactNode, useCallback } from 'react';
+import { QueryClientContext } from '@tanstack/react-query';
 import api from '../services/api';
 import { User } from '../types/user';
 import useIdleTimer from '../hooks/useIdleTimer';
@@ -20,6 +21,7 @@ interface AuthContextType {
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
+  const queryClient = useContext(QueryClientContext);
   const [token, setToken] = useState<string | null>(localStorage.getItem('token'));
   const [deploymentMode, setDeploymentMode] = useState<'server' | 'desktop' | null>(
     localStorage.getItem('deployment_mode') as 'server' | 'desktop' | null
@@ -53,6 +55,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useIdleTimer(timeout, handleIdle, !!token);
 
   const logout = useCallback(() => {
+    queryClient?.clear();
     setToken(null);
     setUser(null);
     setDeploymentMode(null);
@@ -61,7 +64,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     delete api.defaults.headers.common['Authorization'];
     // Use hash-based redirect for HashRouter compatibility (works in Electron)
     window.location.hash = '#/login';
-  }, []);
+  }, [queryClient]);
 
   useEffect(() => {
     const responseInterceptor = api.interceptors.response.use(
@@ -102,6 +105,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, [token, fetchUserData]);
 
   const login = (data: { access_token: string, deployment_mode: 'server' | 'desktop' }) => {
+    queryClient?.clear();
     setToken(data.access_token);
     setDeploymentMode(data.deployment_mode);
     setIsIdle(false);  // Reset idle state on login

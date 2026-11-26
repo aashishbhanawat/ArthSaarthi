@@ -4,7 +4,7 @@ import asyncio
 import logging
 from collections import defaultdict
 from datetime import date, datetime
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 from typing import Any, Dict, List, Optional
 
 import httpx
@@ -93,6 +93,13 @@ class AmfiIndiaProvider(FinancialDataProvider):
                     if len(parts) >= 5 and parts[0].isdigit():
                         try:
                             scheme_code = parts[0]
+                            raw_nav = parts[4].strip() if len(parts) > 4 else ""
+                            nav_value = (
+                                str(Decimal(raw_nav))
+                                if raw_nav and raw_nav not in ("N.A.", "NA", "N/A", "-")
+                                else "0.0"
+                            )
+                            raw_date = parts[5].strip() if len(parts) > 5 else ""
                             data[scheme_code] = {
                                 "scheme_code": scheme_code,
                                 "isin": parts[1] if parts[1] != "N.A." else None,
@@ -102,22 +109,18 @@ class AmfiIndiaProvider(FinancialDataProvider):
                                     else None
                                 ),
                                 "scheme_name": parts[3],
-                                "nav": (
-                                    str(Decimal(parts[4]))
-                                    if parts[4] != "N.A."
-                                    else "0.0"
-                                ),
+                                "nav": nav_value,
                                 "date": (
-                                    datetime.strptime(parts[5], "%d-%b-%Y")
+                                    datetime.strptime(raw_date, "%d-%b-%Y")
                                     .date()
                                     .isoformat()
-                                    if len(parts) > 5 and parts[5] != "N.A."
+                                    if raw_date and raw_date not in ("N.A.", "NA", "N/A", "-")
                                     else None
                                 ),
                                 "mf_category": current_category,
                                 "mf_sub_category": current_sub_category,
                             }
-                        except (ValueError, IndexError):
+                        except (ValueError, IndexError, InvalidOperation):
                             continue
         except (httpx.RequestError, httpx.HTTPStatusError) as e:
             print(f"ERROR: Could not fetch AMFI data: {e}")

@@ -126,6 +126,17 @@ class ParsedFixedDeposit(BaseModel):
     interest_payout: str = "Cumulative"
     compounding_frequency: str = "Quarterly"
 
+    @validator("account_number", pre=True)
+    @classmethod
+    def coerce_account_number(cls, v: Any) -> Optional[str]:
+        if v is None:
+            return None
+        if isinstance(v, float) and math.isnan(v):
+            return None
+        if isinstance(v, float) and v.is_integer():
+            return str(int(v))
+        return str(v)
+
     @validator("*", pre=True, each_item=False)
     @classmethod
     def fix_nan(cls, v: Any) -> Any:

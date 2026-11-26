@@ -78,8 +78,11 @@ class CapitalGainsService:
 
         links = self.db.scalars(query).all()
 
-        # 1.5. Pre-fetch and pre-calculate Demerger Cost Reductions
+        # 1.5. Pre-fetch and pre-calculate Demerger Cost Reductions & Split Ratios
         demerger_ratios = self._calculate_demerger_ratios(
+            portfolio_id, user_id, end_date
+        )
+        split_events = self._calculate_split_events(
             portfolio_id, user_id, end_date
         )
 
@@ -113,13 +116,13 @@ class CapitalGainsService:
             if is_foreign:
                 # Process as foreign gain (no INR conversion)
                 foreign_entry = self._process_foreign_link(
-                    link, asset, sell_tx, buy_tx, demerger_ratios
+                    link, asset, sell_tx, buy_tx, demerger_ratios, split_events
                 )
                 foreign_gains.append(foreign_entry)
             else:
                 # 2. Calculate Gain for this specific lot (domestic)
                 entry, s112a_entry = self._process_single_link(
-                    link, asset, sell_tx, buy_tx, demerger_ratios
+                    link, asset, sell_tx, buy_tx, demerger_ratios, split_events
                 )
                 gains.append(entry)
 
@@ -206,6 +209,34 @@ class CapitalGainsService:
         end_date = datetime(start_year + 1, 3, 31, 23, 59, 59)
         return start_date, end_date
 
+    def _calculate_split_events(
+        self, portfolio_id: Optional[str], user_id: Optional[str], end_date: datetime
+    ) -> Dict[str, List[Tuple[datetime, Decimal]]]:
+        """
+        Fetches chronological stock split ratios for assets up to end_date.
+        Returns: { asset_id_str: [(split_datetime, split_ratio), ...] }
+        """
+        query = (
+            select(Transaction)
+            .where(
+                Transaction.transaction_type == TransactionType.SPLIT,
+                Transaction.transaction_date <= end_date,
+            )
+            .order_by(Transaction.transaction_date.asc())
+        )
+        if user_id:
+            query = query.where(Transaction.user_id == user_id)
+        if portfolio_id:
+            query = query.where(Transaction.portfolio_id == portfolio_id)
+
+        split_txs = self.db.scalars(query).all()
+        result: Dict[str, List[Tuple[datetime, Decimal]]] = defaultdict(list)
+        for tx in split_txs:
+            if tx.price_per_unit and tx.price_per_unit > 0 and tx.quantity and tx.quantity > 0:
+                ratio = tx.quantity / tx.price_per_unit
+                result[str(tx.asset_id)].append((tx.transaction_date, ratio))
+        return result
+
     def _calculate_demerger_ratios(
         self, portfolio_id: Optional[str], user_id: Optional[str], end_date: datetime
     ) -> Dict[str, List[Tuple[date, Decimal]]]:
@@ -283,6 +314,21 @@ class CapitalGainsService:
 
         return result
 
+    def _get_split_multiplier(
+        self,
+        asset_id_str: str,
+        buy_dt: datetime,
+        sell_dt: datetime,
+        split_events: Optional[Dict[str, List[Tuple[datetime, Decimal]]]],
+    ) -> Decimal:
+        """Returns cumulative split multiplier for splits occurring between buy_dt and sell_dt."""
+        multiplier = Decimal("1")
+        if split_events and asset_id_str in split_events:
+            for s_date, s_ratio in split_events[asset_id_str]:
+                if buy_dt < s_date <= sell_dt:
+                    multiplier *= s_ratio
+        return multiplier
+
     def _process_foreign_link(
         self,
         link: TransactionLink,
@@ -290,6 +336,7 @@ class CapitalGainsService:
         sell_tx: Transaction,
         buy_tx: Transaction,
         demerger_ratios: Optional[Dict[str, List[Tuple[date, Decimal]]]] = None,
+        split_events: Optional[Dict[str, List[Tuple[datetime, Decimal]]]] = None,
     ) -> ForeignGainEntry:
         """
         Process a foreign asset gain entry.
@@ -312,8 +359,14 @@ class CapitalGainsService:
         ):
             buy_price = Decimal(str(buy_tx.details["fmv"]))
 
-        # --- Corporate Action Adjustment (Demerger) ---
+        # --- Corporate Action Adjustment (Split & Demerger) ---
         asset_id_str = str(asset.id)
+        split_multiplier = self._get_split_multiplier(
+            asset_id_str, buy_tx.transaction_date, sell_tx.transaction_date, split_events
+        )
+        if split_multiplier != Decimal("1"):
+            buy_price /= split_multiplier
+
         if demerger_ratios and asset_id_str in demerger_ratios:
             for d_date, ratio in demerger_ratios[asset_id_str]:
                 if buy_date < d_date <= sell_date:
@@ -325,10 +378,11 @@ class CapitalGainsService:
 
         sell_price = sell_tx.price_per_unit
 
-        # Proportional Fees
+        # Proportional Fees (post-split lot quantity = buy_tx.quantity * split_multiplier)
+        effective_buy_qty = buy_tx.quantity * split_multiplier
         prop_buy_fees = (
-            (buy_tx.fees / buy_tx.quantity) * quantity
-            if buy_tx.quantity > 0
+            (buy_tx.fees / effective_buy_qty) * quantity
+            if effective_buy_qty > 0
             else Decimal(0)
         )
         prop_sell_fees = (
@@ -386,6 +440,7 @@ class CapitalGainsService:
         sell_tx: Transaction,
         buy_tx: Transaction,
         demerger_ratios: Optional[Dict[str, List[Tuple[date, Decimal]]]] = None,
+        split_events: Optional[Dict[str, List[Tuple[datetime, Decimal]]]] = None,
     ) -> Tuple[GainEntry, Optional[Schedule112AEntry]]:
 
         buy_date = buy_tx.transaction_date.date()
@@ -408,8 +463,14 @@ class CapitalGainsService:
                 f"Using ESPP FMV {buy_price} as cost basis for {asset.ticker_symbol}"
             )
 
-        # --- Corporate Action Adjustment (Demerger) ---
+        # --- Corporate Action Adjustment (Split & Demerger) ---
         asset_id_str = str(asset.id)
+        split_multiplier = self._get_split_multiplier(
+            asset_id_str, buy_tx.transaction_date, sell_tx.transaction_date, split_events
+        )
+        if split_multiplier != Decimal("1"):
+            buy_price /= split_multiplier
+
         if demerger_ratios and asset_id_str in demerger_ratios:
             for d_date, ratio in demerger_ratios[asset_id_str]:
                 # If the buy happened before the demerger,
@@ -423,10 +484,11 @@ class CapitalGainsService:
 
         sell_price = sell_tx.price_per_unit
 
-        # Proportional Fees
+        # Proportional Fees (post-split lot quantity = buy_tx.quantity * split_multiplier)
+        effective_buy_qty = buy_tx.quantity * split_multiplier
         prop_buy_fees = (
-            (buy_tx.fees / buy_tx.quantity) * quantity
-            if buy_tx.quantity > 0
+            (buy_tx.fees / effective_buy_qty) * quantity
+            if effective_buy_qty > 0
             else Decimal(0)
         )
         prop_sell_fees = (

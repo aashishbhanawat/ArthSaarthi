@@ -144,3 +144,39 @@ def test_get_scheme_by_isin(mock_httpx_client):
 
     # Test not found
     assert provider.get_scheme_by_isin("INVALID") is None
+
+
+def test_parse_non_numeric_nav_and_fd_account_coercion(monkeypatch):
+    """P1-04/P1-05: Non-numeric AMFI NAVs ('-', '') and int FD account numbers don't crash."""
+    from unittest.mock import MagicMock
+
+    from app.schemas.import_session import ParsedFixedDeposit
+
+    sample_nav = (
+        "Open Ended Schemes(Equity Scheme - Large Cap Fund)\n"
+        "100099;INF090I01099;-;Test Dash NAV Fund;-;26-Nov-2026\n"
+        "100100;INF090I01100;-;Test Blank NAV Fund;;N.A.\n"
+    )
+    mock_resp = MagicMock()
+    mock_resp.text = sample_nav
+    mock_resp.raise_for_status = MagicMock()
+    mock_client = MagicMock()
+    mock_client.__enter__ = MagicMock(return_value=mock_client)
+    mock_client.__exit__ = MagicMock(return_value=False)
+    mock_client.get.return_value = mock_resp
+    monkeypatch.setattr("app.services.providers.amfi_provider.httpx.Client", lambda **kw: mock_client)
+
+    provider = AmfiIndiaProvider(cache_client=None)
+    data = provider.get_all_nav_data()
+    assert data["100099"]["nav"] == "0.0"
+    assert data["100100"]["nav"] == "0.0"
+
+    fd = ParsedFixedDeposit(
+        bank="HDFC",
+        account_number=50300049402823,
+        principal_amount=39078.82,
+        interest_rate=6.25,
+        start_date="2025-07-12",
+        maturity_date="2026-07-13",
+    )
+    assert fd.account_number == "50300049402823"
