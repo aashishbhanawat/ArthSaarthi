@@ -1,3 +1,23 @@
+## 2026-11-26: Expand E2E Regression Coverage for v1.4/v1.5 Features & RBAC
+
+**Task:** Add Playwright E2E regression tests covering Market Research & News, Admin System Maintenance (AI Model Management & Scheduler Dashboard), FMV/Symbol Aliases, Capital Gains / Schedule FA / Dividend tabs, non-admin RBAC route guards, and Profile & Settings tabs, with uncaught `pageerror` and HTTP `>= 500` gates.
+
+**AI Assistant:** Antigravity  
+**Role:** QA Automation & Full-Stack Developer
+
+### Summary
+
+1. **[`e2e/tests/research-and-scheduler.spec.ts`](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/e2e/tests/research-and-scheduler.spec.ts):**
+   - Verifies `/research` (`Market & Research`, `Holding Intelligence & Research`, `Sync Now`, and all category tabs).
+   - Verifies `/admin/maintenance` (`Shared Edge ML Models`, `Automated Tasks`, and `Activity History` modal), `/admin/fmv`, and `/admin/aliases`.
+2. **[`e2e/tests/capital-gains-and-rbac.spec.ts`](file:///media/data/AppData/CodeServer/pms4/ArthSaarthi/e2e/tests/capital-gains-and-rbac.spec.ts):**
+   - Verifies `/capital-gains` (`Tax Reports`, FY/Tax Slab selectors, `Capital Gains`, `Schedule FA (Foreign Assets)`, and `Dividend Report` tabs).
+   - Verifies non-admin RBAC (hidden `Administration` group, blocked `/admin/users`) and `/profile` tabs (`Risk Profile`, `Broker Integrations`, `Data & System`).
+3. **Verification:**
+   - Executed `npx playwright test tests/research-and-scheduler.spec.ts tests/capital-gains-and-rbac.spec.ts` via `docker-compose.e2e.yml`: `5 passed (31.9s)` with zero `pageerror` or HTTP 5xx responses.
+
+---
+
 ## 2026-11-25: Security Hardening for Broker Logs, Diagnostic Script, & System Endpoints (Issues #601, #602, #603)
 
 **Task:** Resolve three post-audit security issues before tagging Release v1.5.0:

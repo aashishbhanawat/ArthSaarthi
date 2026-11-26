@@ -1,12 +1,12 @@
 # Project Handoff & Status Summary
 
-**Last Updated:** 2026-11-24
+**Last Updated:** 2026-11-26
 
 ## 1. Current Project Status
 
-*   **Overall Status:** Release v1.5.0 In Progress — FinBERT-Tone Migration & Quantitative Concall Intelligence Layer (Issue #618 / PR #619) Implemented & Verified.
+*   **Overall Status:** Release v1.5.0 In Progress — Expanded E2E Regression Coverage (`test/expand-e2e-coverage`) Verified.
 
-**Latest Achievement:** Upgraded edge NLP engine to `yiyanghkust/finbert-tone` INT8 ONNX with dynamic label auto-detection. Implemented quantitative zero-LLM concall intelligence: Prepared vs Q&A Tone Divergence Alerts, Loughran-McDonald Hedging & Uncertainty Index, 4-Aspect Financial Sentiment Scorecards (Demand, Margins, Guidance, CapEx), and Extractive Red Flags.
+**Latest Achievement:** Added Playwright E2E regression specs for Research & News, System Maintenance (AI Models & Scheduler Dashboard), FMV/Symbol Aliases, Capital Gains / Schedule FA, non-admin RBAC guards, and Profile tabs (`5/5` passing via `docker-compose.e2e.yml`).
 
 ## 2. Test Suite Status
 
