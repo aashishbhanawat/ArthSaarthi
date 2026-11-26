@@ -5,6 +5,32 @@ All notable changes to ArthSaarthi will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.0] - 2026-11-25
+
+### Added
+
+#### Broker API Integration & Data Automation
+- **Direct Broker API Sync (`NFR12`):** Integrated ICICI Breeze direct holdings/tradebook sync (`BrokerApiSyncCard.tsx`, `broker.py`) and Zerodha Kite / ICICI Breeze live market quote integration (`BrokerSettings.tsx`) with AES-256-GCM encrypted credential storage (`broker_credentials`).
+- **In-Process Background Job Scheduler (`APScheduler`):** Embedded `AsyncIOScheduler` into FastAPI lifespan (`app/core/scheduler.py`) with concurrency guards, execution audit logs (`scheduled_job_logs`), and an Admin Scheduler Dashboard (`SchedulerDashboard.tsx`).
+- **Automated Bond & Stock Corporate Actions (`#562`, `#607`):** Scheduled bond coupon payouts, bond maturity redemptions, and stock dividend/split/bonus ingestion with user notification receipts (`corporate_action_events`, `CorporateActionNotificationModal.tsx`).
+- **API Rate Limiting & Caching (`NFR13`):** Added rate-limiting and multi-tier caching across market data, asset seeding, and research endpoints.
+
+#### Market Research & Edge AI Concall Intelligence (`FR8.2`, `FR8.2.1`, `FR8.2.2`)
+- **Research Intelligence Feed (`#618`):** Multi-source aggregation of NSE/BSE corporate filings, Trendlyne concall audio/transcripts, Yahoo Finance `.NS` RSS feeds, and broker research reports (`market_news_articles`, `ResearchIntelligenceFeed.tsx`).
+- **On-Device Concall Transcription & FinBERT-Tone NLP:** Integrated CTranslate2 INT8 `faster-whisper` (via PyAV, no system `ffmpeg` required) with Indian financial phonetic normalization, official PDF transcript auto-priority, and `yiyanghkust/finbert-tone` INT8 ONNX sentiment analysis (`ConcallAnalysisModal.tsx`).
+- **Quantitative Concall Analytics:** Prepared vs Q&A Tone Divergence Alerts, Loughran-McDonald Hedging & Uncertainty Index, 4-Aspect Financial Sentiment Scorecards (Demand, Margins, Guidance, CapEx), and Extractive Red Flags.
+- **AI Model Management:** Added `AIModelManagementCard.tsx` and `/api/v1/ml/*` endpoints to download and manage local Whisper and FinBERT ONNX models.
+
+### Changed
+- **Navigation & Menu Reorganization:** Grouped sidebar navigation into collapsible sections (**Markets & Research** → `Research & News`, `Watchlists`; **Tax & Income** → `Income & Tax Hub`, `Capital Gains`; **Administration** → `User Management`, `Interest Rates`, `System Maintenance`, `FMV Management`, `Symbol Aliases`), and consolidated **Risk Profile**, **Broker Integrations**, **Data & System**, and **AI & Intelligence** into tabbed sections under **Profile & Settings**.
+
+### Security
+- **PII Log Removal (`#601`):** Removed raw Zerodha/ICICI holdings and trade item `logger.debug` dumps from `broker_api_parser.py`.
+- **Diagnostic Script Guard (`#602`):** Added `ENVIRONMENT=production` exit guard to `backend/scripts/inspect_icici_raw.py`.
+- **System Endpoint Auth (`#603`):** Enforced admin JWT authentication on `GET /api/v1/system/logs` and `POST /api/v1/system/snapshots/run-daily` in server and desktop modes while preserving Android WorkManager local loopback access.
+
+---
+
 ## [1.4.0] - 2026-09-02
 
 ### Added
@@ -17,7 +43,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Tax-Deductible Expense & Investment Logging:** Chapter VI-A investment logging (Section 80C ₹1.5L, Section 80D medical, Section 80CCD(1B) NPS, Section 80TTA/80TTB interest) with statutory ceiling limit progress meters and capping (FR16.3 / #518).
 - **Structured Tax Readiness Summary & Regime Comparison:** Consolidated Financial Year tax readiness report comparing Old Tax Regime vs New Tax Regime (Section 115BAC), displaying potential tax savings, non-advisory legal notice banners, and CSV/PDF report exporters (FR16.4, FR16.4.1 / #519).
 
-#### Security & Desktop/Mobile Protection
+### Security & Desktop/Mobile Protection
 - **`SECRET_KEY` Persistence:** Local file persistence of application `SECRET_KEY` to `secret.key` in app data directory to prevent JWT session invalidation across app restarts.
 - **SQLite Bytes Decoding:** Dynamic string decoding in `EncryptedString` database decorator for mobile SQLite drivers.
 
@@ -43,7 +69,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Native Settings Toggle:** Integrated `AndroidSettingsCard` in user profile page.
 - **Pydantic V1 & Chaquopy Compatibility:** Restored SQLite/DiskCache compatibility layer for embedded Android Python environment (#495).
 
-#### Security & Tenant Isolation
+### Security & Tenant Isolation
 - **Tax Report Endpoint Authorization:** Enforced user authentication and strict tenant filtering on Capital Gains and Dividend report endpoints (#423).
 - **Goal Asset IDOR Protection:** Secured goal asset linking endpoints against IDOR vulnerability (#434, #467).
 - **PPF Immutability & Scoping:** Restricted update/delete on system-generated PPF interest credits and introduced user-scoped PPF account tickers (`PPF-{user_id_short}-{account_number}`).

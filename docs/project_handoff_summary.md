@@ -1,12 +1,12 @@
 # Project Handoff & Status Summary
 
-**Last Updated:** 2026-11-24
+**Last Updated:** 2026-11-25
 
 ## 1. Current Project Status
 
-*   **Overall Status:** Release v1.5.0 In Progress — FinBERT-Tone Migration & Quantitative Concall Intelligence Layer (Issue #618 / PR #619) Implemented & Verified.
+*   **Overall Status:** Release v1.5.0 Release Candidate Ready for Real-Data Testing — Version bumped to `1.5.0` across Backend, Frontend, Electron, and Android; all documentation and user guides synchronized on branch `chore/release-v1.5.0-docs`.
 
-**Latest Achievement:** Upgraded edge NLP engine to `yiyanghkust/finbert-tone` INT8 ONNX with dynamic label auto-detection. Implemented quantitative zero-LLM concall intelligence: Prepared vs Q&A Tone Divergence Alerts, Loughran-McDonald Hedging & Uncertainty Index, 4-Aspect Financial Sentiment Scorecards (Demand, Margins, Guidance, CapEx), and Extractive Red Flags.
+**Latest Achievement:** Completed v1.5.0 version bump (`1.4.0` -> `1.5.0`, Android `versionCode = 6`) and synchronized `docs/v1.5.0.md`, `CHANGELOG.md`, `README.md`, `docs/architecture.md`, `docs/code_flow_guide.md`, `docs/database_schema.md`, `docs/user_guide.md`, `docs/user_guide/index.html`, and `frontend/public/user_guide/index.html`.
 
 ## 2. Test Suite Status
 

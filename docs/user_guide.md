@@ -29,12 +29,16 @@ ArthSaarthi is a powerful web-based application designed to help you track, mana
    - Dual Regime Tax Comparison
    - Unrealized Capital Gains & Sec 112A Exemption Pooling
 7. [Import Data](#import-data)
-8. [Goals](#goals)
-9. [Risk Profile](#risk-profile)
-10. [Watchlists](#watchlists)
-11. [Profile & Settings](#profile--settings)
-12. [Admin Features](#admin-features)
-13. [Themes & Privacy](#themes--privacy)
+   - Broker API Direct Sync (Zerodha Kite & ICICI Breeze)
+8. [Market Research & Concall Intelligence](#market-research--concall-intelligence-release-v150)
+9. [Goals](#goals)
+10. [Risk Profile](#risk-profile)
+11. [Watchlists](#watchlists)
+12. [Profile & Settings](#profile--settings)
+13. [Admin Features](#admin-features)
+    - Background Job Scheduler
+    - AI Model Management
+14. [Themes & Privacy](#themes--privacy)
 
 ---
 
@@ -541,6 +545,40 @@ When the system doesn't recognize a ticker from your file:
 > [!TIP]
 > For Mutual Funds, download your Consolidated Account Statement (CAS) from MFCentral for the most complete data.
 
+### Broker API Integration & Direct Sync (ICICI Breeze & Zerodha Kite)
+
+Connect your brokerage account in **Profile & Settings** (`Broker API Integration`) to fetch **live market data quotes** (ICICI Breeze and Zerodha Kite) and sync **holdings/tradebook data** directly (ICICI Breeze):
+
+#### 1. Obtaining Your API Key & API Secret
+- **ICICI Direct Breeze:** Log in to the ICICI Direct Breeze API portal (`api.icicidirect.com`), create/register an app with a redirect URL, and copy your **App Key (API Key)** and **Secret Key**.
+- **Zerodha Kite:** Log in to the Zerodha Kite Developer portal (`developers.kite.trade`), create a Kite Connect app with a redirect URL, and copy your **API Key** and **API Secret**.
+
+#### 2. Setup & Daily Authentication
+1. Go to **Profile & Settings > Broker API Integration**, select **ICICI Direct Breeze** or **Zerodha Kite**, and save your **API Key** and **API Secret** (encrypted at rest with AES-256-GCM).
+2. Click **Login / Generate Session** to open the broker login page, sign in, and paste the callback URL (or `apisession` / `request_token`) back into ArthSaarthi.
+3. For **ICICI Breeze**, you can then go to **Import > Direct Broker API Sync** to stage **Holdings** or **Trade Book History** into the Import Preview workflow without manual CSV uploads.
+
+> [!IMPORTANT]
+> **Limitations & Daily Re-Authentication:**
+> - **Daily Authentication Required:** Both ICICI Breeze and Zerodha Kite issue session tokens that expire daily. You must re-authenticate once per day in **Profile & Settings** to keep live market quotes and broker sync active.
+> - **Zerodha Kite Import Limitation:** Zerodha Kite is supported for fetching live market prices/quotes, **not** for importing holdings or trade history via API—Kite's trade API is limited to same-day trades only, and its holdings API does not include original transaction dates. Use **Zerodha Tradebook CSV** file upload on the Import page for Zerodha transactions.
+> - **ICICI Breeze Holdings Date Note:** ICICI's Holdings API returns current holdings with average purchase prices **without original buy dates** (entries use the selected snapshot date). Switch to **Trade Book History** mode for full historical trade dates.
+
+---
+
+## Market Research & Concall Intelligence (Release v1.5.0)
+
+Access the **Research & Intelligence Feed** directly from the Dashboard to stay on top of your portfolio and watchlist companies:
+
+- **Multi-Source Aggregation:** Automatically pulls NSE/BSE corporate filings, Trendlyne earnings concall audio/transcripts, Yahoo Finance `.NS` news, and broker research reports.
+- **Filter & Sync:** Filter by category (`All`, `News`, `Concalls`, `Results`, `Broker Reports`) or click **Sync Now** to fetch the latest updates.
+- **Edge AI Concall Analyzer:** Click **Analyze Concall** (or **View AI Insights**) on any earnings call to run on-device speech-to-text (`faster-whisper`) and financial sentiment analysis (`finbert-tone`) with zero external LLM calls:
+  - **Prepared vs Q&A Tone Divergence:** Flags gaps between scripted management remarks and analyst Q&A responses.
+  - **Hedging & Uncertainty Index:** Measures cautious language density using Loughran-McDonald financial wordlists.
+  - **4-Aspect Scorecard:** Breaks down sentiment across **Demand**, **Margins**, **Guidance**, and **CapEx**.
+  - **Extractive Red Flags & Key Themes:** Highlights cautionary statements and key discussion topics.
+  - **Official PDF Priority:** Automatically prefers official exchange PDF transcripts over audio when available, or lets you paste a custom transcript.
+
 ---
 
 ## Goals
@@ -560,7 +598,7 @@ Set and track your financial goals in the **Goals** section.
 
 ## Risk Profile
 
-Assess your financial risk tolerance using the built-in **Grable & Lytton 13-Question Risk Scale**.
+Assess your financial risk tolerance using the built-in **Grable & Lytton 13-Question Risk Scale**, now located under **Profile & Settings > Risk Profile**.
 
 **Features:**
 - **13-Question Wizard:** Multi-step questionnaire covering investment horizon, financial reaction to market volatility, and liquidity preferences.
@@ -571,7 +609,7 @@ Assess your financial risk tolerance using the built-in **Grable & Lytton 13-Que
 
 ## Watchlists
 
-Monitor stocks and funds you're interested in without adding them to your portfolio.
+Monitor stocks and funds you're interested in without adding them to your portfolio under **Markets & Research > Watchlists**.
 
 ![Watchlists Page](./images/watchlists_page_1768318466860.png)
 
@@ -657,6 +695,16 @@ Perform system maintenance tasks including Asset Master synchronization.
 > **Server Mode:** Asset seeding runs automatically on every server launch/restart. Use **Sync Assets** to update without restarting.
 > **Desktop Mode:** Asset seeding runs only once on first boot. After that, you must manually run **Sync Assets** to get the latest securities.
 
+### Background Job Scheduler & Corporate Actions
+
+From **Admin > System Maintenance**, view and manage automated background jobs powered by APScheduler:
+- **Scheduled Jobs:** Daily portfolio snapshots, automated bond coupon/maturity corporate actions, stock corporate actions, and market news syncing.
+- **Controls:** Pause/resume schedules, trigger manual runs, and inspect execution logs (`SUCCESS` / `FAILED` with durations).
+
+### AI Model Management
+
+From **Admin > AI Intelligence** (or Profile settings in single-user mode), download and manage on-device Edge AI models (`faster-whisper` for concall audio transcription and `finbert-tone` INT8 ONNX for financial sentiment analysis).
+
 ---
 
 ## Themes & Privacy
@@ -695,9 +743,14 @@ Click the **eye icon** next to the page title to toggle privacy mode, which hide
 | Dashboard | Overview of all portfolios |
 | Portfolios | Manage individual portfolios |
 | Transactions | View all transactions |
-| Import | Bulk import data |
-| Watchlists | Track potential investments |
+| Import | Bulk import data & ICICI Breeze API sync |
 | Goals | Financial goal tracking |
+| Markets & Research → Research & News | Corporate filings, concall AI insights, and market news |
+| Markets & Research → Watchlists | Track potential investments |
+| Tax & Income → Income & Tax Hub | Income, HRA, Chapter VI-A deductions & regime comparison |
+| Tax & Income → Capital Gains | Realized/unrealized capital gains & Schedule FA/112A |
+| Administration | User Management, Interest Rates, System Maintenance, FMV & Aliases (Admin only) |
+| Profile & Settings | Account & Security, Risk Profile, Broker Integrations, Data & System, AI & Intelligence |
 
 ---
 

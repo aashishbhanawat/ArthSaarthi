@@ -30,12 +30,15 @@ The project was developed following a rigorous, AI-assisted Agile SDLC, with a s
 *   **Consolidated Holdings View:** A redesigned portfolio page that shows a consolidated holdings table with sorting, replacing a simple transaction list.
 *   **Sectioned Holdings Table:** A redesigned holdings table that groups assets by class into collapsible sections for a clearer overview.
 *   **Mutual Fund Dividend Tracking:** Manually log cash or reinvested dividends for mutual fund holdings.
-*   **Automated Bond Corporate Actions:** Background scheduler engine automatically computes and generates coupon payout cash credits and maturity redemptions for Bond/Fixed-Income holdings with user notification receipts and transaction tags.
+*   **Automated Bond & Stock Corporate Actions:** Background scheduler engine automatically computes and generates bond coupon payout cash credits and maturity redemptions, as well as stock corporate actions (dividends, splits, bonus issues), with user notification receipts and transaction tags.
 *   **Stock Dividend Reinvestment (DRIP):** Support for automatic reinvestment of stock dividends.
 *   **Holdings Drill-Down:** Click on any holding to see a detailed modal with its constituent buy transactions, calculated using FIFO logic.
-*   **Automated Data Import:** A full-stack workflow for uploading, parsing, previewing, and committing transaction data from CSV/Excel/PDF files.
+*   **Automated Data Import & Broker API Sync:** A full-stack workflow for uploading, parsing, previewing, and committing transaction data from CSV/Excel/PDF files, plus direct **Broker API Integration** (Zerodha Kite & ICICI Breeze) with encrypted credential storage.
     *   Includes pre-built parsers for Zerodha, ICICI Direct (Tradebook & Portfolio), MFCentral CAS, CAMS Statement, Zerodha Coin MF, KFintech PDF, generic format, and **Fixed Deposit (FD) PDFs** (HDFC, ICICI, SBI).
     *   Features an advanced UI for on-the-fly **asset alias mapping** for unrecognized ticker symbols, with admin management (view, edit, delete) of all aliases.
+*   **Market Research & Concall Intelligence Feed (Release v1.5.0):**
+    *   Aggregates NSE/BSE corporate filings, Trendlyne concall audio/transcripts, Yahoo Finance `.NS` news, and broker research reports for your portfolio and watchlist holdings.
+    *   **Edge AI Concall Analyzer:** On-device `faster-whisper` INT8 audio transcription and `finbert-tone` INT8 ONNX sentiment analysis delivering Prepared vs Q&A Tone Divergence Alerts, Hedging Index, 4-Aspect Scorecards (Demand, Margins, Guidance, CapEx), and Extractive Red Flags—with zero external LLM API calls.
 *   **Tax Compliance & Tax Readiness (Release v1.4.0):**
     *   **Schedule FA (Foreign Assets):** Generate reports compliant with Calendar Year rules, including Peak Value analysis (daily balance check) and specific field exports.
     *   **Capital Gains & Loss Set-Off:** Comprehensive reports for Short-Term (STCG) and Long-Term (LTCG) capital gains with statutory intra-head loss set-off rules (Section 70/71/74).

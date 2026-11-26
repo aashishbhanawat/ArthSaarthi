@@ -532,8 +532,90 @@ test.describe.serial('User Guide Screenshots', () => {
         await page.getByLabel('Password', { exact: true }).fill(adminUser.password);
         await page.getByRole('button', { name: 'Sign in' }).click();
 
-        await page.getByRole('link', { name: 'Risk Profile' }).click();
+        await page.getByRole('link', { name: /Profile/ }).click();
+        await page.getByRole('button', { name: /Risk Profile/ }).click();
         await page.waitForTimeout(1000);
         await screenshot(page, '31_risk_profile_questionnaire');
+    });
+
+    // ========== v1.4.0 Features ==========
+
+    test('32 - Income & Tax Hub', async ({ page }) => {
+        await page.goto('/');
+        await page.getByLabel('Email address').fill(adminUser.email);
+        await page.getByLabel('Password', { exact: true }).fill(adminUser.password);
+        await page.getByRole('button', { name: 'Sign in' }).click();
+
+        const incomeLink = page.getByRole('link', { name: 'Income & Tax Hub' });
+        if (!(await incomeLink.isVisible())) {
+            await page.getByRole('button', { name: 'Tax & Income' }).click();
+        }
+        await incomeLink.click();
+        await page.waitForTimeout(1000);
+        await screenshot(page, '32_income_tax_hub');
+    });
+
+    test('33 - Capital Gains & Sec 112A Pooling', async ({ page }) => {
+        await page.goto('/');
+        await page.getByLabel('Email address').fill(adminUser.email);
+        await page.getByLabel('Password', { exact: true }).fill(adminUser.password);
+        await page.getByRole('button', { name: 'Sign in' }).click();
+
+        const cgLink = page.getByRole('link', { name: 'Capital Gains' });
+        if (!(await cgLink.isVisible())) {
+            await page.getByRole('button', { name: 'Tax & Income' }).click();
+        }
+        await cgLink.click();
+        await expect(page.getByRole('heading', { name: 'Tax Reports' })).toBeVisible();
+        await page.waitForTimeout(1000);
+        await screenshot(page, '33_capital_gains_unrealized');
+    });
+
+    // ========== v1.5.0 Features ==========
+
+    test('34 - Broker API Integrations', async ({ page }) => {
+        await page.goto('/');
+        await page.getByLabel('Email address').fill(adminUser.email);
+        await page.getByLabel('Password', { exact: true }).fill(adminUser.password);
+        await page.getByRole('button', { name: 'Sign in' }).click();
+
+        await page.getByRole('link', { name: /Profile/ }).click();
+        await page.getByRole('button', { name: /Broker Integrations/ }).click();
+        await expect(page.getByText('Broker API Integration')).toBeVisible();
+        await page.waitForTimeout(500);
+        await screenshot(page, '34_broker_api_settings');
+    });
+
+    test('35 - Market Research & Concall Intelligence Feed', async ({ page }) => {
+        await page.goto('/');
+        await page.getByLabel('Email address').fill(adminUser.email);
+        await page.getByLabel('Password', { exact: true }).fill(adminUser.password);
+        await page.getByRole('button', { name: 'Sign in' }).click();
+
+        const researchLink = page.getByRole('link', { name: 'Research & News' });
+        if (!(await researchLink.isVisible())) {
+            await page.getByRole('button', { name: 'Markets & Research' }).click();
+        }
+        await researchLink.click();
+        await expect(page.getByRole('heading', { name: 'Market & Research' })).toBeVisible();
+        await page.waitForTimeout(1000);
+        await screenshot(page, '35_research_intelligence_feed');
+    });
+
+    test('36 - Background Job Scheduler & AI Model Management', async ({ page }) => {
+        await page.goto('/');
+        await page.getByLabel('Email address').fill(adminUser.email);
+        await page.getByLabel('Password', { exact: true }).fill(adminUser.password);
+        await page.getByRole('button', { name: 'Sign in' }).click();
+
+        const maintenanceLink = page.getByRole('link', { name: 'System Maintenance' });
+        if (!(await maintenanceLink.isVisible())) {
+            await page.getByRole('button', { name: 'Administration' }).click();
+        }
+        await maintenanceLink.click();
+        await page.waitForTimeout(1000);
+        await page.evaluate(() => window.scrollTo(0, 450));
+        await page.waitForTimeout(500);
+        await screenshot(page, '36_admin_scheduler_and_ai');
     });
 });
