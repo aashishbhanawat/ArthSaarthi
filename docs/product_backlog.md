@@ -210,14 +210,15 @@ The goal of this release was to build a robust and user-friendly system for impo
     -   Log tax-deductible expenses (Section 80C, Medical).
 
 ### Release v1.5.0: Infrastructure, Data & Automation
+**Status: ✅ COMPLETE (as of 2026-11-25)**
 **Focus: Integrating official data sources, enabling background processing, and improving automation.**
--   **Broker API Integration (NFR12):** Implement pluggable data providers for Zerodha Kite and ICICI Breeze to replace `yfinance`, especially for the Android build. This includes the necessary UI for the daily OAuth user login flow.
--   **API Rate Limiting & Caching (NFR13):** Implement robust caching, request batching, and rate limiting for the new broker APIs to ensure compliance and performance.
--   **Desktop Update Notification (FR-Desktop-2):** Check GitHub Releases API and notify users of new versions.
+-   **Broker API Integration (NFR12):** Implement pluggable data providers for Zerodha Kite and ICICI Breeze to replace `yfinance`, especially for the Android build. This includes the necessary UI for the daily OAuth user login flow. **✅ Complete**
+-   **API Rate Limiting & Caching (NFR13):** Implement robust caching, request batching, and rate limiting for the new broker APIs to ensure compliance and performance. **✅ Complete**
+-   **Desktop Update Notification (FR-Desktop-2):** Check GitHub Releases API and notify users of new versions. **✅ Complete**
 -   **Background Job Scheduler:** Architectural implementation (e.g., APScheduler) to handle asynchronous tasks. **✅ Complete**
 -   **Automated Bond Corporate Actions (#562):** Use the new scheduler for auto-generation of bond coupons and maturity transactions. **✅ Complete**
 -   **Automated Stock Corporate Actions & Dividends (#607):** Scheduled fetching of equity dividends, splits, and bonus issues via exchange feeds. **✅ Complete**
--   **Market News Feed (FR8.2):** Use the new scheduler for background fetching and linking of relevant financial news, broker target prices, and earnings concalls to user holdings. **✅ Complete**
+-   **Market News Feed (FR8.2 / FR8.2.1 / FR8.2.2):** Use the new scheduler for background fetching and linking of relevant financial news, broker target prices, and earnings concalls (with Faster-Whisper & FinBERT-Tone edge intelligence). **✅ Complete**
 
 ### Release v1.6.0: Security, Admin & Advanced UX
 **Focus: Polishing core user experience and security before introducing AI.**
