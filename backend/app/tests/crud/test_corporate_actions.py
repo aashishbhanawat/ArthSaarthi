@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from decimal import Decimal
 from unittest.mock import patch
 
@@ -1080,7 +1080,7 @@ def test_p1_02_merger_after_demerger_preserves_remaining_basis(db: Session) -> N
             transaction_type=TransactionType.MERGER,
             quantity=Decimal("0.25"),
             price_per_unit=Decimal("1"),
-            transaction_date=datetime(2025, 3, 10),
+            transaction_date=datetime(2025, 3, 10, tzinfo=timezone.utc),
             details={"new_asset_id": str(dest.id)},
         ),
     )

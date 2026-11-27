@@ -326,7 +326,7 @@ class CRUDTransaction(CRUDBase[Transaction, TransactionCreate, TransactionUpdate
         start_date: Optional[datetime] = None,
         end_date: Optional[datetime] = None,
         skip: int = 0,
-        limit: int = 100,
+        limit: Optional[int] = 100,
     ) -> tuple[list[Transaction], int]:
         query = db.query(self.model).filter(
             self.model.user_id == user_id, self.model.portfolio_id == portfolio_id
@@ -344,14 +344,12 @@ class CRUDTransaction(CRUDBase[Transaction, TransactionCreate, TransactionUpdate
             query = query.filter(self.model.transaction_date <= end_date)
 
         total = query.count()
-        transactions = (
-            query.order_by(
-                self.model.transaction_date.desc(), self.model.id.desc()
-            )
-            .offset(skip)
-            .limit(limit)
-            .all()
+        ordered_query = query.order_by(
+            self.model.transaction_date.desc(), self.model.id.desc()
         )
+        if limit is not None:
+            ordered_query = ordered_query.offset(skip).limit(limit)
+        transactions = ordered_query.all()
         return transactions, total
 
     def get_multi_by_portfolio(

@@ -37,6 +37,7 @@ def read_transactions(
     """
     Retrieve transactions for the current user, with optional filters.
     """
+    include_synthetic_fds = bool(portfolio_id and not asset_id and not transaction_type)
     if portfolio_id:
         portfolio = crud.portfolio.get(db=db, id=portfolio_id)
         if not portfolio:
@@ -51,14 +52,14 @@ def read_transactions(
             transaction_type=transaction_type,
             start_date=start_date,
             end_date=end_date,
-            skip=skip,
-            limit=limit,
+            skip=0 if include_synthetic_fds else skip,
+            limit=None if include_synthetic_fds else limit,
         )
     else:
         transactions, total = crud.transaction.get_multi_by_user_with_filters(  # type: ignore
             db=db, user_id=current_user.id, portfolio_id=None, skip=skip, limit=limit
         )
-    if portfolio_id and not asset_id and not transaction_type:
+    if include_synthetic_fds:
         all_fds = crud.fixed_deposit.get_multi_by_portfolio(
             db, portfolio_id=portfolio_id
         )
@@ -81,27 +82,34 @@ def read_transactions(
             fd_id_str = str(fd.id)
 
             # 1️⃣  FD_DEPOSIT entry – initial principal on start_date (all FDs, read-only)
-            start_dt = datetime.combine(fd.start_date, datetime.min.time())
-            buy_tx = models.Transaction(
-                id=deposit_uuid,
-                transaction_type="FD_DEPOSIT",
-                quantity=fd.principal_amount,
-                price_per_unit=Decimal("1.0"),
-                fees=Decimal("0.0"),
-                is_reinvested=False,
-                transaction_date=start_dt,
-                portfolio_id=fd.portfolio_id,
-                asset_id=fd.id,
-                user_id=current_user.id,
-                details={"_fd_id": fd_id_str},
-            )
-            buy_tx.asset = dummy_asset
-            transactions.append(buy_tx)
-            total += 1
+            if (not start_date or fd.start_date >= start_date) and (
+                not end_date or fd.start_date <= end_date
+            ):
+                start_dt = datetime.combine(fd.start_date, datetime.min.time())
+                buy_tx = models.Transaction(
+                    id=deposit_uuid,
+                    transaction_type="FD_DEPOSIT",
+                    quantity=fd.principal_amount,
+                    price_per_unit=Decimal("1.0"),
+                    fees=Decimal("0.0"),
+                    is_reinvested=False,
+                    transaction_date=start_dt,
+                    portfolio_id=fd.portfolio_id,
+                    asset_id=fd.id,
+                    user_id=current_user.id,
+                    details={"_fd_id": fd_id_str},
+                )
+                buy_tx.asset = dummy_asset
+                transactions.append(buy_tx)
+                total += 1
 
             # 2️⃣  FD_MATURITY entry – maturity payout
             # (matured FDs only, deletable → deletes the FD record)
-            if fd.maturity_date <= today:
+            if (
+                fd.maturity_date <= today
+                and (not start_date or fd.maturity_date >= start_date)
+                and (not end_date or fd.maturity_date <= end_date)
+            ):
                 from app.crud.crud_holding import _calculate_fd_current_value
 
                 maturity_value = _calculate_fd_current_value(
@@ -130,12 +138,12 @@ def read_transactions(
                 transactions.append(sell_tx)
                 total += 1
 
-        # Normalise tz-awareness before sorting
-        # (DB rows are naive; synthetic are naive too now)
+        # Normalise tz-awareness and tie-break by id before paginating combined list
         transactions.sort(
-            key=lambda t: t.transaction_date.replace(tzinfo=None),
+            key=lambda t: (t.transaction_date.replace(tzinfo=None), str(t.id)),
             reverse=True,
         )
+        transactions = transactions[skip : skip + limit]
 
     if config.settings.DEBUG:
         print("--- BACKEND DEBUG: Read Transactions Response ---")

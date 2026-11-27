@@ -6,7 +6,7 @@
 
 *   **Overall Status:** Release v1.5.0 QA Stabilization — All P1 & P2 QA Blockers (`#624`–`#629`) Fixed & Verified on branch `fix/v1.5.0-qa-blockers`.
 
-**Latest Achievement:** Resolved P1 blockers (`#624`–`#628`), P2/security findings (`#629`), and mutual fund import commit/duplicate-detection bugs (matched `ISIN:...` tickers and IDCW Reinvestment `isin2` schemes against persisted DB assets via `_resolve_external_isin_asset` + `get_by_ticker`, preserved `isin` across preview -> commit, guarded empty commits with HTTP `400`, removed redundant post-commit preview refetch, and blocked redirect on 0-transaction commits). Verified with `16/16` import session backend tests and `58/58` frontend suites (`224/224` tests).
+**Latest Achievement:** Resolved all valid defects from the v1.5.0 Final QA Report (`fix/v1.5.0-qa-blockers`): fixed tz-aware `record_date` crash in `handle_merger` after demerger, paginated synthetic FD entries alongside DB transactions (`transactions.py`), hardened `BenchmarkService` + kept `BenchmarkComparison.tsx` selector mounted on errors, improved import parsing HTTP 400 messages, and fixed MF `ISIN:...` / `isin2` commit and duplicate detection. Verified with backend pytest suites (`17/17` corporate actions, `6/6` transactions, `16/16` import sessions) and `58/58` frontend suites (`224/224` tests).
 
 ## 2. Test Suite Status
 

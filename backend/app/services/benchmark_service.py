@@ -580,6 +580,15 @@ class BenchmarkService:
         start_date = transactions[0].transaction_date.date()
         end_date = date.today()
 
+        if start_date > end_date:
+            return {
+                "portfolio_xirr": 0.0,
+                "benchmark_xirr": 0.0,
+                "risk_free_xirr": 0.0,
+                "days_duration": 0,
+                "chart_data": [],
+            }
+
         # 2. Fetch Benchmark History(ies)
         yf = self.financial_service.yfinance_provider
         histories = {}
@@ -587,7 +596,13 @@ class BenchmarkService:
             preset = HYBRID_PRESETS[hybrid_preset]
             for comp in preset["components"]:
                 ticker = comp["ticker"]
-                hist = yf.get_index_history(ticker, start_date, end_date)
+                try:
+                    hist = yf.get_index_history(ticker, start_date, end_date)
+                except Exception as exc:
+                    logger.warning(
+                        f"Error fetching history for hybrid component {ticker}: {exc}"
+                    )
+                    hist = None
                 if hist:
                     histories[ticker] = hist
                 else:
@@ -595,7 +610,13 @@ class BenchmarkService:
                         f"Could not fetch history for hybrid component {ticker}"
                     )
         else:
-            hist = yf.get_index_history(benchmark_ticker, start_date, end_date)
+            try:
+                hist = yf.get_index_history(benchmark_ticker, start_date, end_date)
+            except Exception as exc:
+                logger.warning(
+                    f"Error fetching history for benchmark {benchmark_ticker}: {exc}"
+                )
+                hist = None
             if hist:
                 histories[benchmark_ticker] = hist
             else:
@@ -888,6 +909,9 @@ class BenchmarkService:
 
             if daily_flow != 0:
                 xirr_cashflows.append((d.date(), daily_flow))
+
+        if not chart_data:
+            return 0.0
 
         final_val = chart_data[-1]["benchmark_value"]
         xirr_cashflows.append((end_date, final_val))

@@ -1,3 +1,15 @@
+## 2026-11-27: Resolve Final QA Report Defects (Merger TZ, FD Pagination, Benchmark Resilience, Import 400s)
+
+**Task:** Triaged and fixed all valid code defects from the v1.5.0 Final QA Report on `fix/v1.5.0-qa-blockers`:
+1. **P1 · Merger after demerger (`crud_corporate_action.py`):** Normalized timezone-aware `record_date` (from browser ISO `...Z` strings) against naive DB `transaction_date` values before comparing prior `SPLIT`/`DEMERGER` dates in `handle_merger`, and guarded missing destination assets and `None` `cost_allocation_pct` in `handle_merger`/`handle_demerger`.
+2. **P2 · History pagination (`transactions.py`, `crud_transaction.py`):** Added `limit: Optional[int]` to `get_multi_by_user_with_filters` and paginated the combined DB + synthetic FD list (`skip`/`limit`) with deterministic `(transaction_date, id)` sorting and date-range filtering so FD entries no longer repeat on every page.
+3. **P2 · Benchmark availability (`benchmark_service.py`, `BenchmarkComparison.tsx`):** Guarded `start_date > end_date`, empty `chart_data`, and `get_index_history` exceptions in `_run_simulation`/`_calc_bench_xirr`, and kept the benchmark selector mounted when an error occurs.
+4. **P2 · Import validation (`import_sessions.py`):** Replaced generic `"An error occurred during file parsing."` HTTP 400 messages with specific empty-file / format-verification details.
+
+**Verification:** `test_corporate_actions.py` (`17/17`), `test_transactions.py` (`6/6`), `test_import_sessions.py` (`16/16`), `npx tsc --noEmit`, `npx eslint .`, and `58/58` frontend Jest suites (`224/224` tests) passing.
+
+---
+
 ## 2026-11-27: Fix Duplicate Detection for IDCW Reinvestment (ISIN2) Mutual Funds
 
 **Task:** Fix remaining 64 missed duplicates in KFintech PDF re-imports (`INF740K01052`, `INF200K01461`, `INF090I01EU5`):

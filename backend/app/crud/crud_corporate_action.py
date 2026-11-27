@@ -254,6 +254,11 @@ def handle_merger(
         new_asset = crud.asset.get_or_create_by_ticker(
             db, ticker_symbol=new_asset_ticker, asset_type="STOCK"
         )
+        if not new_asset:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Destination asset '{new_asset_ticker}' could not be found.",
+            )
         new_asset_id = str(new_asset.id)
 
     if conversion_ratio <= 0:
@@ -341,11 +346,27 @@ def handle_merger(
             Decimal("0"),
         )
 
+        record_date_cmp = (
+            record_date.replace(tzinfo=None)
+            if getattr(record_date, "tzinfo", None)
+            else record_date
+        )
+        orig_buy_dt = (
+            orig_buy.transaction_date.replace(tzinfo=None)
+            if getattr(orig_buy.transaction_date, "tzinfo", None)
+            else orig_buy.transaction_date
+        )
+
         # Replay splits between orig_buy and record_date
         split_mult = Decimal("1")
         for sp in prior_splits:
+            sp_dt = (
+                sp.transaction_date.replace(tzinfo=None)
+                if getattr(sp.transaction_date, "tzinfo", None)
+                else sp.transaction_date
+            )
             if (
-                orig_buy.transaction_date < sp.transaction_date <= record_date
+                orig_buy_dt < sp_dt <= record_date_cmp
                 and sp.price_per_unit > 0
                 and sp.quantity > 0
             ):
@@ -358,9 +379,14 @@ def handle_merger(
         # Replay demerger cost reductions between orig_buy and record_date
         effective_unit_price = orig_buy.price_per_unit / split_mult
         for dm in prior_demergers:
-            if orig_buy.transaction_date < dm.transaction_date <= record_date:
+            dm_dt = (
+                dm.transaction_date.replace(tzinfo=None)
+                if getattr(dm.transaction_date, "tzinfo", None)
+                else dm.transaction_date
+            )
+            if orig_buy_dt < dm_dt <= record_date_cmp:
                 dm_pct = Decimal(
-                    str((dm.details or {}).get("cost_allocation_pct", "0"))
+                    str((dm.details or {}).get("cost_allocation_pct") or "0")
                 ) / Decimal("100")
                 effective_unit_price *= Decimal("1") - dm_pct
 
@@ -432,6 +458,11 @@ def handle_demerger(
         new_asset = crud.asset.get_or_create_by_ticker(
             db, ticker_symbol=new_asset_ticker, asset_type="STOCK"
         )
+        if not new_asset:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Destination asset '{new_asset_ticker}' could not be found.",
+            )
         new_asset_id = str(new_asset.id)
 
     if ratio <= 0:
@@ -557,6 +588,11 @@ def handle_rename(
         new_asset = crud.asset.get_or_create_by_ticker(
             db, ticker_symbol=new_asset_ticker, asset_type="STOCK"
         )
+        if not new_asset:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Destination asset '{new_asset_ticker}' could not be found.",
+            )
         new_asset_id = str(new_asset.id)
 
     # Get the portfolio

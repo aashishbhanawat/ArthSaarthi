@@ -190,17 +190,16 @@ async def create_import_session(
         raise
     except pd.errors.EmptyDataError as e:
         log.error(f"Error parsing file {temp_file_path}: {e}", exc_info=True)
+        err_msg = "An error occurred during file parsing. The uploaded file is empty."
         crud.import_session.update(
             db,
             db_obj=import_session,
             obj_in={
                 "status": "FAILED",
-                "error_message": "An error occurred during file parsing.",
+                "error_message": err_msg,
             },
         )
-        raise HTTPException(
-            status_code=400, detail="An error occurred during file parsing."
-        )
+        raise HTTPException(status_code=400, detail=err_msg)
     except ValueError as e:
         log.warning(f"Validation error parsing file {temp_file_path}: {e}")
         crud.import_session.update(
@@ -214,17 +213,19 @@ async def create_import_session(
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         log.error(f"Error parsing file {temp_file_path}: {e}", exc_info=True)
+        err_msg = (
+            f"Could not parse '{source}' file ({type(e).__name__}). "
+            "Please verify the file format and required columns."
+        )
         crud.import_session.update(
             db,
             db_obj=import_session,
             obj_in={
                 "status": "FAILED",
-                "error_message": "An error occurred during file parsing.",
+                "error_message": err_msg,
             },
         )
-        raise HTTPException(
-            status_code=400, detail="An error occurred during file parsing."
-        )
+        raise HTTPException(status_code=400, detail=err_msg)
 
     # 4. Save the list of Pydantic models to a JSON file (Android compatible)
     # Convert list of Pydantic models to a DataFrame for efficient storage

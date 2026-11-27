@@ -1,5 +1,6 @@
 import uuid
 from datetime import date, datetime, timedelta
+from decimal import Decimal
 from typing import Callable, Dict
 
 import pytest
@@ -313,3 +314,64 @@ def test_read_transactions_with_synthetic_fd_types(
     types = [t["transaction_type"] for t in data["transactions"]]
     assert "FD_DEPOSIT" in types
     assert "FD_MATURITY" in types
+
+
+def test_read_transactions_paginates_synthetic_fds_across_pages(
+    client: TestClient,
+    db: Session,
+    get_auth_headers: Callable[[str, str], Dict[str, str]],
+) -> None:
+    """Ensure synthetic FD entries are paginated together with DB transactions
+    so they do not repeat on every page."""
+    user, password = create_random_user(db)
+    headers = get_auth_headers(user.email, password)
+    portfolio = create_test_portfolio(db, user_id=user.id, name="FD Page Portfolio")
+    asset = create_test_asset(db, ticker_symbol="FD_PAGE_TEST")
+    for idx in range(3):
+        crud.transaction.create_with_portfolio(
+            db,
+            obj_in=TransactionCreate(
+                asset_id=asset.id,
+                transaction_type="BUY",
+                quantity=Decimal("10"),
+                price_per_unit=Decimal("100"),
+                transaction_date=datetime(2025, 1, 10 + idx),
+            ),
+            portfolio_id=portfolio.id,
+        )
+    crud.fixed_deposit.create_with_portfolio(
+        db=db,
+        obj_in=FixedDepositCreate(
+            portfolio_id=portfolio.id,
+            name="Paginated FD",
+            account_number="FD-PAGE-001",
+            principal_amount=Decimal("50000"),
+            interest_rate=Decimal("7.0"),
+            start_date=date(2025, 1, 1),
+            maturity_date=date(2025, 2, 1),
+            compounding_frequency="Quarterly",
+            interest_payout="Cumulative",
+        ),
+        user_id=user.id,
+    )
+    db.commit()
+
+    page_1 = client.get(
+        f"/api/v1/transactions/?portfolio_id={portfolio.id}&skip=0&limit=3",
+        headers=headers,
+    )
+    page_2 = client.get(
+        f"/api/v1/transactions/?portfolio_id={portfolio.id}&skip=3&limit=3",
+        headers=headers,
+    )
+    assert page_1.status_code == 200
+    assert page_2.status_code == 200
+    p1_data = page_1.json()
+    p2_data = page_2.json()
+    assert p1_data["total"] == 5
+    assert p2_data["total"] == 5
+    p1_ids = {tx["id"] for tx in p1_data["transactions"]}
+    p2_ids = {tx["id"] for tx in p2_data["transactions"]}
+    assert len(p1_ids) == 3
+    assert len(p2_ids) == 2
+    assert p1_ids.isdisjoint(p2_ids)

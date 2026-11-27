@@ -155,9 +155,8 @@ const BenchmarkComparison: React.FC<Props> = ({ portfolioId }) => {
         };
     }, [currentData?.chart_data, benchmarkLabel, showRiskFree, riskFreeRate]);
 
-    if (isLoading) return <div className="animate-pulse h-64 bg-gray-100 rounded-lg"></div>;
-    if (error) return <div className="text-red-500 p-4 bg-red-50 rounded-lg">Failed to load benchmark comparison.</div>;
-    if (!data) return null;
+    if (isLoading && !data) return <div className="animate-pulse h-64 bg-gray-100 rounded-lg"></div>;
+    if (!data && !error) return null;
 
     const handleSelectionChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
         const val = e.target.value;
@@ -226,7 +225,13 @@ const BenchmarkComparison: React.FC<Props> = ({ portfolioId }) => {
                 </div>
             </div>
 
-            {benchmarkMode === 'category' && (
+            {error && (
+                <div className="text-red-500 p-4 bg-red-50 rounded-lg mb-4">
+                    Failed to load benchmark comparison. Please try another benchmark.
+                </div>
+            )}
+
+            {!error && benchmarkMode === 'category' && (
                 <div className="mb-4 border-b border-gray-200">
                     <nav className="-mb-px flex space-x-8" aria-label="Tabs">
                         <button
@@ -251,7 +256,7 @@ const BenchmarkComparison: React.FC<Props> = ({ portfolioId }) => {
                 </div>
             )}
 
-            {noDataForCategory ? (
+            {!error && data && (noDataForCategory ? (
                 <div className="p-8 text-center text-gray-500 bg-gray-50 rounded-lg">
                     No {categoryTab} transactions found in this portfolio.
                 </div>
@@ -291,7 +296,7 @@ const BenchmarkComparison: React.FC<Props> = ({ portfolioId }) => {
                         <Line options={CHART_OPTIONS} data={chartDataObj} />
                     </div>
                 </>
-            )}
+            ))}
         </div>
     );
 };
