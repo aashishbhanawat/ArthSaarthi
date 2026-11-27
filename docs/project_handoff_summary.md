@@ -6,7 +6,7 @@
 
 *   **Overall Status:** Release v1.5.0 QA Stabilization — All P1 & P2 QA Blockers (`#624`–`#629`) Fixed & Verified on branch `fix/v1.5.0-qa-blockers`.
 
-**Latest Achievement:** Resolved all valid defects from the v1.5.0 Final QA Report (`fix/v1.5.0-qa-blockers`): fixed tz-aware `record_date` crash in `handle_merger` after demerger, paginated synthetic FD entries alongside DB transactions (`transactions.py`), hardened `BenchmarkService` + kept `BenchmarkComparison.tsx` selector mounted on errors, improved import parsing HTTP 400 messages, and fixed MF `ISIN:...` / `isin2` commit and duplicate detection. Verified with backend pytest suites (`17/17` corporate actions, `6/6` transactions, `16/16` import sessions) and `58/58` frontend suites (`224/224` tests).
+**Latest Achievement:** Resolved all valid defects from the v1.5.0 Final QA Report (`fix/v1.5.0-qa-blockers`): fixed tz-aware `record_date` crash in `handle_merger` after demerger, paginated synthetic FD entries alongside DB transactions (`transactions.py`), capped future Payout FD synthetic dividends in `BenchmarkService` (`benchmark_service.py`) + kept `BenchmarkComparison.tsx` selector mounted on errors, improved import parsing HTTP 400 messages, and fixed MF `ISIN:...` / `isin2` commit and duplicate detection. Verified with backend pytest suites (`13/13` analytics, `17/17` corporate actions, `6/6` transactions, `16/16` import sessions) and `58/58` frontend suites (`224/224` tests).
 
 ## 2. Test Suite Status
 

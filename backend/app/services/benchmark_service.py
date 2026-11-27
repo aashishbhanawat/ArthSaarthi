@@ -121,7 +121,8 @@ class BenchmarkService:
                         / divisor
                     )
                     curr_date = fd.start_date + interval
-                    while curr_date <= fd.maturity_date:
+                    today = date.today()
+                    while curr_date <= fd.maturity_date and curr_date <= today:
                         synthetic_txns.append(
                             self._create_mock_txn(curr_date, period_payout, "DIVIDEND")
                         )

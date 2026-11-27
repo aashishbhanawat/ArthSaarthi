@@ -1,3 +1,13 @@
+## 2026-11-27: Cap Payout FD Synthetic Dividends to Today in BenchmarkService
+
+**Task:** Fix HTTP 500 `ValidationError: Transaction date cannot be in the future` in `GET /portfolios/{id}/benchmark-comparison`:
+- **`backend/app/services/benchmark_service.py`:** Capped the synthetic `DIVIDEND` payout loop in `_generate_synthetic_transactions` to `curr_date <= date.today()` so active Payout FDs with future maturity dates do not emit future-dated synthetic transactions.
+- **`backend/app/tests/api/v1/test_analytics.py`:** Added `test_benchmark_comparison_active_payout_fd_no_future_date_error`.
+
+**Verification:** `pytest app/tests/api/v1/test_analytics.py` (`13/13` passing).
+
+---
+
 ## 2026-11-27: Resolve Final QA Report Defects (Merger TZ, FD Pagination, Benchmark Resilience, Import 400s)
 
 **Task:** Triaged and fixed all valid code defects from the v1.5.0 Final QA Report on `fix/v1.5.0-qa-blockers`:

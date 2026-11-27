@@ -473,3 +473,53 @@ def test_get_ppf_asset_analytics_sharpe_ratio(
     # The Sharpe Ratio for a portfolio with only a risk-free asset like PPF should be 0.
     assert "sharpe_ratio" in analytics_data
     assert analytics_data["sharpe_ratio"] == 0.0
+
+
+def test_benchmark_comparison_active_payout_fd_no_future_date_error(
+    client: TestClient,
+    db: Session,
+    get_auth_headers: Callable[[str, str], Dict[str, str]],
+    mocker,
+) -> None:
+    """Regression test: active Payout FDs with future maturity dates must not
+    emit future synthetic dividend dates in BenchmarkService."""
+    user, password = create_random_user(db)
+    headers = get_auth_headers(user.email, password)
+    portfolio = create_test_portfolio(db, user_id=user.id, name="Payout FD Benchmark")
+
+    from app import crud
+    from app.schemas.fixed_deposit import FixedDepositCreate
+
+    start_dt = date.today() - timedelta(days=90)
+    maturity_dt = date.today() + timedelta(days=365)
+    crud.fixed_deposit.create_with_portfolio(
+        db=db,
+        obj_in=FixedDepositCreate(
+            portfolio_id=portfolio.id,
+            name="Active Payout FD",
+            account_number="FD-PAY-001",
+            principal_amount=Decimal("100000"),
+            interest_rate=Decimal("7.5"),
+            start_date=start_dt,
+            maturity_date=maturity_dt,
+            compounding_frequency="Quarterly",
+            interest_payout="Payout",
+        ),
+        user_id=user.id,
+    )
+    db.commit()
+
+    mocker.patch.object(
+        financial_data_service.yfinance_provider,
+        "get_index_history",
+        return_value={},
+        create=True,
+    )
+
+    response = client.get(
+        f"{settings.API_V1_STR}/portfolios/{portfolio.id}/benchmark-comparison"
+        "?benchmark_ticker=%5ENSEI&benchmark_mode=single&risk_free_rate=7",
+        headers=headers,
+    )
+    assert response.status_code == 200
+    assert "chart_data" in response.json()
