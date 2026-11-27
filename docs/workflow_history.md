@@ -1,3 +1,13 @@
+## 2026-11-27: Fix Duplicate Detection for IDCW Reinvestment (ISIN2) Mutual Funds
+
+**Task:** Fix remaining 64 missed duplicates in KFintech PDF re-imports (`INF740K01052`, `INF200K01461`, `INF090I01EU5`):
+- **`backend/app/api/v1/endpoints/import_sessions.py`:** Extracted `_resolve_external_isin_asset` in `get_import_session_preview` to check `crud.asset.get_by_ticker(db, ticker_symbol=resolved_ticker)` before constructing a transient `Asset`. IDCW Reinvestment schemes appear in CAS PDFs under their 2nd AMFI ISIN (`isin2`) while the persisted DB `Asset` stores `isin1` (Payout ISIN), so checking the resolved AMFI scheme code in DB ensures persisted assets are matched and `crud.transaction.get_by_details` detects all duplicates.
+- **`backend/app/tests/api/test_import_sessions.py`:** Added `test_preview_then_commit_idcw_reinvestment_isin2_detects_duplicates`.
+
+**Verification:** `pytest app/tests/api/test_import_sessions.py` (`16/16` passing).
+
+---
+
 ## 2026-11-27: Fix Duplicate Detection on Re-Imported ISIN-Prefixed Mutual Funds
 
 **Task:** Fix duplicate detection returning `0` duplicates when re-uploading a KFintech/CAMS PDF:

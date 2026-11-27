@@ -411,6 +411,20 @@ def get_import_session_preview(
             )
         return external_lookup_cache[lookup_key]
 
+    def _resolve_external_isin_asset(lookup_key: str) -> Optional[models.Asset]:
+        details = _cached_get_asset_details(lookup_key)
+        if not details:
+            return None
+        resolved_ticker = details.get("ticker_symbol") or lookup_key.upper()
+        existing = crud.asset.get_by_ticker(db, ticker_symbol=resolved_ticker)
+        if existing:
+            return existing
+        asset_in = schemas.AssetCreate(
+            ticker_symbol=resolved_ticker,
+            **{k: v for k, v in details.items() if k != "ticker_symbol"},
+        )
+        return models.Asset(**model_dump(asset_in))
+
     try:
         for _, row in df.iterrows():
             # Clean NaNs to None to avoid validation errors for optional fields
@@ -437,35 +451,14 @@ def get_import_session_preview(
 
             # If ISIN lookup externally for new mutual funds (side-effect free preview)
             if not asset and isin_code:
-                details = _cached_get_asset_details(f"ISIN:{isin_code}")
-                if details:
-                    # Validate and filter through schema to prevent TypeError
-                    asset_in = schemas.AssetCreate(
-                        ticker_symbol=(
-                            details.get("ticker_symbol")
-                            or f"ISIN:{isin_code}".upper()
-                        ),
-                        **{
-                            k: v for k, v in details.items() if k != "ticker_symbol"
-                        },
-                    )
-                    asset = models.Asset(**model_dump(asset_in))
+                asset = _resolve_external_isin_asset(f"ISIN:{isin_code}")
                 if asset:
                     log.debug(f"Found asset by ISIN: {isin_code} -> {asset.name}")
 
             # If ticker looks like "ISIN:XXX", try to find externally
             # (side-effect free preview)
             if not asset and ticker_symbol.upper().startswith("ISIN:"):
-                details = _cached_get_asset_details(ticker_symbol)
-                if details:
-                    # Validate and filter through schema to prevent TypeError
-                    asset_in = schemas.AssetCreate(
-                        ticker_symbol=(
-                            details.get("ticker_symbol") or ticker_symbol.upper()
-                        ),
-                        **{k: v for k, v in details.items() if k != "ticker_symbol"},
-                    )
-                    asset = models.Asset(**model_dump(asset_in))
+                asset = _resolve_external_isin_asset(ticker_symbol)
                 if asset:
                     log.info(
                         f"Auto-matched (transient) by ISIN: {ticker_symbol} "

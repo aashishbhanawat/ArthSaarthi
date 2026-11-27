@@ -813,4 +813,105 @@ def test_preview_then_commit_isin_ticker_preserves_isin(
     assert len(preview_data_2["duplicates"]) == 1
 
 
+def test_preview_then_commit_idcw_reinvestment_isin2_detects_duplicates(
+    client: TestClient,
+    db: Session,
+    normal_user: tuple[User, str],
+    user_portfolio: Portfolio,
+    get_auth_headers: Callable[[str, str], Dict[str, str]],
+    monkeypatch,
+    tmp_path,
+):
+    """Regression test: IDCW Reinvestment plans use ISIN2 in CAS PDFs while AMFI
+    stores ISIN1 (Payout ISIN) on the Asset record. Re-previewing after commit
+    must match the persisted Asset by scheme code and flag the row as duplicate."""
+    user, password = normal_user
+    auth_headers = get_auth_headers(user.email, password)
+
+    df = pd.DataFrame(
+        [
+            {
+                "transaction_date": "2017-03-06T00:00:00",
+                "ticker_symbol": "ISIN:INF740K01052",
+                "transaction_type": "BUY",
+                "quantity": 145.671,
+                "price_per_unit": 18.305,
+                "fees": 0.0,
+            }
+        ]
+    )
+    parsed_file_path = tmp_path / f"{uuid.uuid4()}.json"
+    df.to_json(parsed_file_path, orient="records", date_format="iso")
+
+    session_1 = models.ImportSession(
+        user_id=user.id,
+        portfolio_id=user_portfolio.id,
+        file_name="kfintech_idcw.pdf",
+        file_path=str(parsed_file_path),
+        source="KFintech PDF",
+        status="PARSED",
+        parsed_file_path=str(parsed_file_path),
+    )
+    db.add(session_1)
+    db.commit()
+    db.refresh(session_1)
+
+    from app.services.financial_data_service import financial_data_service
+
+    def fake_get_asset_details(ticker_symbol: str, asset_type=None):
+        if ticker_symbol == "ISIN:INF740K01052":
+            return {
+                "ticker_symbol": "109537",
+                "name": "DSP Natural Resources And New Energy Fund - Regular Plan - IDCW",
+                "asset_type": "Mutual Fund",
+                "currency": "INR",
+                "exchange": "AMFI",
+                "isin": "INF740K01045",  # Payout ISIN1 stored in DB
+            }
+        return None
+
+    monkeypatch.setattr(
+        financial_data_service, "get_asset_details", fake_get_asset_details
+    )
+
+    p1 = client.post(
+        f"/api/v1/import-sessions/{session_1.id}/preview",
+        headers=auth_headers,
+        json=[],
+    )
+    assert p1.status_code == 200
+    valid_new = p1.json()["valid_new"]
+    assert len(valid_new) == 1
+
+    c1 = client.post(
+        f"/api/v1/import-sessions/{session_1.id}/commit",
+        headers=auth_headers,
+        json={"transactions_to_commit": valid_new, "aliases_to_create": []},
+    )
+    assert c1.status_code == 200
+    assert "Successfully committed 1 transactions" in c1.json()["msg"]
+
+    session_2 = models.ImportSession(
+        user_id=user.id,
+        portfolio_id=user_portfolio.id,
+        file_name="kfintech_idcw.pdf",
+        file_path=str(parsed_file_path),
+        source="KFintech PDF",
+        status="PARSED",
+        parsed_file_path=str(parsed_file_path),
+    )
+    db.add(session_2)
+    db.commit()
+    db.refresh(session_2)
+
+    p2 = client.post(
+        f"/api/v1/import-sessions/{session_2.id}/preview",
+        headers=auth_headers,
+        json=[],
+    )
+    assert p2.status_code == 200
+    assert len(p2.json()["valid_new"]) == 0
+    assert len(p2.json()["duplicates"]) == 1
+
+
 
