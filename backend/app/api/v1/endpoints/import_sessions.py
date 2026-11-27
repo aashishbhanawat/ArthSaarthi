@@ -283,9 +283,16 @@ def resolve_asset_for_import_transaction(
     if not ticker_symbol and not isin and not name:
         return None
 
-    # 1. Try ISIN lookup first
-    if isin:
-        asset = crud.asset.get_by_isin(db, isin_code=isin)
+    # 1. Try ISIN lookup first (including ISIN:xxx ticker_symbol format)
+    effective_isin = isin
+    if (
+        not effective_isin
+        and ticker_symbol
+        and ticker_symbol.upper().startswith("ISIN:")
+    ):
+        effective_isin = ticker_symbol.split(":", 1)[1].strip()
+    if effective_isin:
+        asset = crud.asset.get_by_isin(db, isin_code=effective_isin)
         if asset:
             return asset
 

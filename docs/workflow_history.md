@@ -1,3 +1,13 @@
+## 2026-11-27: Fix Duplicate Detection on Re-Imported ISIN-Prefixed Mutual Funds
+
+**Task:** Fix duplicate detection returning `0` duplicates when re-uploading a KFintech/CAMS PDF:
+- **`backend/app/api/v1/endpoints/import_sessions.py`:** Updated `resolve_asset_for_import_transaction` to extract `effective_isin` from `ISIN:<isin>` ticker symbols when `isin` is `None`. Previously, `get_import_session_preview` fell through to creating a transient unpersisted `Asset` instead of matching the persisted DB `Asset`, skipping `crud.transaction.get_by_details` duplicate detection.
+- **`backend/app/tests/api/test_import_sessions.py`:** Extended `test_preview_then_commit_isin_ticker_preserves_isin` to re-preview the same parsed file after commit and assert `0` new and `1` duplicate.
+
+**Verification:** `pytest app/tests/api/test_import_sessions.py` (`15/15` passing).
+
+---
+
 ## 2026-11-26: Preserve ISIN Across Import Preview -> Commit for Mutual Funds
 
 **Task:** Fix KFintech/CAMS mutual fund import commit failing with `Asset '<Fund Name>' not found during commit`:

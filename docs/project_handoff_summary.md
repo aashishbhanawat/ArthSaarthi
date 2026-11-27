@@ -6,7 +6,7 @@
 
 *   **Overall Status:** Release v1.5.0 QA Stabilization — All P1 & P2 QA Blockers (`#624`–`#629`) Fixed & Verified on branch `fix/v1.5.0-qa-blockers`.
 
-**Latest Achievement:** Resolved P1 blockers (`#624`–`#628`), P2/security findings (`#629`), and mutual fund import commit bugs (preserved `isin` when `get_import_session_preview` replaces `ISIN:...` with display name, guarded empty commit payloads with HTTP `400`, removed redundant post-commit preview refetch, and blocked redirect on 0-transaction commits). Verified with `15/15` import session backend tests and `58/58` frontend suites (`224/224` tests).
+**Latest Achievement:** Resolved P1 blockers (`#624`–`#628`), P2/security findings (`#629`), and mutual fund import commit/duplicate-detection bugs (extracted `effective_isin` from `ISIN:...` ticker symbols in `resolve_asset_for_import_transaction` so re-uploads match persisted DB assets for duplicate detection, preserved `isin` across preview -> commit, guarded empty commits with HTTP `400`, removed redundant post-commit preview refetch, and blocked redirect on 0-transaction commits). Verified with `15/15` import session backend tests and `58/58` frontend suites (`224/224` tests).
 
 ## 2. Test Suite Status
 

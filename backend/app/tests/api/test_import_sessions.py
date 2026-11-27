@@ -788,5 +788,29 @@ def test_preview_then_commit_isin_ticker_preserves_isin(
     assert commit_res.status_code == 200
     assert "Successfully committed 1 transactions" in commit_res.json()["msg"]
 
+    # Re-upload / preview the same parsed file again -> must detect 1 duplicate, 0 new
+    session_in_2 = models.ImportSession(
+        user_id=user.id,
+        portfolio_id=user_portfolio.id,
+        file_name="kfintech_cas.pdf",
+        file_path=str(parsed_file_path),
+        source="KFintech PDF",
+        status="PARSED",
+        parsed_file_path=str(parsed_file_path),
+    )
+    db.add(session_in_2)
+    db.commit()
+    db.refresh(session_in_2)
+
+    preview_res_2 = client.post(
+        f"/api/v1/import-sessions/{session_in_2.id}/preview",
+        headers=auth_headers,
+        json=[],
+    )
+    assert preview_res_2.status_code == 200
+    preview_data_2 = preview_res_2.json()
+    assert len(preview_data_2["valid_new"]) == 0
+    assert len(preview_data_2["duplicates"]) == 1
+
 
 
